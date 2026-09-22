@@ -5,7 +5,7 @@ Editors: Amy Brown and Greg Wilson
 Official edition: https://aosabook.org/en/  
 License: Creative Commons Attribution 3.0 Unported
 
-Research status: **IN PROGRESS**
+Research status: **COMPLETE — full official Volume 1 reviewed**
 
 This is a supplemental EngSense corpus source. It is especially useful because it provides architecture case studies written by maintainers and architects of real systems rather than a single unified doctrine.
 
@@ -40,12 +40,12 @@ This note keeps separate:
 - [x] Chapter 18 — SnowFlock
 - [x] Chapter 19 — SocialCalc
 - [x] Chapter 20 — Telepathy
-- [ ] Chapter 21 — Thousand Parsec
-- [ ] Chapter 22 — Violet
-- [ ] Chapter 23 — VisTrails
-- [ ] Chapter 24 — VTK
-- [ ] Chapter 25 — Battle For Wesnoth
-- [ ] Bibliography
+- [x] Chapter 21 — Thousand Parsec
+- [x] Chapter 22 — Violet
+- [x] Chapter 23 — VisTrails
+- [x] Chapter 24 — VTK
+- [x] Chapter 25 — Battle For Wesnoth
+- [x] Bibliography
 
 ---
 
@@ -2919,3 +2919,988 @@ EngSense should include product maturity and audience criticality when evaluatin
 12. A public API is designed for broad hypothetical capabilities while actual implementations and users rely on a much smaller feature set.
 13. A repository's language layout follows one ecosystem's conventions and materially discourages contributors from other supported languages.
 14. A project retains fast experimental release habits after becoming critical infrastructure without redefining its stability contract.
+
+
+---
+
+# Chapter 21 — Thousand Parsec
+
+## Source scope
+
+Thousand Parsec is a framework for multiplayer, turn-based strategy games rather than one fixed game.
+
+Its architecture separates:
+
+- protocol;
+- client;
+- server;
+- ruleset;
+- AI clients;
+- persistence;
+- metadata;
+- optional administration and single-player support.
+
+The framework is intentionally extensible, but the retrospective is unusually clear that excessive flexibility can itself become a design failure.
+
+## Source-derived observations
+
+### 1. Protocols can become the architectural center
+
+The protocol defines what clients, servers, AI clients, and rulesets can coordinate around.
+
+Because independent implementations exist on both sides, protocol versioning became essential to long-term evolution.
+
+### 2. Rules and presentation are separated
+
+Game rules live on the server side while clients consume protocol-visible state and expose interaction.
+
+AI clients use the same protocol-visible information as human-facing clients, reducing privileged hidden behavior.
+
+### 3. Client-side execution can reduce interaction latency
+
+TPCL sends requirements/calculation logic to clients so some design validation can happen locally without repeated server interaction.
+
+This improves responsiveness while requiring the same semantic logic to be consistently understood by multiple participants.
+
+### 4. Reuse can arise from mature nearby mechanisms
+
+The administration protocol reused concepts from the already mature game protocol instead of inventing an unrelated mechanism.
+
+This is evidence for adapting a proven local abstraction when the semantic fit is strong.
+
+### 5. Metadata can decouple user workflow from implementation details
+
+Single-player setup uses metadata describing available:
+
+- servers;
+- rulesets;
+- AI clients;
+- versions;
+- parameters.
+
+The user chooses the game/ruleset first while implementation selection can be automatic.
+
+This prevents the UI from mirroring internal process structure.
+
+### 6. Persistence is part of game/session semantics
+
+The server continuously persists game state so abrupt termination does not invalidate a long-running game.
+
+Saved games combine state with enough component/version configuration to reconstruct execution.
+
+### 7. Incremental protocol evolution worked well
+
+The project explicitly credits:
+
+- implementing subsets;
+- short iterations;
+- protocol versioning;
+- client/server separation
+
+for enabling organic growth.
+
+### 8. Binary protocol cost was underestimated
+
+The authors identify the binary protocol as a major source of debugging difficulty.
+
+They also conclude that the protocol accumulated too much flexibility.
+
+### 9. Framework flexibility has a carrying cost
+
+Extensibility was a central goal, but the retrospective warns against implementing more protocol capability than current needs justify.
+
+## EngSense interpretation
+
+Candidate signals:
+
+```text
+protocol_centrality
+independent_implementation_count
+protocol_versioning_need
+client_server_semantic_split
+local_validation_value
+metadata_driven_configuration
+persistence_recovery_requirement
+debuggability
+framework_flexibility_cost
+```
+
+Candidate rules:
+
+- version a protocol when independently evolving implementations depend on it;
+- do not let a user workflow mirror internal component topology unless that topology is meaningful to the user;
+- reuse mature local mechanisms when semantics genuinely align;
+- push validation/computation closer to the user only when semantic consistency can still be maintained;
+- treat protocol debuggability as a quality property;
+- do not maximize framework flexibility preemptively;
+- prefer short, coherent evolution steps for large extensible frameworks.
+
+## Strong conflict candidates
+
+- extensibility vs protocol simplicity;
+- binary compactness vs debuggability;
+- server authority vs client responsiveness;
+- framework generality vs focused current needs;
+- implementation topology vs user-centric workflow.
+
+---
+
+# Chapter 22 — Violet
+
+## Source scope
+
+Violet is deliberately a lightweight UML editor.
+
+Its architecture is shaped by a narrow product goal:
+
+> be useful for simple diagrams while remaining understandable and extensible.
+
+It intentionally rejects many industrial UML-tool capabilities.
+
+## Source-derived observations
+
+### 1. Explicit non-goals preserve product simplicity
+
+Violet does not attempt to provide:
+
+- full UML semantics;
+- code generation;
+- industrial interchange;
+- advanced automatic layout.
+
+These omissions are part of the architecture.
+
+### 2. A small framework can be more appropriate than a comprehensive framework
+
+Violet uses a simple graph framework designed for editable graph applications.
+
+The author explicitly rejected more elaborate alternatives when their complexity did not fit the product.
+
+### 3. Standard platform mechanisms can remove custom architecture
+
+JavaBeans properties, Java2D, persistence support, undo infrastructure, and ServiceLoader provide reusable mechanisms that reduce bespoke code.
+
+### 4. Persistence format is a compatibility contract
+
+Long-term persistence works as long as constructor/property/method semantics remain compatible.
+
+When package names changed, Violet chose a migration transformer instead of preserving an obsolete package structure forever.
+
+This is a concrete case of:
+
+```text
+migrate persisted representation
+instead of
+freeze internal organization
+```
+
+### 5. Security constraints can justify a platform-specific abstraction layer
+
+The WebStart sandbox required a different file/preferences mechanism.
+
+Violet hides those differences behind small wrappers rather than forcing the rest of the application to know deployment context.
+
+### 6. Generality should be measured, not feared
+
+The author initially worried that general Java2D Shape use might cost performance, but measurement/experience showed it was sufficient.
+
+This reinforces measured rather than speculative optimization.
+
+### 7. Undo belongs to model semantics, not UI gestures
+
+The chapter's key undo lesson is that atomic operations should correspond to structural model changes.
+
+One UI action can cause several model changes.
+
+Capturing only controller/UI operations would therefore be semantically incomplete.
+
+### 8. A generalized event mechanism can be overdesign for one feature and justified by another
+
+Generic graph listeners would be unnecessary solely for undo.
+
+They also supported experimental collaborative editing, making the generalization more defensible.
+
+### 9. Use the smallest extension mechanism that satisfies the need
+
+Violet explicitly rejects OSGi for its plugin use case and uses Java ServiceLoader.
+
+The project chooses "simplest thing that works" because contributor-facing extension needs are narrow.
+
+## EngSense interpretation
+
+Candidate signals:
+
+```text
+product_non_goals
+framework_weight
+platform_standard_fit
+persisted_schema_inertia
+migration_transform_cost
+model_atomicity
+extension_requirement_depth
+generalization_multi_use_value
+```
+
+Candidate rules:
+
+- treat explicit non-goals as architecture constraints;
+- prefer the smallest framework that satisfies real product requirements;
+- use platform-standard mechanisms when they fit and reduce bespoke infrastructure;
+- migrate persisted representations rather than freezing internal structure when migration is tractable;
+- define undo/replay around model-level state transitions, not UI commands;
+- justify generalization with multiple real uses, not one hypothetical future use;
+- do not adopt enterprise/plugin infrastructure when a standard lightweight mechanism is sufficient.
+
+## Conflict candidates
+
+- lightweight product scope vs feature completeness;
+- persistence compatibility vs internal refactoring freedom;
+- general event abstraction vs direct implementation;
+- platform framework reuse vs custom framework control;
+- simple plugin mechanism vs feature-rich extension platform.
+
+---
+
+# Chapter 23 — VisTrails
+
+## Source scope
+
+VisTrails supports exploratory scientific workflows with provenance.
+
+Its central architectural premise is that exploration is not a linear sequence of final workflows; it is a constantly changing graph of alternatives, parameters, results, and reasoning paths.
+
+## Source-derived observations
+
+### 1. Provenance is a first-class data model
+
+VisTrails stores not only final outputs but also:
+
+- workflow structure;
+- workflow evolution;
+- parameters;
+- execution context;
+- intermediate data;
+- annotations.
+
+This supports reproducibility and reflective reasoning.
+
+### 2. Change-based provenance can be more compact and expressive than full snapshots
+
+Workflow evolution is stored as operations between versions, similar to a transaction/change log.
+
+That representation makes:
+
+- version navigation;
+- comparison;
+- collaboration;
+- reconstruction
+
+natural operations.
+
+### 3. Caching requires semantic constraints
+
+Intermediate results can be reused when modules behave functionally:
+
+```text
+same inputs → same outputs
+```
+
+Modules with side effects or intentional nondeterminism must be treated differently or marked non-cacheable.
+
+Optimization therefore depends on explicit semantic contracts.
+
+### 4. Schema evolution requires explicit translation infrastructure
+
+As provenance/storage schema changed, VisTrails introduced versioned domain/persistence classes and transformations between versions.
+
+Common default transformations handle ordinary cases, while local overrides handle exceptional changes.
+
+### 5. Repetitive compatibility logic is a generation opportunity
+
+Meta-schema/templates generate serialization and data-management boilerplate across versions/languages.
+
+This is automation applied to structurally repetitive work.
+
+### 6. Extensibility is infrastructure, not merely a plugin list
+
+Packages can declare:
+
+- dependencies;
+- system requirements;
+- modules;
+- ports;
+- initialization/finalization;
+- computation.
+
+The system constrains module behavior partly to preserve execution/caching semantics.
+
+### 7. Persistent data identity is required for reproducibility
+
+Data versions are linked using stable identifiers, version information, hashes, and upstream workflow signatures.
+
+A reproducible workflow needs its data dependencies to remain addressable.
+
+### 8. Workflow upgrades are migrations
+
+Third-party package evolution can rename or alter module interfaces.
+
+VisTrails attempts automatic upgrades for unchanged interfaces and lets package developers provide explicit remapping for breaking changes.
+
+### 9. User feedback is evidence, not specification
+
+The authors emphasize rapid prototypes and user feedback, but also explicitly note that what users request is not always the right solution.
+
+### 10. Powerful unfamiliar features can fail through adoption cost
+
+Even useful novel concepts can be underused when:
+
+- users do not understand the mental model;
+- documentation is weak;
+- the tool is too general;
+- the learning curve is high.
+
+## EngSense interpretation
+
+Candidate signals:
+
+```text
+provenance_requirement
+workflow_evolution_rate
+reproducibility_requirement
+cache_semantic_safety
+side_effect_presence
+schema_version_count
+migration_mapping_complexity
+data_identity_stability
+feature_learning_cost
+documentation_gap
+```
+
+Candidate rules:
+
+- if reproducibility matters, preserve execution provenance and data identity, not only source code;
+- choose snapshot vs change-log representation according to reconstruction/comparison/storage needs;
+- do not enable caching unless the computation semantics make reuse valid;
+- encode schema migration explicitly rather than assuming serialized state will remain compatible;
+- generate repetitive compatibility/serialization code when one declarative source can drive it safely;
+- treat user requests as problem evidence, not literal architecture instructions;
+- include adoption/documentation cost when evaluating novel abstractions.
+
+## Strong conflict candidates
+
+- full snapshots vs change-based provenance;
+- caching efficiency vs side-effect freedom;
+- general-purpose platform vs domain-specific usability;
+- automatic migration vs explicit per-change mapping;
+- user-request literalism vs solving the underlying user need.
+
+---
+
+# Chapter 24 — VTK
+
+## Source scope
+
+VTK is a long-lived visualization toolkit designed around:
+
+- data representations;
+- algorithms;
+- demand-driven pipelines;
+- rendering;
+- interaction;
+- language wrapping;
+- cross-platform scientific use.
+
+The chapter repeatedly connects architecture to scientific-computing culture and decades of growth.
+
+## Source-derived observations
+
+### 1. Project ecosystem goals can influence foundational technical choices
+
+Open licensing and standard technology were selected partly to reduce collaboration/adoption barriers.
+
+This is a reminder that architecture sits inside organizational and ecosystem constraints.
+
+### 2. Multi-language wrapping separates performance core from scripting productivity
+
+VTK implements high-performance code in C++ while generating bindings for Python, Java, and Tcl.
+
+The architecture avoids independently reimplementing the same toolkit in every language.
+
+### 3. Data layout follows workload characteristics
+
+Contiguous typed arrays fit:
+
+- scientific computing;
+- serialization;
+- I/O;
+- interoperability;
+- large-block allocation.
+
+Representation choice reflects dominant operations.
+
+### 4. Shared input data is treated as immutable by pipeline algorithms
+
+Because multiple algorithms may consume the same data, filters read input and produce output instead of mutating shared input.
+
+This reduces interference among consumers.
+
+### 5. Demand-driven execution can avoid unnecessary work
+
+A sink requests data.
+
+The request propagates upstream only as far as needed.
+
+Cached results can be reused when metadata shows they remain valid.
+
+### 6. Caching is an explicit compute-memory trade-off
+
+Keeping intermediate results saves recomputation and I/O but costs memory.
+
+The policy is configurable because scientific datasets can be huge.
+
+### 7. Request metadata enables partial/out-of-core execution
+
+The pipeline can request:
+
+- pieces;
+- time steps;
+- extents;
+- ghost layers.
+
+The execution mechanism therefore carries not just "run" but structured demand information.
+
+### 8. Large systems can outgrow implicit coordination
+
+VTK originally coordinated pipeline behavior implicitly through data and algorithm objects.
+
+It later introduced an explicit executive object because execution policy became too complex to remain distributed implicitly.
+
+This is a particularly strong EngSense lesson.
+
+### 9. Successful abstractions can still become too large
+
+The authors credit VTK's modularity but also admit some classes/subsystems grew too high-level and too complex.
+
+They continued refactoring them into smaller pieces.
+
+### 10. Initial problem framing can become obsolete
+
+VTK began as a read-only visualization system.
+
+Users later wanted data editing, which requires meaningfully different structures.
+
+Long-lived architecture must sometimes revisit foundational assumptions.
+
+### 11. Community growth can require governance architecture
+
+As VTK grew, it introduced:
+
+- architecture review;
+- subsystem leads;
+- further modularization;
+- contribution structures.
+
+Scale changes project governance as well as code.
+
+## EngSense interpretation
+
+Candidate signals:
+
+```text
+data_access_pattern
+shared_input_mutability
+pipeline_demand_model
+cache_memory_tradeoff
+partial_processing_need
+execution_policy_complexity
+implicit_coordination_cost
+language_binding_count
+foundational_assumption_validity
+community_scale
+```
+
+Candidate rules:
+
+- select data representation according to dominant operations and interoperability constraints;
+- prefer immutable shared inputs when multiple consumers should not interfere;
+- use demand-driven execution when expensive upstream work need not always run;
+- make caching policy explicit where memory and recomputation trade directly;
+- introduce an explicit coordinator when execution policy becomes too complex to remain implicit across participants;
+- revisit foundational assumptions when product use changes materially;
+- recognize that modularity can decay as abstractions accumulate responsibilities.
+
+## Strong conflict candidates
+
+- cache reuse vs memory pressure;
+- implicit collaboration vs explicit orchestration;
+- high-level convenient objects vs subsystem complexity;
+- immutable pipeline input vs in-place editing needs;
+- performance core vs multi-language usability.
+
+---
+
+# Chapter 25 — Battle for Wesnoth
+
+## Source scope
+
+Battle for Wesnoth is organized around an unusual architectural driver: lowering contribution barriers for people with widely varying technical skill.
+
+Its architecture therefore treats contributor accessibility as a first-class system quality.
+
+## Source-derived observations
+
+### 1. Contributor accessibility can shape core architecture
+
+Wesnoth moves large amounts of game content out of C++ into WML so contributors can create:
+
+- units;
+- campaigns;
+- scenarios;
+- GUI configuration;
+- other content
+
+without becoming C++ engine developers.
+
+### 2. Dependencies can either raise or lower contribution barriers
+
+The project generally limits dependencies to reduce portability and learning costs.
+
+But selected libraries such as SDL reduce platform-specific complexity and make cross-platform development easier.
+
+Therefore dependency count alone is a weak measure.
+
+### 3. Self-contained subsystems reduce blast radius for new contributors
+
+Segmented modules let contributors work in one area with less risk of destabilizing unrelated code.
+
+This is modularity serving contributor safety.
+
+### 4. Poorly defined responsibilities tend toward Blob modules
+
+Large "play game" and display modules accumulated responsibility partly because their boundaries changed constantly and were hard to specify.
+
+Unclear responsibility is a stronger warning signal than raw module size.
+
+### 5. A user-friendly DSL trades implementation efficiency for participation
+
+WML is intentionally simpler than a full programming language.
+
+Its verbosity and processing model create performance/complexity costs, but those costs buy a lower barrier for content creators.
+
+### 6. Global convenience can create scaling problems
+
+Representing all content as one conceptual WML document made engine access simple but eventually produced large startup/reload and memory costs.
+
+Caching and conditional preprocessing mitigated the problem.
+
+### 7. Composition can outperform inheritance for highly variable entities
+
+Wesnoth does not create a C++ subclass for every unit combination.
+
+Instead:
+
+- unit instances refer to unit types;
+- unit types contain combinations of abilities;
+- attacks/modifications are data-driven.
+
+This allows non-programmers to compose existing capabilities.
+
+### 8. Full programmability was intentionally rejected
+
+Making WML powerful enough to define arbitrary new behavior would turn it into a real programming language and undermine the accessibility goal.
+
+The system therefore keeps some abilities hard-coded.
+
+This is an explicit boundary between:
+
+- safe/easy composition;
+- engine-level programming.
+
+### 9. Command representation enables deterministic replay and networking
+
+Player actions can be serialized as WML commands.
+
+The same command representation supports:
+
+- replay;
+- remote synchronization;
+- observers;
+- bug reproduction.
+
+### 10. Security architecture reflects product goals
+
+The multiplayer design deliberately does not invest heavily in anti-cheat because the community avoids competitive ranking incentives.
+
+This is a rare example of reducing a security/adversarial requirement through product/social design rather than technical enforcement.
+
+### 11. Technical elegance is not the only architecture objective
+
+The chapter explicitly acknowledges that some choices look inelegant by conventional standards but succeeded at the project's core goal: broad participation.
+
+## EngSense interpretation
+
+Candidate quality dimensions:
+
+```text
+contributor_accessibility
+contribution_blast_radius
+dsl_learning_cost
+platform_dependency_cost
+composition_flexibility
+engine_extension_boundary
+content_scale
+replayability
+product_incentive_risk
+```
+
+Candidate rules:
+
+- include contributor skill assumptions when a project's sustainability depends on external/community contribution;
+- evaluate dependencies by net complexity transferred to contributors, not raw count;
+- prefer composition/data-driven configuration when many combinations of existing behavior are expected;
+- do not turn a configuration language into a general programming language unless programmability is actually required;
+- use command/event logs when deterministic replay and synchronization are important;
+- do not assume every adversarial problem requires maximal technical enforcement; product incentives and threat model matter;
+- judge "inelegant" mechanisms against the actual project objective they enable.
+
+## Strong conflict candidates
+
+- implementation elegance vs contributor accessibility;
+- minimal dependencies vs portability abstractions;
+- configuration simplicity vs programmability;
+- global unified representation vs loading/memory scalability;
+- inheritance vs data-driven composition;
+- anti-cheat/security enforcement vs product/community incentives.
+
+---
+
+# Bibliography
+
+The bibliography was reviewed as the reference map for the volume.
+
+No independent EngSense rules are extracted from bibliography entries alone.
+
+Instead, it identifies primary and secondary sources behind the case studies, including work on:
+
+- transactions and recovery;
+- distributed storage;
+- LLVM;
+- filesystem/naming models;
+- visualization;
+- UML interoperability;
+- version control.
+
+Where EngSense later depends on one of those claims directly, the underlying primary source should be researched separately rather than treating the bibliography entry itself as evidence.
+
+---
+
+# Full-book synthesis — AOSA Volume 1
+
+## Status
+
+The official online Volume 1 has now been reviewed through:
+
+- Introduction;
+- Chapters 1–25;
+- Bibliography.
+
+This source's research pass is **COMPLETE**.
+
+The conclusions below are EngSense synthesis across the case studies, not direct claims by one author.
+
+## 1. Architecture quality cannot be inferred from visual cleanliness
+
+Across 25 systems, successful designs include:
+
+- layering violations;
+- native escape hatches;
+- global state;
+- custom DSLs;
+- process boundaries;
+- centralized coordinators;
+- decentralized protocols;
+- plugin systems;
+- deliberately limited extensibility.
+
+The common question is not whether a pattern looks pure.
+
+It is whether the design fits actual constraints at acceptable lifecycle cost.
+
+## 2. Real variation axes are stronger abstraction signals than code shape
+
+Strong abstractions repeatedly form around independently changing dimensions:
+
+- platform;
+- protocol;
+- storage backend;
+- language binding;
+- ruleset;
+- renderer;
+- workflow module;
+- capability.
+
+This supports:
+
+> abstract around stable variation pressure, not around arbitrary categories or hypothetical reuse.
+
+## 3. Public surfaces carry disproportionate inertia
+
+Protocols, persistence formats, plugin APIs, file formats, command languages, package standards, and external APIs become difficult to change because users build on observable behavior.
+
+EngSense should assign a higher design threshold to externally consumed surfaces than to replaceable internals.
+
+## 4. Complexity moves
+
+Many case studies support the principle:
+
+```text
+complexity removed from layer A
+does not necessarily disappear;
+it may move to layer B.
+```
+
+Examples include:
+
+- NoSQL stores shifting semantics into applications;
+- client/server frameworks shifting logic into protocols;
+- plugin systems shifting compatibility burden onto APIs;
+- abstraction hiding platform variance while drivers absorb complexity.
+
+EngSense should model **complexity placement**, not just complexity count.
+
+## 5. Controlled impurity can be correct
+
+Layering violations and escape hatches are sometimes justified by:
+
+- measured performance;
+- required native capability;
+- protocol semantics;
+- migration constraints.
+
+The important properties are:
+
+- explicitness;
+- bounded scope;
+- evidence;
+- observability;
+- containment.
+
+## 6. Evolutionary architecture is common and legitimate
+
+Many systems reached good architecture through:
+
+- incremental refactoring;
+- extracting repeated stable patterns;
+- replacing infrastructure after evidence;
+- adding migration layers;
+- revisiting assumptions after user feedback.
+
+AOSA provides strong empirical evidence against treating the first architecture as a permanent design.
+
+## 7. Representation choice creates architectural leverage
+
+Strong shared representations enable multiple capabilities:
+
+- LLVM IR → front ends, optimization, back ends, tests;
+- SocialCalc commands → mutation, undo, audit, collaboration;
+- VisTrails provenance log → comparison, reconstruction, collaboration;
+- Wesnoth commands → replay, networking, observation;
+- Mercurial DAG → ancestry, merging, integrity.
+
+Candidate EngSense question:
+
+> Is there a representation that can encode the core invariant once and safely support several required operations?
+
+## 8. Explicit coordination often appears after implicit coordination stops scaling
+
+Examples:
+
+- VTK's explicit pipeline executive;
+- centralized/structured CI orchestration;
+- supervisors in OTP;
+- versioned protocols;
+- metadata-driven provisioning.
+
+EngSense should not introduce coordinators prematurely, but should detect when distributed implicit policy has become too hard to reason about.
+
+## 9. Abstraction boundaries can improve testability
+
+LLVM's self-contained IR, VisTrails module semantics, and other case studies show that focused testing is often enabled by architecture rather than added afterward.
+
+A boundary that cannot be exercised independently may be leaking hidden dependencies.
+
+## 10. Performance is systemic
+
+AOSA repeatedly invalidates local assumptions:
+
+- Graphite's bottleneck was I/O before Python CPU;
+- queue buffering created memory feedback;
+- RPC granularity mattered for Selenium and Telepathy;
+- VTK caching trades compute for memory;
+- HDFS placement trades network, locality, and durability;
+- SnowFlock scale exposed new transport bottlenecks.
+
+EngSense should require evidence about the actual constrained resource.
+
+## 11. Failure handling is a design property
+
+HDFS, Riak, SnowFlock, CI, sendmail, and others show that reliability comes from explicit behavior under:
+
+- crashes;
+- partitions;
+- overload;
+- stale state;
+- resource exhaustion;
+- bad inputs.
+
+"Happy-path correctness" is not sufficient for systems whose environment fails routinely.
+
+## 12. Extensibility has a spectrum of power and cost
+
+Case studies range from:
+
+- declarative configuration;
+- data DSLs;
+- bounded interfaces;
+- ServiceLoader;
+- OSGi;
+- process plugins;
+- arbitrary monkeypatching.
+
+More extension power usually increases some combination of:
+
+- compatibility burden;
+- security/trust surface;
+- reasoning difficulty;
+- migration cost.
+
+EngSense should ask for the **least powerful extension mechanism that satisfies the real requirement**.
+
+## 13. Standards and ecosystem maturity are architecture inputs
+
+Adopting a mature standard can reduce custom infrastructure and contributor cost.
+
+But standards can also be:
+
+- too heavy;
+- too rigid;
+- poorly interoperable;
+- mismatched to the product.
+
+The decision is contextual.
+
+## 14. Contributor ergonomics can be an architectural objective
+
+Selenium repository layout, Wesnoth WML, VTK language bindings, SocialCalc's asynchronous artifacts, and ecosystem-oriented interfaces show that developer/contributor experience can affect project survivability.
+
+This matters especially for:
+
+- open-source projects;
+- multi-language ecosystems;
+- large organizations.
+
+## 15. Product goals can remove technical requirements
+
+Wesnoth's casual multiplayer/community design deliberately reduces incentive for cheating instead of building stronger anti-cheat machinery.
+
+This suggests a broader principle:
+
+> Before engineering a complex technical control, check whether the product/system design can reduce the underlying requirement.
+
+## 16. Compatibility should be selective and explicit
+
+The volume repeatedly shows different surfaces needing different guarantees.
+
+A good compatibility policy is scoped by:
+
+- audience;
+- lifetime;
+- persistence;
+- ecosystem size;
+- migration path;
+- criticality.
+
+"Never break compatibility" and "move fast and break things" are both poor universal rules.
+
+## 17. Simplicity can define a future ceiling without being a bad initial choice
+
+HDFS, Graphite, SnowFlock, Wesnoth, and other systems used simple early choices that later created scaling limits.
+
+This does not retroactively invalidate the choice.
+
+EngSense should distinguish:
+
+```text
+wrong now
+from
+correct for current scale with known future ceiling
+```
+
+and record the trigger at which reconsideration becomes necessary.
+
+---
+
+# EngSense candidate additions after AOSA Volume 1
+
+## New/strengthened context signals
+
+```text
+variation_axis
+surface_inertia
+complexity_payer
+complexity_multiplicity
+transport_round_trip_cost
+extension_power
+extension_trust
+contributor_skill_distribution
+historical_constraint_validity
+threat_model_age
+scale_ceiling
+product_maturity
+representation_leverage
+coordination_explicitness
+```
+
+## New/strengthened quality dimensions
+
+```text
+discoverability
+contributor_accessibility
+replayability
+provenance
+debuggability
+representation_integrity
+extension_safety
+coordination_cost
+surface_inertia
+change_malleability
+```
+
+## Strong candidate anti-rules
+
+- Do not equate many interfaces/modules with loose coupling.
+- Do not call moved complexity eliminated complexity.
+- Do not treat a layering violation as automatically wrong.
+- Do not generalize before a stable variation pattern exists.
+- Do not use a more powerful extension mechanism than the requirement needs.
+- Do not judge historical code without checking the historical constraints.
+- Do not design distributed APIs as though calls were local.
+- Do not turn configuration into a programming language accidentally.
+- Do not equate a simple current design with an architecture that must scale forever.
+- Do not preserve compatibility uniformly across surfaces with different audiences/lifetimes.
+- Do not optimize an assumed bottleneck.
+- Do not hide concurrency/distribution semantics that callers need for correctness.
+
+---
+
+# Cross-source questions now ready for comparison
+
+With both *Software Engineering at Google* and *AOSA Volume 1* complete, EngSense can now compare:
+
+1. Google's standardization at organizational scale vs AOSA's heterogeneous context-specific architectures.
+2. Google's preference for explicit policy/tooling vs AOSA's examples of pragmatic bounded escape hatches.
+3. Google's Source-of-Truth/One-Version tendencies vs AOSA ecosystems with multiple protocol/API compatibility surfaces.
+4. Google's large-scale change infrastructure vs AOSA's incremental migration/compatibility mechanisms.
+5. Google's emphasis on high-precision automation vs AOSA's case studies where human/community accessibility shapes architecture.
+6. Google's sustainability-over-time framework vs AOSA's repeated evidence that simple initial designs can rationally carry known future ceilings.
+7. Google's scoped rules/guidance model vs AOSA evidence that even successful systems intentionally violate common architectural ideals.

@@ -81,13 +81,13 @@ Therefore:
 - [x] Chapter 13 — Emergency Response
 - [x] Chapter 14 — Managing Incidents
 - [x] Chapter 15 — Postmortem Culture: Learning from Failure
-- [ ] Chapter 16 — Tracking Outages
-- [ ] Chapter 17 — Testing for Reliability
-- [ ] Chapter 18 — Software Engineering in SRE
-- [ ] Chapter 19 — Load Balancing at the Frontend
-- [ ] Chapter 20 — Load Balancing in the Datacenter
-- [ ] Chapter 21 — Handling Overload
-- [ ] Chapter 22 — Addressing Cascading Failures
+- [x] Chapter 16 — Tracking Outages
+- [x] Chapter 17 — Testing for Reliability
+- [x] Chapter 18 — Software Engineering in SRE
+- [x] Chapter 19 — Load Balancing at the Frontend
+- [x] Chapter 20 — Load Balancing in the Datacenter
+- [x] Chapter 21 — Handling Overload
+- [x] Chapter 22 — Addressing Cascading Failures
 - [ ] Chapter 23 — Managing Critical State: Distributed Consensus for Reliability
 - [ ] Chapter 24 — Distributed Periodic Scheduling with Cron
 - [ ] Chapter 25 — Data Processing Pipelines

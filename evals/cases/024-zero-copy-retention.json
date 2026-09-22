@@ -1,0 +1,47 @@
+{
+  "id": "zero-copy-retention",
+  "title": "Zero-copy slice retains a much larger backing buffer",
+  "mode": "refactoring",
+  "task": "Review a memory optimization that replaces a small copied payload with a zero-copy view into a large network buffer.",
+  "context": [
+    "Each retained payload is about 2 KB.",
+    "The backing receive buffer is 8 MB.",
+    "The view keeps the backing allocation alive for the payload lifetime.",
+    "Payloads may remain cached for several minutes."
+  ],
+  "evidence": [
+    "Heap profiles show many 8 MB buffers retained only by small cached views.",
+    "CPU profiles show copying 2 KB is not a meaningful hotspot.",
+    "Memory pressure triggers GC and eviction churn."
+  ],
+  "tempting_wrong_recommendation": [
+    "Keep zero-copy because copying is always slower.",
+    "Increase the heap instead of reconsidering ownership and lifetime."
+  ],
+  "expected_decision_properties": [
+    "Recognize that zero-copy moved cost from CPU to memory lifetime/retention.",
+    "Prefer copying the small payload when it releases the much larger backing buffer and measured CPU cost is negligible.",
+    "Treat ownership/lifetime behavior as part of the performance decision.",
+    "Verify both memory retention and CPU impact after the change."
+  ],
+  "unacceptable_reasoning": [
+    "Zero-copy is always the highest-performance design.",
+    "Garbage collection will automatically solve conceptual lifetime retention.",
+    "Memory usage is unrelated to slicing/reference design."
+  ],
+  "expected_quality_dimensions": [
+    "memory_retention",
+    "resource_efficiency",
+    "maintainability"
+  ],
+  "expected_tradeoffs": [
+    "copy CPU cost vs backing-buffer lifetime",
+    "zero-copy complexity vs bounded memory"
+  ],
+  "expected_authority": "strong_recommendation",
+  "verification_expectations": [
+    "Compare heap retention before and after.",
+    "Measure copy CPU cost under the representative workload.",
+    "Verify payload semantics remain unchanged."
+  ]
+}

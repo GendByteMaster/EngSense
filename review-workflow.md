@@ -343,17 +343,25 @@ Do not use one fixed test pyramid as a universal rule.
 
 ## Performance review
 
-Do not recommend performance-oriented structural changes without evidence.
+Load `principles/performance-engineering.md` when performance materially affects the decision.
+
+Do not recommend performance-oriented structural changes without scoped evidence.
 
 Ask:
 
-- What resource is actually constrained?
-- Is the bottleneck CPU, I/O, memory, network, lock contention, RPC latency, startup, or something else?
-- Does the optimization introduce buffering, caching, batching, or centralization?
-- What new failure/overload behavior appears?
-- Is there a scale knee?
+- What metric matters: latency, throughput, memory, startup, power, fairness, durability cost, or another resource?
+- Is the workload representative, and what is the evidence scope?
+- Is the benchmark/profiler itself trustworthy for this conclusion?
+- What resource or coordination cost is actually constrained?
+- Can work be removed, reused, precomputed, coalesced, or moved out of the critical path before adding machinery?
+- What data movement, serialization, copies, syscalls, locks, or round trips dominate?
+- What happens at and beyond saturation?
+- Does the optimization change caching, durability, freshness, retries, queue bounds, shutdown, or security semantics?
+- How will the same workload verify the claimed improvement?
 
-Measure where feasible.
+If the evidence is missing, recommend measurement rather than speculative architecture churn.
+
+Escalate specialist-sensitive conclusions such as lock-free memory ordering, formal performance statistics, database-engine internals, modern transport tuning, side-channel behavior, or hardware-specific memory semantics.
 
 ---
 

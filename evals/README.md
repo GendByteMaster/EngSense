@@ -86,5 +86,18 @@ It does not judge model quality. Behavioral scoring will be added separately.
 3. Large cohesive function
 4. Unstable duplication
 5. Public API observable compatibility
+6. Rust Java-style trait/factory layering
+7. TypeScript discriminated union vs class hierarchy
+8. Python enterprise-style CRUD layering
+9. Distributed retry/idempotency specialist boundary
+10. Security-sensitive authentication refactor
+11. Vertical-slice locality vs strict horizontal layering
 
-These cases intentionally include both over-engineering and under-engineering traps.
+The suite intentionally includes:
+
+- over-engineering traps;
+- under-engineering traps;
+- language-pattern transfer traps;
+- specialist-boundary cases;
+- compatibility risks;
+- conflicting-principle scenarios.

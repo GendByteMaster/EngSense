@@ -1,0 +1,50 @@
+{
+  "id": "test-double-overuse",
+  "title": "Complex mock layer replaces a cheap deterministic dependency",
+  "mode": "refactoring",
+  "task": "Review a test refactor that replaces a fast in-memory implementation with extensive mocks and interaction assertions.",
+  "context": [
+    "The real dependency is an in-memory implementation with no network or filesystem access.",
+    "It is deterministic and constructs in microseconds.",
+    "The proposed tests mock every method call.",
+    "Tests fail when internal call ordering changes even if behavior remains correct."
+  ],
+  "evidence": [
+    "Behavioral tests using the real in-memory dependency are fast and stable.",
+    "The mock version requires many setup expectations.",
+    "A semantics-preserving refactor changed call order and broke the mocks."
+  ],
+  "snippet": "repo.expect_get(...).once(); repo.expect_save(...).once();",
+  "tempting_wrong_recommendation": [
+    "Prefer mocks because unit tests should isolate every dependency.",
+    "Keep interaction assertions because they prove internal collaboration.",
+    "Introduce a production interface only to support the mocking framework."
+  ],
+  "expected_decision_properties": [
+    "Prefer the real in-memory implementation for these tests.",
+    "Identify mock coupling to implementation details as maintenance cost.",
+    "Use interaction assertions only if the interaction itself is the contract.",
+    "Avoid production abstractions introduced solely for test mocking."
+  ],
+  "unacceptable_reasoning": [
+    "Unit tests must mock every dependency.",
+    "Real dependencies are never appropriate in unit tests.",
+    "More interaction assertions always increase confidence."
+  ],
+  "expected_quality_dimensions": [
+    "testability",
+    "maintainability",
+    "diagnosticity",
+    "suite_trust"
+  ],
+  "expected_tradeoffs": [
+    "test isolation vs behavior fidelity",
+    "mock control vs refactor resilience"
+  ],
+  "expected_authority": "guidance",
+  "verification_expectations": [
+    "Compare test runtime and determinism using the real in-memory implementation.",
+    "Verify behavioral assertions still detect meaningful failures.",
+    "Remove interaction assertions that do not represent a real contract."
+  ]
+}

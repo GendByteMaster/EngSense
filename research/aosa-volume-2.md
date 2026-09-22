@@ -26,11 +26,11 @@ The purpose of this note is to extract architecture evidence from real systems w
 - [x] Chapter 8 — The Dynamic Language Runtime and the Iron Languages
 - [x] Chapter 9 — ITK
 - [x] Chapter 10 — GNU Mailman
-- [ ] Chapter 11 — matplotlib
-- [ ] Chapter 12 — MediaWiki
-- [ ] Chapter 13 — Moodle
-- [ ] Chapter 14 — nginx
-- [ ] Chapter 15 — Open MPI
+- [x] Chapter 11 — matplotlib
+- [x] Chapter 12 — MediaWiki
+- [x] Chapter 13 — Moodle
+- [x] Chapter 14 — nginx
+- [x] Chapter 15 — Open MPI
 - [ ] Chapter 16 — OSCAR
 - [ ] Chapter 17 — Processing.js
 - [ ] Chapter 18 — Puppet
@@ -1519,3 +1519,968 @@ The decision depends on measured cost and lifetime maintenance burden.
 13. Decision and mutation handlers share one order-sensitive pipeline and create hidden sequencing bugs.
 14. Persistence serializes an entire aggregate for convenience while new product requirements need efficient cross-aggregate queries.
 15. Global language/locale state is used in a concurrent server with per-request locales.
+
+
+---
+
+# Chapter 11 — matplotlib
+
+## Source scope
+
+matplotlib is a plotting library that has to serve several very different use cases:
+
+- interactive scientific scripting;
+- object-oriented embedding in applications;
+- GUI integration across multiple toolkits;
+- raster and vector hardcopy generation;
+- scientific/math text rendering.
+
+Its architecture separates rendering backends, a reusable object model, and a lighter stateful scripting layer.
+
+## Source-derived observations
+
+### 1. One product can legitimately expose two APIs for different user populations
+
+The object-oriented API is appropriate for application developers and embedding.
+
+The stateful \`pyplot\` API exists because exploratory scientific work has different ergonomics: users benefit from concise command-oriented interaction.
+
+This is not accidental duplication. The two surfaces serve different usage modes.
+
+### 2. A stable user-facing facade can protect users from internal refactoring
+
+matplotlib's MATLAB-like scripting layer remained relatively stable while the lower-level object-oriented implementation evolved.
+
+This provided compatibility for casual/interactive users while allowing deeper internals to change.
+
+### 3. Backend boundaries should minimize the mandatory contract
+
+Early backends implemented a large primitive drawing API.
+
+As more backends appeared, that contract became expensive to implement and update.
+
+The project later reduced the required backend API to a small core and made more specialized operations optional.
+
+This is strong evidence for:
+
+minimal required contract
++
+optional optimized capability.
+
+### 4. Optional fast paths can coexist with a general fallback
+
+Backends may implement specialized operations such as efficient marker drawing.
+
+If they do not, the core can express the same semantics using the general path.
+
+This is another bounded specialization pattern:
+
+general semantics
++
+optional optimized override
++
+correct fallback.
+
+### 5. Dependency graphs can drive incremental invalidation
+
+The transform graph records dependencies between coordinate transformations.
+
+When one upstream transformation changes, only dependent transforms are invalidated.
+
+This creates a general pattern for interactive systems:
+
+explicit dependency graph
+→ localized invalidation
+→ less unnecessary recomputation.
+
+### 6. Staged pipelines can make backend-specific policy explicit
+
+The polyline pipeline separates transformation, missing-data handling, clipping, snapping, simplification, and output.
+
+Different backends can choose relevant stages.
+
+This is a strong reason to decompose: the stages have distinct semantics and variation.
+
+### 7. Exact representation comparison can be the wrong regression oracle
+
+For vector outputs, multiple internal representations can render the same visible result.
+
+matplotlib therefore compares rendered output rather than requiring byte-identical vector files.
+
+The test oracle is based on semantic output, not implementation representation.
+
+### 8. Visual regression testing sometimes needs tolerance, not exact equality
+
+Font-rendering/environment differences can make bitwise image equality too strict.
+
+The testing system uses thresholded image difference and diagnostic diff images.
+
+This is a concrete example of choosing the right equivalence relation for tests.
+
+### 9. System-level regression tests can bootstrap confidence faster than exhaustive low-level tests
+
+The project lacked broad automated testing and initially gained substantial value from end-to-end plot generation plus baseline comparison.
+
+The chapter does not claim unit tests are useless; it argues that high-fidelity regression coverage was the most cost-effective first step for this system.
+
+### 10. Borrowing a mature external abstraction can be cheaper than inventing one
+
+The authors identify early reinvention as a regret and note that existing graphics specifications/toolkits could have reduced later redesign.
+
+They also acknowledge the opposite cost: external integration can make builds/releases more complex and reduce internal freedom.
+
+## EngSense interpretation
+
+Candidate signals:
+
+multiple_user_personas
+stable_facade_value
+backend_count
+required_backend_contract_size
+optional_fast_path
+dependency_graph_invalidation
+pipeline_stage_variation
+semantic_output_equivalence
+test_tolerance
+integration_vs_reinvention
+
+Candidate rules:
+
+- allow separate APIs when distinct user workflows genuinely need different ergonomics;
+- keep the mandatory extension contract as small as possible;
+- expose optional optimized capabilities only when a correct general fallback exists;
+- use explicit dependency graphs when localized invalidation can avoid expensive recomputation;
+- split pipelines when stages have distinct semantics, failure modes, or backend variation;
+- test semantic behavior instead of incidental representation where multiple equivalent representations exist;
+- use tolerant comparison only when the domain defines a meaningful tolerance;
+- bootstrap regression protection at the fidelity level that catches the real failures most economically;
+- compare integration cost with reinvention cost before building a custom subsystem.
+
+## Conflict candidates
+
+- scripting convenience vs explicit object API;
+- minimal backend contract vs backend-specific optimization;
+- exact regression equality vs semantic equivalence;
+- external reuse vs dependency/build complexity;
+- internal refactoring freedom vs stable user-facing facade.
+
+---
+
+# Chapter 12 — MediaWiki
+
+## Source scope
+
+MediaWiki is a long-lived system shaped primarily by Wikipedia's needs while also serving a broad third-party ecosystem.
+
+Its architecture reflects:
+
+- extreme read traffic;
+- limited operational budget;
+- caching;
+- community-driven features;
+- legacy compatibility;
+- internationalization;
+- extension mechanisms;
+- a highly observable content/parser surface.
+
+## Source-derived observations
+
+### 1. The dominant production workload can shape the entire architecture
+
+MediaWiki is not a generic CMS that happened to power Wikipedia.
+
+Wikipedia's workload, open-edit model, vandalism/spam problems, performance constraints, and non-profit budget strongly shaped the design.
+
+This is another strong warning against judging architecture outside its product context.
+
+### 2. Language/runtime choice includes contributor supply, not only performance
+
+The chapter criticizes PHP's performance limitations while also noting its popularity made contributor recruitment easier.
+
+Language choice therefore spans:
+
+- runtime characteristics;
+- ecosystem;
+- contributor accessibility.
+
+### 3. Architecture often catches up after feature pressure exposes inadequacy
+
+Many now-central abstractions were introduced after the relevant feature already existed.
+
+The chapter describes a recurring pattern where feature development moves faster than architecture until maintenance cost becomes obvious.
+
+This is evidence for evolutionary architecture, but also for watching accumulating structural debt.
+
+### 4. Security wrappers can make the safe path easier
+
+MediaWiki centralizes escaping, request handling, sanitization, CSRF protection, and database-query safety through shared mechanisms.
+
+This is a useful architecture principle:
+
+when a safety invariant is universal and repeatable, encode it in the normal developer path.
+
+### 5. Global context can become a long-term flexibility and security constraint
+
+MediaWiki historically relied heavily on global variables for configuration/context.
+
+The system has gradually moved processing context into objects to improve reuse, abstraction, and startup optimization.
+
+### 6. Schema redesign can remove recurring data movement
+
+The revision/text schema evolved so edits, renames, and deletions no longer required large historical-record moves.
+
+The redesign changed representation so common operations became cheaper.
+
+This is a representation-leverage example:
+
+change the data model
+instead of
+optimizing repeated expensive migration-like operations.
+
+### 7. Multi-layer caching can be a product architecture, not an implementation detail
+
+Reverse proxies, object caches, localization caches, and opcode caches all participate in request performance.
+
+MediaWiki adapts itself to this operational environment rather than pretending the application alone controls caching.
+
+### 8. Caching can influence visible product behavior
+
+Making anonymous pages user-independent allows entire rendered pages to be shared through reverse proxies.
+
+This shows that cacheability can feed back into UI/feature design.
+
+### 9. Performance optimization should follow the real cost profile
+
+ResourceLoader uses lazy loading, minification, grouping, and other mechanisms because frontend asset delivery became a material cost.
+
+The architecture evolved as the workload changed.
+
+### 10. Internationalization can be a core architecture driver
+
+MediaWiki prioritizes translator/user language needs even when developer ergonomics become harder.
+
+The system must support:
+
+- hundreds of languages;
+- fallback chains;
+- mixed directions/scripts;
+- separate content and interface languages.
+
+This is not presentation-only behavior.
+
+### 11. Accidental languages create extreme compatibility inertia
+
+Wikitext evolved without a formal grammar.
+
+Its real specification became the existing parser behavior plus tests and an enormous corpus of stored content.
+
+This makes parser replacement unusually difficult.
+
+Once user-created content depends on emergent syntax, compatibility cost can exceed ordinary API compatibility.
+
+### 12. User extension mechanisms can evolve beyond their original purpose
+
+Templates began as reusable content inclusion but evolved toward a programming system.
+
+This increased expressiveness and community capability while creating substantial parser/performance complexity.
+
+Extension power can grow organically even when not deliberately designed as a language.
+
+### 13. Provide extension mechanisms at different power levels
+
+MediaWiki supports:
+
+- user preferences;
+- personal/site JavaScript and CSS;
+- gadgets;
+- hooks/extensions;
+- skins;
+- machine API.
+
+These mechanisms differ in power, risk, and barrier to entry.
+
+This reinforces EngSense's extension-power spectrum.
+
+### 14. Machine APIs are preferable to presentation scraping
+
+Bots originally scraped HTML and broke frequently.
+
+A dedicated machine-readable API created a stable integration surface with semantics appropriate for programs.
+
+## EngSense interpretation
+
+Candidate signals:
+
+dominant_production_workload
+contributor_ecosystem
+feature_pressure
+safe_path_wrapper
+global_context_debt
+historical_data_move_cost
+multi_layer_cache
+cacheability_product_effect
+i18n_as_core_requirement
+accidental_language_surface
+user_generated_compatibility_corpus
+extension_power_levels
+machine_api_need
+
+Candidate rules:
+
+- evaluate architecture against the dominant real workload, not generic product-category expectations;
+- include contributor availability/ecosystem when language/runtime choices affect project sustainability;
+- turn repeated security invariants into default-safe APIs where feasible;
+- move mutable/request context out of process-global state when reuse/concurrency/flexibility demands it;
+- consider changing representation when common operations repeatedly pay for a poor data model;
+- treat caching as part of system architecture when layers materially shape request behavior;
+- recognize user-generated languages/content formats as very high-inertia compatibility surfaces;
+- monitor extension mechanisms that accidentally become programming languages;
+- offer lower-power extension paths for small customization when possible;
+- provide machine-oriented APIs instead of forcing automation to parse human presentation.
+
+## Conflict candidates
+
+- runtime performance vs contributor accessibility;
+- feature velocity vs architectural upkeep;
+- global convenience vs reusable explicit context;
+- cacheability vs per-user page variation;
+- extension power vs parser/performance complexity;
+- compatibility with massive user content vs parser redesign freedom.
+
+---
+
+# Chapter 13 — Moodle
+
+## Source scope
+
+Moodle is a plugin-oriented learning platform with strong emphasis on:
+
+- integration with institutional systems;
+- contextual roles/permissions;
+- theming/output;
+- localization;
+- database portability;
+- long-lived upgrade compatibility.
+
+## Source-derived observations
+
+### 1. Stay focused on the product's real role in a larger ecosystem
+
+Moodle provides enough adjacent functionality to work standalone but is designed to integrate with identity, student-information, document, portfolio, and analytics systems.
+
+This is a boundary decision:
+
+own the core learning problem
+while interoperating with neighboring systems.
+
+### 2. Simple URL-to-script dispatch can be sufficient
+
+Moodle's direct PHP-script dispatch is not aesthetically modern, but the chapter notes the missing indirection does not materially hurt the system.
+
+The resulting URLs are stable.
+
+This is another strong case against adding indirection simply because it looks architecturally cleaner.
+
+### 3. Plugin architecture protects customization from core-upgrade cost
+
+Customizing core directly makes upgrades difficult.
+
+Defined plugin APIs allow institutions to specialize Moodle while keeping the core upgrade path manageable.
+
+The key benefit is lifecycle isolation, not plugin architecture for its own sake.
+
+### 4. Plugin systems may need typed extension categories
+
+Moodle has many plugin types because authentication, activities, questions, blocks, etc. have genuinely different contracts.
+
+A single generic plugin interface would hide meaningful differences.
+
+### 5. Compatibility metadata belongs with deployable extensions
+
+Plugins declare identity, version, minimum Moodle version, maturity, and dependencies.
+
+This makes extension lifecycle constraints machine-readable.
+
+### 6. Authorization models should reflect contextual identity
+
+A user can be a teacher in one course, a student in another, and a moderator in one activity.
+
+Moodle models permissions using:
+
+- hierarchical contexts;
+- roles;
+- capabilities;
+- inheritance/override rules.
+
+This directly represents the domain rather than relying on one global user role.
+
+### 7. Global variables can be less harmful under process/request isolation—but remain contextual
+
+The chapter explicitly defends some PHP globals because a PHP process handles a single request at a time.
+
+That makes the state effectively request-scoped.
+
+This is a valuable EngSense nuance:
+
+"global variable" risk depends on runtime lifetime/concurrency semantics.
+
+### 8. Domain complexity often hides behind simple-looking operations
+
+Names, dates, locale, time zones, institutional display policies, and permissions make apparently trivial rendering operations non-trivial.
+
+Local convenience code should not duplicate such domain rules.
+
+### 9. Auditability has operational cost
+
+Moodle logs significant actions because the data enables analysis and reporting.
+
+At large scale the log table creates:
+
+- write contention;
+- backup burden;
+- query cost;
+- retention pressure.
+
+Auditability therefore needs lifecycle/storage policy.
+
+### 10. Legacy architecture can evolve via stepping-stone abstractions
+
+Moodle's renderer/output work represents migration from controller-output mixing toward stronger view separation.
+
+The chapter describes intermediate architecture that is not ideal but moves the system toward a better boundary.
+
+### 11. Replacing a generic dependency can be justified by measured overhead and fit
+
+Moodle moved from ADOdb to a thinner database layer because the extra abstraction had noticeable performance cost and did not fit well enough.
+
+This is not evidence against reuse generally; it is a fit/cost decision.
+
+### 12. Database portability requires a constrained common subset plus escape mechanisms
+
+Moodle's DB layer uses:
+
+- portable SQL conventions;
+- placeholders;
+- compatibility helpers;
+- declarative XML schema metadata.
+
+The abstraction handles real variation while acknowledging cases where no common SQL form exists.
+
+### 13. Historical compatibility debt can block correctness improvements
+
+Moodle documents desired foreign keys but does not enable them because long-running installations may contain inconsistent data.
+
+Introducing enforcement later would require a difficult cleanup/migration.
+
+This is a strong example where a correctness improvement has migration preconditions.
+
+### 14. Start simple, generalize from observed demand
+
+The chapter explicitly presents early hard-coded roles as sufficient for years.
+
+The later generalized Roles system was designed after real user behavior and feature requests exposed the needed dimensions.
+
+This is direct evidence for evidence-driven generalization.
+
+## EngSense interpretation
+
+Candidate signals:
+
+ecosystem_role
+plugin_upgrade_isolation
+typed_extension_category
+extension_compatibility_metadata
+contextual_authorization
+runtime_request_isolation
+audit_log_scale
+stepping_stone_refactor
+database_portability
+historical_inconsistent_data
+generalization_evidence
+
+Candidate rules:
+
+- keep product scope focused while providing explicit integration seams for neighboring systems;
+- do not add request-dispatch indirection without a concrete benefit;
+- use plugin boundaries when customization must survive core upgrades;
+- prefer typed extension contracts when extension categories have materially different semantics;
+- model authorization around real context hierarchy when roles vary by location/resource;
+- judge globals against actual runtime lifetime/concurrency, not name alone;
+- treat audit logging as a storage/operations system with retention and contention costs;
+- allow temporary stepping-stone architecture in long migrations;
+- use portability abstractions that expose unavoidable vendor differences explicitly;
+- do not enable stronger data constraints until existing-data migration is feasible;
+- generalize after real variation appears rather than before.
+
+## Conflict candidates
+
+- architectural indirection vs direct/simple dispatch;
+- one plugin API vs typed extension categories;
+- global-state purity vs request-scoped runtime convenience;
+- auditability vs storage/write cost;
+- stronger DB invariants vs migration feasibility;
+- generic third-party DB layer vs thin purpose-built abstraction.
+
+---
+
+# Chapter 14 — nginx
+
+## Source scope
+
+nginx is designed around high concurrency, low memory overhead, asynchronous event processing, and efficient edge-server behavior.
+
+Its architecture includes:
+
+- a master/worker process model;
+- event-driven single-threaded workers;
+- protocol/phase/filter modules;
+- caching;
+- upstream/load-balancing integration;
+- explicit low-level buffer management.
+
+## Source-derived observations
+
+### 1. Architecture can be dominated by the unit cost of concurrency
+
+nginx's event-driven design follows from the observation that process/thread-per-connection models pay substantial memory and scheduling cost at very high concurrent connection counts.
+
+The architecture is therefore driven by the workload's concurrency shape.
+
+### 2. Offloading work to the right layer can reduce total system cost
+
+nginx moves expensive connection management, TLS, compression, caching, throttling, static delivery, and proxy work away from application processes into a layer optimized for those tasks.
+
+This is complexity placement by capability/resource profile.
+
+### 3. Platform-specific optimization is justified when the goal is explicit
+
+nginx uses OS-specific event mechanisms and I/O capabilities rather than enforcing a lowest-common-denominator abstraction.
+
+Portability remains a goal, but optimized backends vary by OS.
+
+### 4. One blocking extension can violate the worker model for thousands of connections
+
+Embedded scripting is dangerous because a blocking or crashing script can stall a worker responsible for many connections.
+
+Extension behavior must respect host execution semantics.
+
+This is a powerful extension-safety lesson.
+
+### 5. Process roles can separate privilege, lifecycle, and operational responsibility
+
+The master process handles privileged configuration/socket/process management.
+
+Workers run unprivileged and handle requests.
+
+Special cache processes own cache loading/expiration concerns.
+
+The boundaries follow distinct lifecycle and privilege responsibilities.
+
+### 6. Hot reconfiguration/upgrade capability is architectural reversibility
+
+The master process supports reconfiguration and binary upgrades without service interruption, including rollback mechanisms.
+
+Reversibility is enabled by runtime/process architecture, not merely version control.
+
+### 7. Configuration architecture is an operations interface
+
+nginx intentionally centralizes configuration because distributed Apache-style local configuration was seen as difficult to manage at scale.
+
+This is an operational trade-off:
+
+central manageability
+vs
+local delegation/customization.
+
+### 8. Pipeline stages can stream concurrently
+
+Filters can start processing as upstream data becomes available, and output can reach clients before the complete upstream response is received.
+
+This reduces buffering/latency but requires streaming-safe stage semantics.
+
+### 9. Extension flexibility can impose a steep developer burden
+
+The callback/module architecture allows insertion at many lifecycle and request-processing points.
+
+But the low-level API, especially buffer-chain handling, is difficult enough to be described as a barrier to third-party module development.
+
+Extensibility quantity is not the same as extension usability/safety.
+
+### 10. Low-copy design trades performance for implementation complexity
+
+nginx aggressively passes buffers by reference/pointer and avoids copying.
+
+That improves performance while making buffer ownership/state handling more complex.
+
+This is a legitimate specialist trade-off, not a universal style.
+
+### 11. Focus can be more valuable than broad platform parity
+
+The chapter uses the weaker Windows port as an example of diluted development effort outside the project's strongest target environment.
+
+This is a product/project prioritization lesson:
+
+portability breadth has opportunity cost.
+
+## EngSense interpretation
+
+Candidate signals:
+
+connection_concurrency
+per_connection_memory
+context_switch_cost
+edge_offload_value
+os_specific_capability
+extension_blocking_risk
+process_privilege_boundary
+hot_reload_upgrade_need
+configuration_operational_scope
+streaming_pipeline
+extension_api_difficulty
+copy_avoidance_value
+platform_focus
+
+Candidate rules:
+
+- let concurrency shape influence architecture when per-connection process/thread cost is material;
+- place work in the layer best suited to its resource profile;
+- permit OS-specific optimized implementations behind stable system semantics when evidence justifies them;
+- require extensions to obey host scheduling/blocking/failure assumptions;
+- use process boundaries when privilege/lifecycle/failure isolation is real;
+- treat hot reload/upgrade/rollback capability as concrete reversibility infrastructure;
+- design configuration as an operational API with an explicit centralization/delegation policy;
+- use streaming pipelines when stages can operate safely on partial data;
+- evaluate extension APIs by usability and failure safety, not only number of hooks;
+- accept low-copy complexity only when measured performance value dominates;
+- include platform-support opportunity cost in portability decisions.
+
+## Conflict candidates
+
+- event-loop efficiency vs blocking extension freedom;
+- platform-specific optimization vs uniform portability;
+- centralized configuration vs local delegation;
+- low-copy performance vs buffer-management complexity;
+- extension flexibility vs extension developer usability;
+- platform breadth vs focused engineering effort.
+
+---
+
+# Chapter 15 — Open MPI
+
+## Source scope
+
+Open MPI is a portable high-performance implementation of the MPI standard.
+
+Its architecture was explicitly designed around:
+
+- portability;
+- multiple underlying networks/platforms;
+- runtime-selectable implementations;
+- aggressive performance;
+- independently developed components;
+- power-user tuning.
+
+## Source-derived observations
+
+### 1. Rewriting can be justified when merging existing architectures would preserve incompatible weaknesses
+
+Open MPI began by abandoning four existing code bases while carrying forward their best ideas.
+
+The decision was based on concrete facts:
+
+- radically different internal architectures;
+- significant strengths and weaknesses in each;
+- high merge complexity;
+- a desire to put collaborating teams on equal footing.
+
+This is a rare but useful counterexample to "never rewrite."
+
+### 2. Layering can be enforced mechanically
+
+Open MPI's major layers are separate libraries.
+
+Incorrect higher-layer dependency attempts fail at link time.
+
+Architecture constraints are stronger when the toolchain makes violations difficult.
+
+### 3. Layering can allow explicitly sanctioned performance bypasses
+
+For performance-sensitive paths, upper layers may bypass generic lower abstractions and talk directly to hardware/OS facilities.
+
+The architecture distinguishes:
+
+- normal boundary;
+- controlled exceptional path.
+
+### 4. Plugin systems are strongly justified by many real implementations
+
+Open MPI had numerous networks, process launchers, checkpoint systems, memory-copy strategies, and other alternatives.
+
+Runtime-loadable components directly match this variation.
+
+This is not speculative plugin architecture.
+
+### 5. Different extension problems need different selection semantics
+
+Some frameworks allow several active implementations.
+
+Others require exactly one.
+
+Some can load dynamically.
+
+Others must be selected/statically linked because:
+
+- call overhead matters;
+- functionality is needed before normal runtime initialization.
+
+One plugin model does not fit every capability.
+
+### 6. Extension metadata supports compatibility, discovery, and operations
+
+Components expose:
+
+- framework identity;
+- version compatibility;
+- plugin version;
+- lifecycle/query callbacks;
+- runtime parameters.
+
+Extensibility includes lifecycle and compatibility metadata, not only a function table.
+
+### 7. User-tunable runtime parameters can be part of portability
+
+Open MPI cannot automatically choose optimal settings for every HPC environment.
+
+Power users can override algorithms, protocols, resources, and thresholds.
+
+This is a deliberate response to environmental heterogeneity.
+
+### 8. Performance abstractions should optimize the common operation path
+
+The chapter emphasizes shallow call stacks and separation between expensive setup and repeated fast operations.
+
+This is not "avoid abstraction"; it is "design abstraction around the hot path."
+
+### 9. Performance-critical impurity can be acceptable when isolated
+
+Hand-written assembly and other low-level techniques are accepted for a small set of critical operations.
+
+The source still prefers hiding/discretizing the complexity where possible.
+
+### 10. Existing mature dependencies can be better than reinvention
+
+Open MPI explicitly reuses suitable external code when licensing, maintenance, portability, and fit are good.
+
+"Not invented here" is treated as an engineering liability.
+
+### 11. Frameworks should be removable
+
+The project adds frameworks when multiple real approaches need coexistence, but also removes obsolete frameworks when their reason disappears.
+
+This is an important lifecycle property for abstractions.
+
+### 12. Organizational disagreement can be absorbed through architecture
+
+Components let research groups with different implementation preferences collaborate in one code base.
+
+Architecture can reduce political/organizational coupling when multiple approaches are legitimately valuable.
+
+## EngSense interpretation
+
+Candidate signals:
+
+rewrite_merge_incompatibility
+layer_boundary_enforcement
+performance_bypass
+real_implementation_count
+plugin_selection_cardinality
+pre_main_requirement
+plugin_compatibility_metadata
+environment_tunability
+hot_path_call_depth
+setup_vs_repeated_operation
+external_dependency_fit
+framework_removal
+organizational_implementation_diversity
+
+Candidate rules:
+
+- consider rewrite only when coexistence/merge cost is demonstrably worse and migration/replacement risk is acceptable;
+- enforce architecture boundaries mechanically where toolchains can do so cheaply;
+- permit bounded performance bypasses when normal abstraction cost is measured and semantics remain controlled;
+- match plugin machinery to real implementation multiplicity and lifecycle;
+- distinguish many-active, one-of-many, dynamic, and static extension semantics;
+- expose environment tuning when automatic defaults cannot reliably fit materially different deployments;
+- optimize abstractions around hot-path execution rather than eliminating abstraction wholesale;
+- reuse mature external solutions when fit, license, maintenance, and dependency risk are favorable;
+- design abstraction/framework lifecycle to include deletion when variation disappears;
+- allow architecture to host legitimate organizational/technical alternatives rather than forcing artificial consensus.
+
+## Conflict candidates
+
+- rewrite vs evolutionary merge;
+- enforced layering vs performance bypass;
+- dynamic extensibility vs direct-call performance;
+- automatic configuration vs expert tuning;
+- external reuse vs dependency control;
+- architectural uniformity vs multiple legitimate implementation strategies.
+
+---
+
+# Chapters 11–15 — Cross-case synthesis
+
+## 1. Small mandatory interfaces with optional capabilities are repeatedly successful
+
+matplotlib reduced its required backend API and left specialized operations optional.
+Open MPI has framework-specific capabilities.
+MediaWiki and Moodle expose different extension levels/types.
+
+EngSense should prefer:
+
+small stable mandatory contract
++
+explicit optional capability
+
+over a large interface every implementation must fake.
+
+## 2. Stable user-facing facades can create internal change freedom
+
+matplotlib's scripting interface protects ordinary users from internal API churn.
+MediaWiki's machine API protects bots from HTML presentation changes.
+Moodle's plugin boundaries isolate institutional customization from core upgrades.
+
+A stable facade can therefore increase, rather than reduce, refactoring freedom behind it.
+
+## 3. Architecture must model execution semantics of extensions
+
+nginx cannot safely treat arbitrary blocking scripts as ordinary callbacks.
+Open MPI distinguishes dynamic/static and one/many component models.
+Moodle uses typed plugin categories.
+
+EngSense should ask:
+
+- When does the extension run?
+- Can it block?
+- How many implementations may be active?
+- What resources/privileges does it own?
+- What compatibility metadata is needed?
+
+## 4. Global state is contextual, not categorically wrong
+
+MediaWiki moved away from globals as reuse/security/optimization needs grew.
+Moodle explains that PHP request-isolated globals can behave like request-scoped registries.
+
+This creates a real conflict:
+
+global access convenience
+vs
+lifetime/concurrency/reuse coupling.
+
+The runtime model determines the cost.
+
+## 5. High-inertia user content can be a stronger compatibility surface than code APIs
+
+MediaWiki's wikitext parser behavior is constrained by an enormous corpus of existing content.
+
+EngSense should add a stronger notion of:
+
+data/content compatibility inertia
+
+where historical user-created artifacts make semantic change especially expensive.
+
+## 6. Performance architecture often depends on moving work to the right layer
+
+MediaWiki uses multi-level caches.
+nginx offloads concurrency/TLS/static/proxy work from applications.
+Open MPI performs expensive setup once and optimizes repeated operations.
+matplotlib pushes specialized drawing optimizations into capable backends.
+
+Performance review should ask not only "how fast is this code?" but:
+
+"Which layer should own this cost?"
+
+## 7. Testing equivalence should match domain semantics
+
+matplotlib compares rendered outcomes instead of vector-file byte identity.
+
+This reinforces a broad test principle:
+
+Choose the weakest equivalence relation that still detects meaningful regressions.
+
+Too-strict oracles can freeze harmless implementation detail.
+
+## 8. Operational interfaces are architecture
+
+nginx configuration, Open MPI MCA parameters, Moodle plugin metadata, and MediaWiki cache/runtime settings shape production behavior.
+
+Configuration should be reviewed for:
+
+- scope;
+- discoverability;
+- compatibility;
+- safe defaults;
+- override policy;
+- operational ownership.
+
+## 9. Stronger constraints often need migration preconditions
+
+Moodle cannot simply add foreign keys to long-lived inconsistent installations.
+MediaWiki parser cleanup is constrained by stored wikitext.
+Open MPI architecture choices are constrained by binary/performance requirements.
+
+A locally better invariant may still be unsafe until migration capability exists.
+
+## 10. Rewrite vs refactor has no universal answer
+
+MediaWiki and Moodle evolved incrementally.
+Open MPI deliberately started a new implementation because merging four architectures was judged worse.
+
+EngSense should compare:
+
+- migration path;
+- coexistence cost;
+- retained legacy constraints;
+- replacement validation;
+- organizational impact;
+- reversibility.
+
+"Never rewrite" and "rewrite for cleanliness" are both weak rules.
+
+## 11. Extension ecosystems need lifecycle economics
+
+MediaWiki hooks, Moodle plugins, nginx modules, matplotlib backends, and Open MPI components all create long-term responsibilities:
+
+- compatibility;
+- documentation;
+- testing;
+- security/failure isolation;
+- discovery;
+- deprecation/removal.
+
+Extension count is not free capability.
+
+## 12. Architecture can encode the safe/default path
+
+MediaWiki security wrappers,
+Moodle parameter validation,
+Open MPI library-level dependency enforcement,
+and matplotlib fallback rendering
+
+all demonstrate a broader pattern:
+
+Make the correct/common behavior easy and structural; reserve exceptional behavior for explicit paths.
+
+## New eval candidates
+
+1. Backend interface forces every renderer to implement ten operations when four primitives plus optional fast paths are sufficient.
+2. Visual regression test requires byte-identical SVG and blocks harmless internal optimization despite identical rendered output.
+3. Wiki parser rewrite ignores millions of persisted documents whose behavior is the de facto contract.
+4. Extension mechanism starts by executing arbitrary registration code when declarative metadata would enable caching/introspection.
+5. Legacy system adds foreign-key enforcement without first cleaning historical inconsistent data.
+6. Event-loop server permits arbitrary blocking plugin calls in the worker path.
+7. System centralizes configuration for operational consistency vs request for per-directory overrides without considering deployment scale.
+8. HPC abstraction removes a direct hardware fast path despite measured hot-path cost.
+9. Plugin framework assumes every capability is runtime-loadable even though some must initialize before main/runtime startup.
+10. Reuse of a mature dependency is rejected solely because the team prefers to own all code.
+11. Four incompatible legacy implementations are force-merged despite greater complexity than a validated clean replacement.
+12. A stable scripting facade is broken because maintainers want internal API symmetry.

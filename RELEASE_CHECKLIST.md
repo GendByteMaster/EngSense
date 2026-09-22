@@ -51,6 +51,7 @@ A pre-v1 development release may be reasonable once the repository is packaged a
 - [x] Performance engineering lens.
 - [x] Change strategy lens.
 - [x] Representation design lens.
+- [x] Reliability/operability lens.
 
 ## 4. Mandatory source-specific research gate
 

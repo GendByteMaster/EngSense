@@ -13,7 +13,7 @@ Completed research notes are tracked in the repository. The completed AOSA Volum
 
 ## Supplemental research in progress
 
-- *Site Reliability Engineering: How Google Runs Production Systems* — official complete online edition at `sre.google`; Foreword, Preface, Parts I–III, and Chapters 1–27 studied on `research/site-reliability-engineering`. This source strengthens reliability/operability synthesis but does **not** replace any mandatory commercial source.
+- *Site Reliability Engineering: How Google Runs Production Systems* — official complete online edition at `sre.google`; Foreword, Preface, Parts I–IV, and Chapters 1–32 studied on `research/site-reliability-engineering`. This source strengthens reliability/operability synthesis but does **not** replace any mandatory commercial source.
 
 ## Mandatory corpus still open
 

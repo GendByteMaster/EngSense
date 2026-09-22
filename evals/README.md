@@ -237,3 +237,5 @@ python -m unittest discover -s evals/tests -p 'test_*.py'
 It deliberately does **not** call paid/external models.
 
 Full behavioral runs are explicit/manual so that cost, model choice, secrets, and nondeterminism remain visible.
+
+A manual GitHub Actions workflow is available at `.github/workflows/behavioral-evals.yml`. It requires an `OPENAI_API_KEY` repository secret and explicit target/judge model ids; its default case is a single fixture so that a dispatch does not accidentally spend a full-suite budget.

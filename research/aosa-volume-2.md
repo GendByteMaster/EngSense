@@ -5,7 +5,7 @@ Editors: Amy Brown and Greg Wilson
 Official online edition: https://aosabook.org/en/
 License: Creative Commons Attribution 3.0 Unported
 
-Research status: IN PROGRESS
+Research status: COMPLETE — official Volume 2 reviewed in full
 
 This is a supplemental source for EngSense. It does not replace the mandatory commercial corpus in Issue #2.
 
@@ -36,11 +36,11 @@ The purpose of this note is to extract architecture evidence from real systems w
 - [x] Chapter 18 — Puppet
 - [x] Chapter 19 — PyPy
 - [x] Chapter 20 — SQLAlchemy
-- [ ] Chapter 21 — Twisted
-- [ ] Chapter 22 — Yesod
-- [ ] Chapter 23 — Yocto
-- [ ] Chapter 24 — ZeroMQ
-- [ ] Bibliography
+- [x] Chapter 21 — Twisted
+- [x] Chapter 22 — Yesod
+- [x] Chapter 23 — Yocto
+- [x] Chapter 24 — ZeroMQ
+- [x] Bibliography
 
 ---
 
@@ -3567,3 +3567,1341 @@ A powerful test strategy has evidence independent of the new implementation.
 12. Automatic flush/synchronization is introduced before transaction semantics make it safe.
 13. Mature heavily tested subsystem rewrite is rejected categorically despite a stable behavioral oracle and clear replacement advantage.
 14. Persistence command ordering is implemented as one hardcoded total order instead of dependency-driven partial ordering.
+
+
+---
+
+# Chapter 21 — Twisted
+
+## Source scope
+
+Twisted is an event-driven networking framework that grew from a networked game into a cross-platform, batteries-included networking platform.
+
+The chapter covers:
+
+- event-driven vs synchronous/threaded execution;
+- reactors;
+- callback/deferred composition;
+- transports and protocols;
+- application/service lifecycle;
+- deployment tooling;
+- plugins;
+- failed persistence design;
+- rewrite failure;
+- long-term protocol/platform maintenance.
+
+## Source-derived observations
+
+### 1. Concurrency model should match workload shape
+
+Twisted's original problem involved many largely independent network tasks that spend substantial time waiting for I/O.
+
+The move from multiple blocking threads to one event-driven loop reduced:
+
+- lock complexity;
+- shared-state races;
+- deadlocks;
+- scaling cost.
+
+This is not a universal argument for event loops. The fit comes from:
+
+many independent tasks
++
+I/O blocking
++
+manageable single-threaded callbacks.
+
+### 2. Platform variance can be centralized without erasing platform capability
+
+The reactor presents a stable event interface while using:
+
+- poll;
+- kqueue;
+- epoll;
+- IOCP
+
+and other platform-specific mechanisms underneath.
+
+This is a real portability boundary around independently varying OS facilities.
+
+### 3. Raw callback composition became an architectural pain point
+
+As asynchronous chains grew, callers had to manually preserve:
+
+- exactly-once result handling;
+- error propagation;
+- cleanup/finalization.
+
+The Deferred abstraction emerged because this repeated semantic burden was widespread and error-prone.
+
+This is evidence-driven abstraction:
+
+repeated hard coordination invariant
+→ shared object with explicit semantics.
+
+### 4. Abstractions can make asynchronous semantics more like familiar structured control flow
+
+Deferred chains provide success/error/finalization structure analogous to synchronous try/except/finally semantics.
+
+The abstraction does not hide asynchrony; it gives it a more composable representation.
+
+### 5. Transport/protocol separation follows real variation axes
+
+Transports own connection mechanics such as:
+
+- stream/datagram behavior;
+- flow control;
+- reliability;
+- endpoint details.
+
+Protocols own application-level event semantics.
+
+This allows reuse and focused testing because the concerns genuinely vary independently.
+
+### 6. Standard deployment infrastructure can remove repeated operational boilerplate
+
+Services, Applications, TAC files/plugins, and twistd centralize:
+
+- startup/shutdown;
+- logging;
+- daemonization;
+- reactor selection;
+- profiling;
+- privilege handling.
+
+This shows that operational lifecycle can be a reusable abstraction, not application-specific glue.
+
+### 7. Extension APIs need expert-operator input, not only developer input
+
+Large Twisted deployments often replaced management/monitoring facilities because the architecture did not expose enough for system administrators.
+
+The chapter attributes this partly to insufficient architectural input from deployment experts.
+
+EngSense should treat expert end-user feedback as architecture evidence.
+
+### 8. Persisting internal object graphs creates severe version coupling
+
+Twisted Application Persistence serialized live application objects with pickle.
+
+Class/API evolution then required complex upgrade matrices and remained fragile.
+
+The project ultimately removed the design.
+
+This strongly supports:
+
+persistent state needs an explicit schema
+rather than
+opaque serialization of internal runtime objects.
+
+### 9. Novel infrastructure should have an explicit complexity budget
+
+The TAP retrospective is broader than persistence:
+
+before committing to a novel mechanism, understand:
+
+- added complexity;
+- upgrade path;
+- test burden;
+- concrete benefit.
+
+This is a direct anti-overengineering rule.
+
+### 10. Side-by-side rewrite can create years of product ambiguity
+
+The web2 rewrite ran alongside the original web implementation for years.
+
+Users could not tell which one to adopt, major users depended on experimental code, and the intended switchover never happened.
+
+The chapter concludes that backward-compatible evolution/deprecation would have been preferable.
+
+### 11. Rewrite strategy is partly a communication and product-surface problem
+
+If a rewrite is unavoidable, users and contributors need:
+
+- one clear supported choice;
+- migration direction;
+- long-term plan.
+
+Technical coexistence without product clarity creates ecosystem debt.
+
+### 12. Batteries-included architecture creates maintenance obligations
+
+Bundling many protocols made Twisted immediately useful, but each protocol became an ongoing standards/compatibility burden.
+
+Feature breadth should therefore be priced across maintenance lifetime, not only initial adoption value.
+
+### 13. Extension ecosystems can absorb work the core cannot staff
+
+Some new protocol work moved to external libraries because volunteer time was the limiting factor.
+
+Modularity can distribute maintenance ownership, but it may also create long-lived "almost merged" ecosystems.
+
+## EngSense interpretation
+
+Candidate signals:
+
+io_wait_fraction
+independent_task_count
+shared_mutable_state
+platform_event_variation
+async_error_propagation
+exactly_once_completion
+transport_protocol_variation
+deployment_lifecycle_repetition
+operator_architecture_input
+persistent_internal_object_graph
+novel_mechanism_complexity
+rewrite_coexistence_duration
+core_maintenance_capacity
+protocol_breadth
+
+Candidate rules:
+
+- choose a concurrency model based on workload behavior, not fashion;
+- centralize platform-specific event mechanics behind a stable semantic boundary when variation is real;
+- introduce async composition abstractions when success/error/finalization semantics repeat and are easy to misuse;
+- separate transport mechanics from application protocol semantics when both vary independently;
+- standardize operational lifecycle where many applications repeat the same deployment mechanics;
+- seek architecture feedback from operators when deployment/monitoring is part of the product;
+- do not use internal object serialization as a durable persistence contract;
+- require a complexity/upgrade/test case before adopting novel infrastructure;
+- avoid indefinite old/new rewrite coexistence;
+- price batteries-included breadth by ongoing maintenance capacity.
+
+## Conflict candidates
+
+- threads vs event-driven execution;
+- raw callbacks vs structured async abstraction;
+- batteries-included breadth vs maintenance capacity;
+- full rewrite vs backward-compatible evolution;
+- internal-object persistence convenience vs explicit schema stability;
+- core ownership vs external add-on ecosystem.
+
+---
+
+# Chapter 22 — Yesod
+
+## Source scope
+
+Yesod is a Haskell web framework that intentionally uses static typing, code generation, immutable data, and compile-time checks to move many classes of web errors earlier.
+
+The chapter covers:
+
+- web application interfaces;
+- builders and streaming;
+- handlers;
+- template DSLs;
+- type-safe HTML/URLs;
+- persistence abstraction;
+- routing;
+- widgets/subsites;
+- project/community evolution.
+
+## Source-derived observations
+
+### 1. Language strengths should shape framework architecture
+
+Yesod does not imitate dynamic-language frameworks mechanically.
+
+It uses Haskell's type system and code generation to enforce:
+
+- route correctness;
+- escaping boundaries;
+- entity IDs;
+- template variable/type validity.
+
+This is a strong language-aware architecture example.
+
+### 2. Compile-time guarantees can replace repeated runtime/user discipline
+
+The Html type prevents arbitrary text from entering HTML without an explicit conversion.
+
+The default conversion escapes content, while unsafe/pre-escaped insertion is explicit.
+
+This is a powerful safety pattern:
+
+safe representation by default
++
+explicit exceptional escape hatch.
+
+### 3. Code generation is justified when it automates repetitive correctness machinery
+
+Type-safe URLs are not conceptually unique to Yesod; the difficulty is the repetitive/error-prone plumbing.
+
+Template Haskell generates the glue so compile-time guarantees are practical.
+
+This is a strong criterion for code generation:
+
+repeated mechanical structure
++
+valuable invariant
+→ generate rather than hand-maintain.
+
+### 4. Interface shape can encode performance strategy
+
+WAI's builder-oriented response interface allows efficient buffer filling and fewer copies/system calls.
+
+The optimization is not left to every application.
+
+A shared interface can make the performant path the normal path.
+
+### 5. One application contract can support multiple deployment handlers
+
+WAI applications can run under several handlers:
+
+- Warp;
+- FastCGI;
+- SCGI;
+- CGI;
+- test handlers;
+- desktop-like wrappers.
+
+This is a real execution-environment variation axis.
+
+### 6. Test harnesses can implement the same application boundary as production handlers
+
+Yesod/WAI treats testing as another handler of the application contract.
+
+This reduces special test-only application structure.
+
+### 7. Backend abstraction should expose explicit escape routes when semantics differ
+
+Persistent aims for backend-agnostic typed access but openly allows:
+
+- backend-specific capabilities;
+- raw queries.
+
+The abstraction does not pretend SQL and MongoDB are identical.
+
+This reinforces:
+
+portable core
++
+explicit non-portable capability
++
+raw escape hatch when necessary.
+
+### 8. Strong typing can move representation conversion to boundaries
+
+Typed route parameters, database IDs, Html/Text distinctions, and template checks turn malformed conversions into compile-time or boundary failures rather than distributed runtime checks.
+
+### 9. Layering should keep optional subsystems optional
+
+Yesod core does not require Persistent, authentication, or static-file serving for users who do not need them.
+
+This keeps the framework composable.
+
+### 10. Scaffolding can reduce integration complexity without requiring one monolithic core
+
+When users do want the common stack, scaffolding assembles the pieces.
+
+This is a useful product pattern:
+
+modular internals
++
+opinionated setup path.
+
+### 11. Composable UI units can aggregate multiple resource concerns safely
+
+Widgets package:
+
+- HTML;
+- CSS;
+- JavaScript;
+- handler-side data needs.
+
+The framework then aggregates/minifies/caches them coherently.
+
+This reduces duplicated cross-layer coordination in each page.
+
+### 12. Initial product goals should remain revisable
+
+The retrospective explicitly says the final system differed substantially from the original planned goals.
+
+Real development produced better information.
+
+### 13. Early solo-project conventions become onboarding debt if not made explicit
+
+Undocumented personal workflows made collaboration and testing harder once the project gained maintainers.
+
+Standard build scripts and coding conventions improved approachability.
+
+Project approachability is therefore an engineering-quality dimension.
+
+## EngSense interpretation
+
+Candidate signals:
+
+language_type_system_strength
+compile_time_invariant
+safe_default_representation
+code_generation_value
+performance_encoded_interface
+deployment_handler_variation
+test_as_handler
+backend_semantic_variance
+explicit_escape_hatch
+optional_subsystem
+scaffolding_integration
+resource_composition
+project_goal_revisability
+contributor_approachability
+
+Candidate rules:
+
+- exploit the target language's strongest native guarantees rather than importing another ecosystem's architecture;
+- encode safety in types/default representations when practical;
+- use code generation for repetitive invariant-preserving glue, not merely to avoid typing code;
+- let shared interfaces encode a proven performance path when that improves all consumers;
+- keep portability abstractions honest by exposing backend-specific behavior explicitly;
+- make optional systems independently usable and provide scaffolding for common integrated setups;
+- treat tests as ordinary consumers of the same application boundary when feasible;
+- revise initial goals when real usage provides better evidence;
+- convert solo-developer tribal knowledge into reproducible project tooling as contributor count grows.
+
+## Conflict candidates
+
+- compile-time complexity vs runtime safety;
+- portable persistence API vs backend-specific capability;
+- modular component choice vs integrated setup complexity;
+- explicit type-level invariants vs simpler dynamic code;
+- project flexibility vs contributor-standardized workflow.
+
+---
+
+# Chapter 23 — The Yocto Project
+
+## Source scope
+
+The Yocto Project provides tooling and metadata for building customized embedded Linux systems.
+
+The chapter focuses on BitBake and covers:
+
+- layered metadata;
+- recipes/classes/configuration;
+- data stores;
+- build caching/shared state;
+- client/server architecture;
+- dependency graphs;
+- provider selection;
+- run queues;
+- build parallelism;
+- project standards and up-front architectural planning.
+
+## Source-derived observations
+
+### 1. A build system becomes architecture when it owns reproducibility, dependency order, and resource use
+
+BitBake is not merely a command wrapper.
+
+Its design determines:
+
+- what gets built;
+- from which provider/version;
+- in what order;
+- with which metadata;
+- whether work is incremental;
+- how parallelism is scheduled.
+
+Build architecture directly shapes development throughput and reproducibility.
+
+### 2. Layered metadata separates a stable core from product/platform customization
+
+OE-Core provides shared metadata while additional layers can add:
+
+- BSPs;
+- product software;
+- image definitions;
+- local policy.
+
+This lets customization happen without rewriting the core metadata set.
+
+### 3. Extension layering needs explicit precedence rules
+
+Layers carry priorities and search paths.
+
+Without explicit precedence, composability would become ambiguous.
+
+This is an important configuration principle:
+
+layering
+requires
+deterministic conflict resolution.
+
+### 4. Configuration conventions eventually need formal schemas/standards
+
+The retrospective on LICENSE metadata shows that informal community convention was insufficient once tooling needed to interpret the field reliably.
+
+Human-readable convention can become machine-contract debt.
+
+### 5. Failed-task retry is not a substitute for a dependency model
+
+Early BitBake discovered ordering during execution by trying tasks and retrying failures.
+
+That design was:
+
+- slow;
+- unreliable;
+- inherently hard to parallelize.
+
+Precomputing the dependency graph enabled far better scheduling.
+
+### 6. Explicit dependency graphs create parallelism opportunities
+
+Once build/task dependencies are known, independent work can run concurrently.
+
+The architecture therefore converts semantic dependency information into scheduling freedom.
+
+### 7. Build and runtime dependencies are different semantics
+
+BitBake explicitly distinguishes what is needed to build a package from what must exist in the final image.
+
+Collapsing those concepts would produce incorrect dependency behavior.
+
+### 8. Provider choice is policy over a dependency graph
+
+Multiple recipes can satisfy a package capability.
+
+BitBake combines:
+
+- preferred providers;
+- version preferences;
+- dependency requirements
+
+to select an implementation.
+
+This is another example of explicit policy separated from raw graph structure.
+
+### 9. Incremental build capability is concrete reversibility/productivity infrastructure
+
+Early builds restarted from scratch after failure.
+
+Persistence caches/shared state allowed reuse of previous work and greatly reduced iteration cost.
+
+Developer feedback latency is an architecture output.
+
+### 10. Data representation can dominate system memory behavior
+
+The original large duplicated variable dictionary made builds memory-heavy.
+
+Later copy-on-write and data-store improvements reduced resource cost.
+
+Representation choice inside tooling can be a first-order scalability issue.
+
+### 11. Up-front architectural planning can have real value for long-lived frameworks
+
+Unlike many AOSA chapters emphasizing emergent evolution, the Yocto retrospective strongly advocates serious early planning.
+
+The source does not claim planning eliminates redesign; it argues planning reduces duplicated effort and makes later major changes easier.
+
+This should remain an explicit tension in EngSense rather than being flattened into "always evolve."
+
+### 12. Modularity can reduce the cost of inevitable future rewrites
+
+The retrospective argues that because change cannot be predicted perfectly, modularity should make future replacement less painful.
+
+This is a reversibility argument for modular structure.
+
+## EngSense interpretation
+
+Candidate signals:
+
+build_reproducibility
+metadata_layering
+layer_precedence
+informal_metadata_convention
+dependency_graph_completeness
+build_vs_runtime_dependency
+provider_policy
+incremental_build_state
+developer_feedback_latency
+tool_data_memory_cost
+front_end_architecture_planning
+future_replacement_cost
+
+Candidate rules:
+
+- treat build systems as architecture when they control dependency, reproducibility, scheduling, and iteration cost;
+- use layered metadata when product/platform customization must coexist with a shared core;
+- define deterministic precedence for composable configuration layers;
+- turn informal metadata conventions into schemas/standards before machine tooling depends heavily on them;
+- compute dependency structure explicitly instead of discovering it through execution failure;
+- keep build-time and runtime dependencies semantically separate;
+- separate provider-selection policy from dependency representation;
+- invest in incremental build/cache state when full rebuild cost materially harms feedback;
+- include tooling data representation in memory/scalability analysis;
+- preserve a real tension between up-front architecture planning and evolutionary discovery;
+- design modularity partly around future replacement/migration cost.
+
+## Conflict candidates
+
+- informal convention vs formal machine-readable metadata;
+- runtime trial-and-error scheduling vs precomputed dependency planning;
+- up-front architecture planning vs emergent evolution;
+- shared metadata core vs product/platform customization;
+- complete rebuild simplicity vs incremental-state complexity.
+
+---
+
+# Chapter 24 — ZeroMQ
+
+## Source scope
+
+ZeroMQ is a high-performance messaging library that evolved from finance-focused performance work into a general distributed-application toolkit.
+
+The chapter covers:
+
+- library vs broker architecture;
+- global state;
+- performance measurement;
+- small vs large message strategies;
+- batching;
+- queueing;
+- worker-thread/actor design;
+- lock-free queues;
+- shutdown complexity;
+- API design;
+- messaging patterns.
+
+## Source-derived observations
+
+### 1. Process topology should reflect trust/ownership boundaries, not only technical convenience
+
+ZeroMQ rejected the mandatory central broker partly because organizationally distributed deployments may have no acceptable central authority.
+
+Architecture can be constrained by:
+
+- business ownership;
+- legal liability;
+- trust boundaries.
+
+### 2. Removing a central server can move complexity into every endpoint
+
+The brokerless model improves latency/control and avoids one central bottleneck, but endpoints/library logic must now own more distributed behavior.
+
+This is another complexity-placement trade-off, not a free simplification.
+
+### 3. Library global state breaks composition
+
+ZeroMQ explicitly identifies process-global library state as a problem when multiple independent instances must coexist.
+
+This is a strong rule for embeddable libraries:
+
+instance isolation matters.
+
+### 4. Performance metrics must be defined before optimization
+
+The chapter shows intuitive throughput/latency calculations can be misleading.
+
+ZeroMQ spent substantial effort defining benchmarking methodology before architecture optimization.
+
+This strongly supports:
+
+measurement semantics
+before
+performance design.
+
+### 5. One algorithm may not be optimal across the entire input distribution
+
+Small messages benefit from copying into preallocated storage.
+
+Large messages benefit from allocation/reference passing.
+
+The implementation adapts by message size.
+
+This is a powerful general anti-rule:
+
+Do not search for one universal "fastest" algorithm when workload classes differ.
+
+### 6. Batching trades latency against throughput
+
+Batching reduces stack/system-call overhead but delays messages.
+
+ZeroMQ adapts batching to queue/load conditions rather than treating it as universally on/off.
+
+### 7. Queue growth converts throughput overload into latency and memory problems
+
+Once producers exceed processing/network capacity, messages wait.
+
+Unbounded queues can make latency arbitrarily large.
+
+This reinforces EngSense's overload/backpressure cases.
+
+### 8. Batching should happen at the layer that can see meaningful work units
+
+ZeroMQ argues that lower-layer batching becomes redundant when the top layer batches appropriately.
+
+This is a complexity-placement/performance principle:
+
+optimize at the highest layer that has enough semantic knowledge.
+
+### 9. Partitioned thread ownership can remove locks
+
+ZeroMQ binds internal objects to worker threads and communicates via asynchronous messages.
+
+This reduces shared-state locking and cache migration.
+
+But the architecture introduces cooperative scheduling/state-machine requirements.
+
+### 10. Shutdown is a first-class distributed/concurrent subsystem
+
+The chapter reports a large fraction of bugs around shutdown.
+
+Thousands of concurrent state machines make lifecycle termination harder than steady-state message processing.
+
+This is an exceptionally strong EngSense rule:
+
+Design shutdown/cancellation from the beginning.
+
+### 11. Lock-free algorithms carry extreme implementation/debugging cost
+
+The chapter advises reuse of proven lock-free designs and notes batching may yield larger gains on top.
+
+"Lock-free" should not be selected for elegance or fashion.
+
+### 12. Public API design can change product adoption without changing core capability
+
+Replacing an enterprise-messaging-oriented API with BSD-socket-like concepts dramatically improved approachability/adoption.
+
+API is part of product positioning.
+
+### 13. Reusing conceptual models can be as valuable as reusing code
+
+ZeroMQ deliberately reused a familiar sockets model.
+
+Users gained existing knowledge, and the project inherited tested conceptual decisions.
+
+This broadens the notion of reuse:
+
+- code;
+- protocol;
+- API;
+- mental model.
+
+### 14. Specific orthogonal tools can outperform one maximally generic mechanism
+
+ZeroMQ models distinct messaging patterns such as:
+
+- request/reply;
+- publish/subscribe;
+- pipelines.
+
+Each is intentionally scoped and non-interchangeable.
+
+The project prefers multiple focused solutions within a common layer over one generic configuration-heavy engine.
+
+### 15. Use-case boundaries determine whether focused abstractions remain usable
+
+If a pattern is scoped too narrowly, applicability collapses.
+
+If scoped too broadly, the API becomes blurry and complex.
+
+The key design task is selecting the right semantic boundary.
+
+## EngSense interpretation
+
+Candidate signals:
+
+organizational_trust_topology
+broker_bottleneck
+endpoint_complexity
+library_instance_isolation
+performance_metric_definition
+input_size_distribution
+adaptive_batching
+queue_latency_growth
+semantic_batching_layer
+thread_ownership_partition
+shutdown_state_machine_complexity
+lock_free_cost
+api_mental_model
+conceptual_reuse
+orthogonal_pattern_count
+use_case_boundary_precision
+
+Candidate rules:
+
+- include organizational/legal trust topology when choosing centralized vs distributed architectures;
+- account for complexity moved from brokers/servers into endpoints;
+- avoid process-global mutable state in libraries that must support independent instances;
+- define measurement semantics before optimizing;
+- segment workloads when different classes have different optimal algorithms;
+- treat batching as a throughput/latency control, not a universal optimization;
+- model overload explicitly before queues become unbounded latency reservoirs;
+- optimize at the highest layer with enough semantic information;
+- use partitioned ownership to reduce locking when the event/state-machine costs are justified;
+- design shutdown/cancellation as part of the concurrency model from the beginning;
+- reuse proven lock-free algorithms instead of inventing them casually;
+- evaluate API/mental-model familiarity as adoption and integration cost;
+- prefer multiple focused orthogonal implementations when one generic mechanism would require excessive configuration.
+
+## Conflict candidates
+
+- broker centralization vs endpoint autonomy;
+- small-message copy vs large-message zero-copy;
+- batching throughput vs latency;
+- lock-free performance vs implementation/debug cost;
+- generic messaging configurability vs focused patterns;
+- novel API semantics vs familiar conceptual reuse;
+- actor-style ownership vs shutdown/state-machine complexity.
+
+---
+
+# Bibliography
+
+The Volume 2 bibliography was reviewed as the source map behind the chapters.
+
+It contains references to standards, papers, specifications, and project materials including:
+
+- MPI standards and Open MPI design work;
+- Haskell language/compiler literature;
+- graphics/PDF/TeX references;
+- operating-system/event/network standards;
+- supporting project documentation.
+
+No independent EngSense rule is extracted solely from a bibliography entry.
+
+If EngSense later depends directly on a claim from one of those primary works, that work should be researched separately.
+
+---
+
+# Full-book synthesis — AOSA Volume 2
+
+## Status
+
+The official online Volume 2 has now been reviewed through:
+
+- Introduction;
+- Chapters 1–24;
+- Bibliography.
+
+Research status: **COMPLETE**.
+
+The synthesis below is EngSense interpretation across the volume, not a claim that every chapter author endorses the same principles.
+
+## 1. Architecture is the placement of responsibility under constraints
+
+Across the book, architecture repeatedly determines who pays for difficult behavior:
+
+- GPSD centralizes device-protocol complexity;
+- nginx centralizes edge/network work;
+- Puppet centralizes policy compilation;
+- SQLAlchemy centralizes relational mechanics while exposing essential SQL semantics;
+- ZeroMQ removes a broker and shifts responsibility into endpoints;
+- Twisted centralizes event-loop/platform mechanics.
+
+This strongly supports EngSense's **complexity placement** lens.
+
+The correct question is often not:
+
+> Is this complex?
+
+but:
+
+> Where should this unavoidable complexity live, how many times should it be paid, and who is best equipped to own it?
+
+## 2. The right abstraction exposes essential semantics and hides incidental mechanics
+
+This pattern appears repeatedly:
+
+- SQLAlchemy hides DBAPI/vendor mechanics but not relational structure;
+- Yesod Persistent exposes backend-specific escape routes;
+- ITK hides file-format mechanics but retains domain-relevant pixel/type semantics;
+- GPSD hides device protocols behind normalized observations;
+- Open MPI hides implementation variation without hiding performance-sensitive choices;
+- Twisted separates protocol semantics from transport mechanics.
+
+Candidate EngSense invariant:
+
+> An abstraction is harmful when it hides information its consumers need for correctness, capacity planning, or meaningful policy.
+
+## 3. Representation is one of the strongest architecture levers
+
+Across Volume 2:
+
+- Git uses immutable content-addressed DAGs;
+- Puppet uses resource/dependency catalogs;
+- BitBake uses dependency/runqueue graphs;
+- SQLAlchemy uses expression/dependency trees;
+- GHC/PyPy use staged intermediate representations;
+- MediaWiki is constrained by persisted wikitext;
+- Mailman works on a parsed message representation.
+
+A representation can determine:
+
+- correctness;
+- optimization opportunities;
+- migration cost;
+- replay;
+- compatibility;
+- scheduling;
+- tooling.
+
+EngSense should evaluate representation design explicitly, not only module/class decomposition.
+
+## 4. Concurrency architecture is workload-specific and lifecycle-complete
+
+Twisted, nginx, ZeroMQ, FreeRTOS, GHC, and Mailman show very different concurrency approaches.
+
+No universal concurrency pattern wins.
+
+Important signals include:
+
+- I/O wait;
+- shared mutable state;
+- task independence;
+- hard real-time constraints;
+- throughput/latency balance;
+- CPU/core topology;
+- ownership partitionability.
+
+Critically, ZeroMQ shows that **shutdown/cancellation belongs to the concurrency design**, not postscript cleanup.
+
+## 5. Performance requires correct measurement semantics before code changes
+
+Graphite in Volume 1 already showed wrong bottleneck assumptions.
+
+Volume 2 strengthens this with:
+
+- ZeroMQ's throughput/latency methodology;
+- nginx's connection-cost model;
+- Open MPI's hot-path focus;
+- Yesod builders;
+- Processing.js specialization;
+- PyPy tracing/JIT;
+- SQLAlchemy loader planning;
+- BitBake build parallelism.
+
+Candidate EngSense rule:
+
+> Before optimizing, define the metric, observation boundary, workload distribution, and resource actually constrained.
+
+## 6. Workload classes may deserve different algorithms
+
+ZeroMQ treats small and large messages differently.
+ITK retains multiple algorithms for different image/workload characteristics.
+Open MPI exposes different transport/runtime components.
+Yesod and SQLAlchemy allow backend-specific escape paths.
+
+This is strong evidence against forcing one implementation merely to maximize DRY or uniformity.
+
+## 7. Safe defaults should be structural
+
+Volume 2 repeatedly makes safe/correct behavior the normal path:
+
+- Yesod Html escaping;
+- MediaWiki request/escaping/security wrappers;
+- Puppet catalogs and providers;
+- Open MPI enforced library layering;
+- typed routing and IDs;
+- dependency graphs determining legal build/execution order.
+
+The general rule is:
+
+> If an invariant applies broadly and mechanically, make the safe path structural and move exceptions into explicit escape hatches.
+
+## 8. Extension architecture is a lifecycle problem
+
+Extension mechanisms appear throughout the book:
+
+- Twisted plugins;
+- MediaWiki hooks/extensions/gadgets;
+- Moodle plugin categories;
+- nginx modules;
+- Open MPI MCA components;
+- Puppet plugins;
+- Yesod subsites;
+- ITK factories.
+
+Their real costs include:
+
+- compatibility;
+- discovery;
+- deployment;
+- failure isolation;
+- security;
+- initialization timing;
+- documentation;
+- deprecation;
+- removal.
+
+"Supports plugins" is therefore not a complete design.
+
+## 9. Extension mechanisms need the right power level
+
+A recurring spectrum appears:
+
+- declarative metadata;
+- typed capability/plugin;
+- callback/hook;
+- dynamically loaded code;
+- arbitrary executable customization.
+
+Volume 2 strengthens the rule:
+
+> Choose the least powerful extension mechanism that satisfies the real requirement, and make stronger mechanisms explicit.
+
+## 10. Rewrite vs refactor depends on coexistence economics and behavioral evidence
+
+The volume contains both sides:
+
+### Rewrite failure
+Twisted web2 produced long-lived old/new ambiguity and no successful cutover.
+
+### Rewrite success condition
+SQLAlchemy's unit-of-work rewrite occurred after:
+
+- behavior was mature;
+- tests were extensive;
+- the old system could act as an oracle.
+
+### Rewrite from incompatible foundations
+Open MPI chose a new implementation because merging four substantially different architectures would have preserved too much incompatible structure.
+
+Candidate rewrite-readiness model:
+
+behavioral understanding
++
+verification strength
++
+replacement advantage
++
+migration/cutover plan
++
+clear user choice
++
+acceptable coexistence cost.
+
+## 11. Incremental evolution and front-loaded architecture are both valid
+
+Yesod, MediaWiki, SQLAlchemy, and PyPy show learning through implementation/refactoring.
+
+Yocto strongly argues that serious early architecture planning reduces duplicated effort.
+
+These are not contradictions to flatten.
+
+EngSense should ask:
+
+- How reversible is the decision?
+- How expensive is exploration?
+- How much architectural uncertainty exists?
+- How large is the consumer/public surface?
+- How costly will migration be?
+- Can a prototype cheaply test the unknown?
+
+High-irreversibility decisions justify more up-front design.
+Cheap/reversible unknowns justify learning through implementation.
+
+## 12. Persistence/schema decisions create long-lived time coupling
+
+Twisted TAP, MediaWiki wikitext, Moodle legacy data, Mailman pickle state, OSCAR databases, Puppet serialized internal objects all reinforce this.
+
+Persistent representations should normally have:
+
+- explicit schemas;
+- versioning/migration plans;
+- known compatibility policy;
+- clear authoritative ownership.
+
+Avoid persisting opaque internal object graphs as long-term contracts.
+
+## 13. Content/data compatibility can exceed API compatibility
+
+MediaWiki demonstrates the strongest case: a huge corpus of historical user-created content can define de facto parser semantics.
+
+EngSense should distinguish:
+
+- API consumer compatibility;
+- wire protocol compatibility;
+- persisted schema compatibility;
+- user-content semantic compatibility.
+
+The last may have enormous migration cost even when no formal API exists.
+
+## 14. Global state must be judged by lifetime and multiplicity
+
+The volume provides different evidence:
+
+- Moodle's request-isolated PHP globals can be pragmatic;
+- MediaWiki gradually moves away from globals as reuse grows;
+- SQLAlchemy replaces implicit thread-local persistence with explicit Sessions;
+- ZeroMQ rejects global library state because multiple library instances must coexist.
+
+Therefore:
+
+> "Global state is bad" is too coarse.
+
+Ask whether multiple independent contexts can exist simultaneously or sequentially and whether lifecycle must be explicit.
+
+## 15. Operational/development tooling is part of architecture
+
+Examples:
+
+- Firefox release automation;
+- Twisted deployment tooling;
+- BitBake runqueue/build state;
+- PyPy visualization;
+- GPSD replay harness;
+- MediaWiki caching stack;
+- nginx hot upgrades;
+- Open MPI runtime tuning.
+
+Architecture review should include the machinery that makes the system:
+
+- buildable;
+- deployable;
+- inspectable;
+- recoverable;
+- reproducible;
+- changeable.
+
+## 16. Human factors are technical constraints
+
+Volume 2 repeatedly includes:
+
+- contributor approachability in Yesod;
+- contributor supply in MediaWiki;
+- operator feedback in Twisted;
+- operator fatigue in Firefox release engineering;
+- community standards in Yocto;
+- organization boundaries in ZeroMQ;
+- collaboration boundaries in Open MPI.
+
+EngSense should include human/organizational scale only when relevant, but should not exclude it from architecture reasoning.
+
+## 17. Domain-specific limits can justify intentional unsupported behavior
+
+Processing.js documents some edge cases instead of carrying disproportionate compatibility machinery.
+Twisted moves under-maintained protocol work outside core.
+ITK cannot stream every algorithm.
+Yesod Persistent openly admits backend differences.
+
+A system can be stronger by clearly defining what it does **not** support.
+
+## 18. Configuration has an entropy cost
+
+Puppet's over-configurability lesson combines with:
+
+- nginx centralized configuration;
+- Open MPI runtime tunables;
+- Yocto metadata layers.
+
+Every option increases the state space that:
+
+- users can misconfigure;
+- tests must cover;
+- docs must explain;
+- upgrades must preserve.
+
+EngSense should evaluate configuration-space complexity, not merely option usefulness in isolation.
+
+## 19. Developer feedback latency is an architecture property
+
+BitBake's incremental/parallel runqueue reduced hours-long rebuilds.
+PyPy's whole-program translation imposes long iterations.
+Firefox shards release work.
+GHC and other systems rely on focused internal representations/tests.
+
+Fast feedback increases the feasible rate of safe change.
+
+Candidate quality dimension:
+
+\`feedback_latency\`.
+
+## 20. Provenance makes automated decisions explainable
+
+Mailman records rule decisions.
+Puppet reports old/new values and outcomes.
+Git stores immutable history.
+OSCAR preserves remote origin.
+
+EngSense should treat provenance as especially valuable when systems:
+
+- transform data;
+- route work automatically;
+- mutate infrastructure;
+- merge remote/local records;
+- make policy decisions.
+
+## 21. Familiar conceptual models can reduce adoption cost
+
+ZeroMQ's adoption improved dramatically after moving to BSD-socket-like semantics.
+Yesod/MediaWiki/Moodle demonstrate the opposite case where familiar patterns are adapted through language/domain-specific guarantees.
+
+Conceptual reuse should be evaluated alongside code reuse.
+
+## 22. "Clean" architecture can include deliberate asymmetry
+
+Examples:
+
+- optional backend fast paths;
+- backend-specific persistence operations;
+- different algorithms per input class;
+- generated ugly code below a maintained abstraction;
+- compatibility adapters;
+- old/new migration seams;
+- request-scoped globals under isolated runtimes.
+
+Symmetry is not an invariant.
+
+## 23. Failure handling includes lifecycle transitions, not only request failures
+
+The volume highlights:
+
+- queue recovery;
+- release retry;
+- shutdown;
+- upgrade;
+- rollback;
+- partial build failure;
+- consent revocation;
+- stale state after transactions.
+
+EngSense should inspect lifecycle transitions whenever a system is long-running or stateful.
+
+## 24. A mature architecture can deliberately delete abstractions
+
+Twisted removes TAP.
+Open MPI removes frameworks whose variation disappears.
+Projects abandon roadmap ideas whose rationale changes.
+
+EngSense should model abstraction removal as normal lifecycle behavior.
+
+---
+
+# EngSense candidate additions after AOSA Volume 2
+
+## New/strengthened context signals
+
+\`\`\`text
+high_consequence_domain
+operator_architecture_input
+content_compatibility_inertia
+shutdown_complexity
+configuration_space_size
+feedback_latency
+build_graph_complexity
+layer_precedence
+safe_default_enforceability
+conceptual_api_familiarity
+extension_execution_semantics
+rewrite_coexistence_cost
+behavioral_oracle_strength
+generated_code_maintenance_surface
+trust_ownership_topology
+\`\`\`
+
+## New/strengthened quality dimensions
+
+\`\`\`text
+feedback_latency
+operator_usability
+configuration_safety
+content_compatibility
+shutdown_safety
+architecture_observability
+behavioral_reproducibility
+extension_usability
+deployment_reversibility
+provenance
+\`\`\`
+
+## New/strengthened anti-rules
+
+- Do not rewrite a high-consequence subsystem for structural cleanliness without stronger behavioral evidence and migration verification.
+- Do not persist internal runtime objects as a durable interchange schema merely because serialization is convenient.
+- Do not assume one algorithm is optimal across all workload classes.
+- Do not make every extension implement a large interface when a small mandatory core plus optional capabilities is sufficient.
+- Do not hide backend/domain semantics callers need for correctness.
+- Do not expose every internal configuration knob as user-facing flexibility.
+- Do not discover dependency order by repeatedly attempting work that fails.
+- Do not treat shutdown as cleanup that can be designed after steady-state concurrency.
+- Do not force exact-representation tests when the domain defines semantic equivalence.
+- Do not infer architecture from file count/package shape alone.
+- Do not preserve a roadmap/rewrite/abstraction after its original rationale disappears.
+- Do not judge globals without examining lifetime, concurrency, and context multiplicity.
+- Do not force one generic mechanism when several orthogonal focused tools better encode distinct use cases.
+- Do not optimize before defining the metric and workload distribution.
+
+## New eval groups to build
+
+### Rewrite readiness
+- high-consequence unsafe rewrite;
+- Twisted-style indefinite dual implementation;
+- SQLAlchemy-style mature tested rewrite;
+- Open-MPI-style incompatible legacy merge vs clean replacement.
+
+### Representation and persistence
+- internal-object serialization as public schema;
+- content compatibility inertia;
+- immutable history plus mutable refs;
+- dependency graph vs trial-and-error execution.
+
+### Extension design
+- oversized mandatory interface;
+- blocking plugin in event loop;
+- plugin cardinality/lifecycle mismatch;
+- configuration explosion.
+
+### Concurrency lifecycle
+- event loop vs threads by workload;
+- unbounded queues;
+- partitioned ownership;
+- shutdown race architecture.
+
+### Testing semantics
+- exact representation vs semantic equivalence;
+- independent behavioral oracle;
+- replayable field failures;
+- domain-specific visual/output tolerance.
+
+---
+
+# AOSA Volume 2 — final research classification
+
+## What this source is strong evidence for
+
+- context-specific architecture;
+- architecture evolution;
+- representation leverage;
+- real extension systems;
+- performance trade-offs;
+- operational/build architecture;
+- rewrite/refactor outcomes;
+- compatibility and migration;
+- ecosystem/contributor constraints.
+
+## What this source is not sufficient to finalize
+
+Volume 2 is still a case-study collection, not a complete prescriptive theory.
+
+It does not by itself finalize EngSense guidance for:
+
+- small-function philosophy;
+- comment policy across ordinary application code;
+- systematic refactoring mechanics;
+- DDD/domain-model richness;
+- modern distributed-data guarantees;
+- legacy-code seam methodology;
+- construction-level heuristics;
+- modern production-resilience doctrine.
+
+Those areas remain dependent on the mandatory source corpus in Issue #2.
+
+## Research conclusion
+
+AOSA Volume 2 strongly reinforces the central EngSense direction:
+
+> Engineering quality is not conformity to one visual architecture. It is the ability to place complexity, preserve the right invariants, expose the right semantics, choose the right trade-offs for the actual context, and keep the system safe to change over time.
+
+The most important addition from Volume 2 is that this judgment must include not only runtime code, but also:
+
+- build systems;
+- deployment;
+- configuration;
+- shutdown;
+- developer feedback;
+- extension lifecycle;
+- user/content compatibility;
+- operational tooling;
+- organizational trust boundaries.

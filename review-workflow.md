@@ -365,6 +365,23 @@ Escalate specialist-sensitive conclusions such as lock-free memory ordering, for
 
 ---
 
+## Representation review
+
+Load `principles/representation-design.md` when correctness, performance, compatibility, or evolvability is dominated by the shape of data/state rather than code organization.
+
+Ask:
+
+- Does the representation encode the real relationship/invariant directly?
+- Is state duplicated or reconstructed through conventions?
+- Are incidental external differences normalized without erasing needed semantics?
+- Is a human-facing representation being misused as a machine contract?
+- Is an internal runtime object leaking into durable storage or protocol form?
+- Can the representation be versioned, migrated, replayed, validated, and debugged?
+- Does a physical optimization remain behind a stable logical model?
+- Is provenance needed for automated transformations or decisions?
+
+Do not recommend representation changes from elegance alone; identify the operation/invariant they improve and the migration cost they create.
+
 ## Rewrite/refactoring strategy
 
 Load `principles/change-strategy.md` when the question is whether to leave, refactor, stage, coordinate, or replace a subsystem.

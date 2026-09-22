@@ -170,6 +170,11 @@ reversibility
 extension_safety
 coordination_cost
 user_impact
+end_to_end_latency
+throughput
+resource_efficiency
+overload_resilience
+performance_observability
 ```
 
 Do not produce a universal numeric score.
@@ -451,7 +456,8 @@ Choose checks that match the risk:
 - unit tests;
 - integration/contract tests;
 - build;
-- benchmark/profile;
+- benchmark/profile under a representative workload;
+- load/saturation or memory/trace verification when performance is material;
 - migration test;
 - compatibility test;
 - failure/recovery test;

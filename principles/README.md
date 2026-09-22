@@ -11,11 +11,14 @@ The following modules are based only on sources that have been read in full:
 - `complexity-placement.md`
 - `evolution-and-compatibility.md`
 - `evidence-driven-abstraction.md`
+- `performance-engineering.md`
 
 Primary completed sources:
 
 - *Software Engineering at Google*
 - *The Architecture of Open Source Applications, Volume 1*
+- *The Architecture of Open Source Applications, Volume 2*
+- *The Performance of Open Source Applications*
 
 ## Planned source-specific lenses still blocked
 

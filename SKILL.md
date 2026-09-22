@@ -90,6 +90,7 @@ Do not load every module for every task.
 - `principles/complexity-placement.md`
 - `principles/evolution-and-compatibility.md`
 - `principles/evidence-driven-abstraction.md`
+- `principles/performance-engineering.md`
 
 ### References
 
@@ -173,12 +174,13 @@ Use or consult:
 - distributed semantics → `domains/distributed-systems.md`;
 - concurrency semantics → `domains/concurrency.md`;
 - API/protocol compatibility → `domains/api-design.md`;
-- test fidelity/strategy → `domains/testing.md`.
+- test fidelity/strategy → `domains/testing.md`;
+- performance trade-off/evidence quality → `principles/performance-engineering.md`.
 
 Require deeper specialist review when correctness depends on:
 
 - cryptography/authentication/authorization;
-- unmeasured performance claims;
+- low-level or unmeasured performance claims after the performance lens identifies a material concern;
 - database-engine isolation/durability behavior;
 - consensus/quorum/replication guarantees;
 - memory ordering/lock-free synchronization;

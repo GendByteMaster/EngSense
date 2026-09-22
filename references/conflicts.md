@@ -37,6 +37,11 @@ For each pair, ask which side dominates under the current context.
 | Reuse external dependency | Build locally | mature ecosystem; strong fit; reduced maintenance | poor fit; unstable provider; dependency/fork lifecycle cost dominates |
 | Historical consistency | Modern/local improvement | uniformity/tooling benefit; migration expensive | old rationale obsolete; improvement material; mixed state safe |
 | Immediate optimization | Measure first | only when a known invariant requires it | normal case: bottleneck uncertain, optimization adds complexity |
+| Maximum parallelism | Bounded concurrency/overload control | independent work; spare resource headroom; low coordination cost | scarce shared resource; queue growth; fairness or collapse risk |
+| Zero-copy/in-place | Copy/lifetime simplicity | copy cost is measured and ownership/lifetime is controlled | retained backing storage; simpler ownership; locality or release of large allocations dominates |
+| Throughput/batching | Latency/freshness | amortization and sustained throughput dominate | tail latency, immediate visibility, or queue pressure dominates |
+| Generic path | Bounded specialization | common semantics and maintenance simplicity dominate | measured stable hotspot; explicit eligibility; fallback remains correct |
+| Aggressive cache reuse | Freshness/failover | repeated expensive work; stable validity; bounded resource use | invalidation, stale routing/data, memory pressure, or availability semantics dominate |
 | Simplicity now | Future scalability | expected growth near ceiling; migration expensive/slow | current scale far below ceiling; simpler design is cheap to replace |
 | Security/control | Product/incentive redesign | adversarial incentives unavoidable; harm high | product design can credibly eliminate/reduce incentive/attack surface |
 

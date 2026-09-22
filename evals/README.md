@@ -103,6 +103,10 @@ It does not judge model quality. Behavioral scoring will be added separately.
 18. Complexity displacement from a shared invariant into callers
 19. Large multi-responsibility function
 20. Stable duplicated invariant abstraction opportunity
+21. Benchmark driver saturation / measurement validity
+22. Aggregate performance score hides a critical workload regression
+23. Network round-trip dominated latency vs local CPU rewrite
+24. Zero-copy backing-buffer retention
 
 The suite intentionally includes:
 

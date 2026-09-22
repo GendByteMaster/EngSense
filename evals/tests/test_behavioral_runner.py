@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import sys
 import unittest
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[2]
 MODULE_PATH = ROOT / "evals" / "run_behavioral.py"
@@ -149,6 +150,28 @@ class BehavioralRunnerTests(unittest.TestCase):
     def test_parse_json_text_requires_object(self) -> None:
         with self.assertRaises(run_behavioral.EvalError):
             run_behavioral.parse_json_text(json.dumps(["not", "an", "object"]))
+
+    def test_codex_provider_requires_installed_cli(self) -> None:
+        with mock.patch.object(run_behavioral.shutil, "which", return_value=None):
+            with self.assertRaises(run_behavioral.EvalError):
+                run_behavioral.CodexProvider("gpt-5.6-luna", "xhigh", 30)
+
+    def test_codex_provider_rejects_unknown_effort(self) -> None:
+        with mock.patch.object(run_behavioral.shutil, "which", return_value="/usr/bin/codex"):
+            with self.assertRaises(run_behavioral.EvalError):
+                run_behavioral.CodexProvider("gpt-5.6-luna", "impossible", 30)
+
+    def test_make_provider_supports_codex_without_api_key(self) -> None:
+        with mock.patch.object(run_behavioral.shutil, "which", return_value="/usr/bin/codex"):
+            provider = run_behavioral.make_provider(
+                "codex",
+                None,
+                "gpt-5.6-luna",
+                "xhigh",
+                30,
+                1000,
+            )
+        self.assertIsInstance(provider, run_behavioral.CodexProvider)
 
 
 if __name__ == "__main__":

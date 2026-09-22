@@ -1,0 +1,55 @@
+{
+  "id": "public-api-observable-compatibility",
+  "title": "Undocumented observable behavior in a public API",
+  "mode": "architecture",
+  "task": "Review a refactor that changes the deterministic order of items returned by a public API even though the order was never documented.",
+  "context": [
+    "The endpoint has external consumers.",
+    "The implementation has returned stable creation-order results for years.",
+    "The formal API documentation does not guarantee ordering.",
+    "The refactor switches to a hash-based collection and makes order unstable.",
+    "No downstream compatibility survey has been performed."
+  ],
+  "evidence": [
+    "Historical integration tests snapshot the existing order.",
+    "Support examples and client code display items directly without sorting.",
+    "The new implementation changes only ordering, not item membership."
+  ],
+  "snippet": "return list(items_by_id.values())  # new hash-derived iteration order",
+  "tempting_wrong_recommendation": [
+    "Declare the refactor safe because ordering is undocumented.",
+    "Treat the difference as a private implementation detail.",
+    "Require compatibility forever without investigating consumer dependence."
+  ],
+  "expected_decision_properties": [
+    "Treat stable observable behavior as a compatibility risk even if undocumented.",
+    "Investigate consumers before deciding whether order can change.",
+    "Prefer preserving order or introducing an explicit/versioned change if consumer dependence is plausible.",
+    "Do not claim undocumented behavior must always remain frozen forever."
+  ],
+  "unacceptable_reasoning": [
+    "Undocumented means nobody can depend on it.",
+    "Implementation details can never be compatibility constraints.",
+    "Any observable historical behavior is permanently immutable."
+  ],
+  "expected_quality_dimensions": [
+    "compatibility",
+    "evolvability",
+    "surface_inertia",
+    "migration_cost"
+  ],
+  "expected_tradeoffs": [
+    "implementation freedom vs observable compatibility",
+    "cleanup simplicity vs consumer migration cost"
+  ],
+  "expected_authority": "strong_recommendation",
+  "verification_expectations": [
+    "Inspect real callers/integration tests for ordering dependence.",
+    "Add an explicit ordering compatibility test if preserving behavior.",
+    "If changing behavior, define migration/versioning/release notes appropriate to the consumer scope."
+  ],
+  "revisit_when": [
+    "Consumer evidence shows ordering is unused.",
+    "A new API version explicitly defines different ordering semantics."
+  ]
+}

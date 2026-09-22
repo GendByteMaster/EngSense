@@ -123,10 +123,10 @@ The eval folder remains lightweight development evidence. A model-execution plat
 - [x] Project purpose and non-goals are documented.
 - [x] Contribution boundaries are documented.
 - [x] Research status is visible.
-- [ ] License selected and added if public redistribution is intended.
-- [ ] Repository topics/description reviewed.
+- [x] MIT license is present in `LICENSE`.
+- [x] Repository description reviewed; topic tuning remains optional.
 - [ ] Broken internal documentation links checked.
-- [ ] Stale roadmap claims removed.
+- [x] Stale research/integration and license claims removed.
 - [ ] Final spelling/terminology pass completed.
 
 ## 10. Final Skill behavior review

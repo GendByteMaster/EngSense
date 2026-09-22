@@ -46,13 +46,15 @@ For mechanical formatting, syntax, simple renames, obvious lint fixes, or determ
 
 EngSense does not replace specialist review.
 
-If a decision materially depends on any of the following, preserve the relevant invariants and load or request specialized guidance:
+If a decision materially depends on any of the following, preserve the relevant invariants and load the matching EngSense domain module where available, then request deeper specialized guidance when correctness depends on specialist semantics:
 
 - cryptography, authentication, authorization, or security boundaries;
 - performance claims that require profiling/benchmarking;
-- database transactions, durability, or migration correctness;
-- distributed-system semantics such as retries, idempotency, consistency, ordering, deduplication, or quorum behavior;
-- concurrency memory ordering, synchronization, atomicity, or happens-before;
+- database transactions, durability, or migration correctness → `domains/persistence.md`;
+- distributed-system semantics such as retries, idempotency, consistency, ordering, deduplication, or quorum behavior → `domains/distributed-systems.md`;
+- concurrency memory ordering, synchronization, atomicity, or happens-before → `domains/concurrency.md`;
+- API/protocol compatibility → `domains/api-design.md`;
+- test strategy/fidelity → `domains/testing.md`;
 - UI/UX-specific design;
 - legal/compliance requirements.
 
@@ -80,7 +82,17 @@ Current language modules:
 - `languages/typescript.md`
 - `languages/python.md`
 
-Future domain/lens modules should be loaded only when relevant.
+Current domain modules:
+
+- `domains/api-design.md`
+- `domains/testing.md`
+- `domains/concurrency.md`
+- `domains/persistence.md`
+- `domains/distributed-systems.md`
+
+Load them only when the task crosses the corresponding boundary.
+
+Future lens modules should be loaded only when relevant.
 
 ## Context first
 

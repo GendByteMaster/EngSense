@@ -1,0 +1,48 @@
+{
+  "id": "coordinated-cross-cutting-migration",
+  "title": "Cross-cutting representation change is safer as a coordinated transition",
+  "mode": "architecture",
+  "task": "Review a proposal to migrate a tightly coupled in-memory representation one field at a time over many releases.",
+  "context": [
+    "Hundreds of internal types depend on the old representation.",
+    "Supporting both representations simultaneously would require conversion at most boundaries.",
+    "No external/public compatibility surface depends on the internal representation.",
+    "A maintenance window, full regression suite, and rollback artifact are available."
+  ],
+  "evidence": [
+    "A prototype mixed-mode migration doubles conversion code and creates ambiguous ownership.",
+    "The repository can update all affected internal consumers atomically.",
+    "The new representation can be verified against existing fixtures before deployment."
+  ],
+  "tempting_wrong_recommendation": [
+    "Force a tiny-step migration because incremental refactoring is always safer.",
+    "Maintain old and new representations indefinitely to minimize change size."
+  ],
+  "expected_decision_properties": [
+    "Recognize that mixed-mode coexistence can be riskier than one coordinated internal transition.",
+    "Allow a coordinated change when the representation is internal, consumers can move atomically, and verification/rollback are strong.",
+    "Require explicit blast-radius review and rollback rather than treating the big change as inherently safe.",
+    "Avoid generalizing this strategy to public or independently deployed consumers."
+  ],
+  "unacceptable_reasoning": [
+    "Large changes are always unsafe.",
+    "Incremental migrations are always lower risk.",
+    "Internal atomic migration logic can be applied unchanged to public protocols."
+  ],
+  "expected_quality_dimensions": [
+    "migration_cost",
+    "maintainability",
+    "reversibility",
+    "correctness"
+  ],
+  "expected_tradeoffs": [
+    "small-step change size vs mixed-mode complexity",
+    "coordinated blast radius vs long-lived conversion seams"
+  ],
+  "expected_authority": "guidance",
+  "verification_expectations": [
+    "Run the full regression suite on the coordinated representation change.",
+    "Verify rollback artifact/procedure.",
+    "Confirm no external consumers depend on the internal representation."
+  ]
+}

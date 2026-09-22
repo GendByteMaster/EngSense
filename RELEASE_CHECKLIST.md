@@ -125,7 +125,7 @@ The eval folder remains lightweight development evidence. A model-execution plat
 - [x] Research status is visible.
 - [x] MIT license is present in `LICENSE`.
 - [x] Repository description reviewed; topic tuning remains optional.
-- [ ] Broken internal documentation links checked.
+- [x] Internal Markdown links in README/release/contribution/usage/installation/example docs checked against the repository tree.
 - [x] Stale research/integration and license claims removed.
 - [ ] Final spelling/terminology pass completed.
 

@@ -79,7 +79,7 @@ The validator checks:
 - required non-empty string lists;
 - optional list/string field shapes.
 
-It does not judge model quality. Behavioral scoring will be added separately.
+Structural validation does not judge model quality. Behavioral scoring is handled separately by `evals/run_behavioral.py`.
 
 ## Current cases
 
@@ -124,3 +124,118 @@ The suite intentionally includes:
 - specialist-boundary cases;
 - compatibility risks;
 - conflicting-principle scenarios.
+
+
+## Behavioral runner
+
+The behavioral runner executes each selected fixture against:
+
+1. a **target** model/agent that receives the EngSense context plus only the visible scenario fields; and
+2. a separate **judge** that receives the hidden rubric and the target response.
+
+The target never receives:
+
+- `expected_decision_properties`;
+- `unacceptable_reasoning`;
+- `expected_authority`;
+- `verification_expectations`.
+
+The judge scores properties rather than wording. The runner computes the final pass/fail result from:
+
+- all expected decision properties being met;
+- no unacceptable reasoning materially driving the answer;
+- all required verification expectations being present;
+- authority/certainty matching the evidence;
+- specialist boundaries being respected.
+
+Expected quality dimensions are recorded for diagnostics but are not an independent hard pass gate.
+
+### Context modes
+
+`--context-mode auto` is the default.
+
+It loads the EngSense core plus language/domain/principle modules selected from deterministic scenario signals.
+
+Other modes:
+
+- `core` — root Skill + decision framework + review workflow + conflict matrix;
+- `all` — all implemented language/domain/principle modules;
+- `none` — scenario only, useful as a no-skill baseline.
+
+The report records the exact context files loaded for every case.
+
+### Command providers
+
+Both target and judge can be arbitrary commands that read the prompt from standard input and write their response to standard output.
+
+Example environment:
+
+```bash
+export ENGSENSE_EVAL_TARGET_PROVIDER=command
+export ENGSENSE_EVAL_TARGET_CMD='your-agent-command'
+export ENGSENSE_EVAL_JUDGE_PROVIDER=command
+export ENGSENSE_EVAL_JUDGE_CMD='your-judge-command'
+
+python evals/run_behavioral.py --case premature-interface --fail-on-eval-failure
+```
+
+The judge command also receives the required JSON Schema through the `ENGSENSE_EVAL_JSON_SCHEMA` environment variable.
+
+`{case_id}` inside a command argument is replaced with the current fixture id.
+
+### OpenAI Responses API provider
+
+The runner also has a dependency-free OpenAI Responses API adapter.
+
+Set `OPENAI_API_KEY` and pass model ids explicitly:
+
+```bash
+python evals/run_behavioral.py \
+  --target-provider openai \
+  --target-model <target-model> \
+  --judge-provider openai \
+  --judge-model <judge-model> \
+  --case premature-interface \
+  --fail-on-eval-failure
+```
+
+The runner does not hardcode model ids.
+
+For judge calls it requests structured JSON output using the per-case judgment schema.
+
+Responses are sent with storage disabled.
+
+### Reports
+
+By default, results are written to:
+
+```text
+evals/out/behavioral-results.json
+evals/out/behavioral-results.md
+```
+
+The output directory is ignored by Git.
+
+The JSON report preserves:
+
+- target response;
+- judge result;
+- component-level pass/fail;
+- loaded context files;
+- provider/model or command metadata;
+- aggregate counts.
+
+### CI policy
+
+Normal pull-request CI runs:
+
+```bash
+python evals/validate.py
+python -m unittest discover -s evals/tests -p 'test_*.py'
+```
+
+It deliberately does **not** call paid/external models.
+
+Full behavioral runs are explicit/manual so that cost, model choice, secrets, and nondeterminism remain visible.
+
+A manual GitHub Actions workflow is available at `.github/workflows/behavioral-evals.yml`. It requires an `OPENAI_API_KEY` repository secret and explicit target/judge model ids; its default case is a single fixture so that a dispatch does not accidentally spend a full-suite budget.

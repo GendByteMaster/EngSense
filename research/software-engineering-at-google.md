@@ -36,11 +36,11 @@ No source is treated as absolute authority.
 - [x] Chapter 13 — Test Doubles
 - [x] Chapter 14 — Larger Testing
 - [x] Chapter 15 — Deprecation
-- [ ] Chapter 16 — Version Control and Branch Management
-- [ ] Chapter 17 — Code Search
-- [ ] Chapter 18 — Build Systems and Build Philosophy
-- [ ] Chapter 19 — Critique: Google's Code Review Tool
-- [ ] Chapter 20 — Static Analysis
+- [x] Chapter 16 — Version Control and Branch Management
+- [x] Chapter 17 — Code Search
+- [x] Chapter 18 — Build Systems and Build Philosophy
+- [x] Chapter 19 — Critique: Google's Code Review Tool
+- [x] Chapter 20 — Static Analysis
 - [ ] Chapter 21 — Dependency Management
 - [ ] Chapter 22 — Large-Scale Changes
 - [ ] Chapter 23 — Continuous Integration
@@ -2139,4 +2139,673 @@ This is a major addition to the original EngSense quality model.
 8. A migration removes old usage but tooling still permits new dependencies.
 9. Test duplication is removed into a helper that hides each scenario's essential inputs.
 10. A large production-like test is replaced by a smaller test that loses the only coverage of an emergent failure mode.
+
+
+
+---
+
+# Chapter 16 — Version Control and Branch Management
+
+## Source scope
+
+This chapter treats version control not merely as storage or undo, but as a core mechanism for coordinating code across **time, people, and parallel work**.
+
+Its strongest policy claims concern:
+
+- a clear Source of Truth;
+- minimizing ambiguity about where changes land;
+- avoiding long-lived development branches by default;
+- reducing version choice;
+- using tests/CI instead of branch isolation as the primary stability mechanism.
+
+## Source-derived principles
+
+### 1. Version control makes time explicit
+
+A filesystem maps:
+
+```text
+filename → contents
+```
+
+while version control effectively maps:
+
+```text
+filename + time + branch → contents
+```
+
+For long-lived software, provenance, history, sequencing, atomic changes, and auditability are engineering properties, not administrative extras.
+
+### 2. Source of Truth reduces coordination complexity
+
+Distributed VCS technology does not inherently define one authoritative repository or branch, so policy must.
+
+The key scaling property is not "centralized VCS is always better"; it is:
+
+> contributors should not be uncertain about where the authoritative state lives.
+
+### 3. Branch technology is not the same as branch policy
+
+Branches are not intrinsically harmful.
+
+The problematic case is long-lived development divergence that must later be reconciled.
+
+Release branches can be reasonable because their lifecycle differs: they often represent a deployed state and are eventually abandoned rather than merged back indefinitely.
+
+### 4. Long-lived dev branches shift risk later
+
+Using development branches to preserve trunk stability delays integration.
+
+The eventual merge still happens, but now:
+
+- more unrelated changes interact;
+- regressions are harder to attribute;
+- retesting grows;
+- coordination cost increases.
+
+The source prefers trunk-based development backed by tests, CI, code review, and runtime feature controls.
+
+### 5. Choice can itself be a systems cost
+
+Google's One-Version policy intentionally removes choices such as:
+
+- which version of an internal dependency to use;
+- where to commit authoritative changes.
+
+The source argues that removing these choices can reduce aggregate organizational complexity.
+
+### 6. Temporal compatibility is expensive
+
+Supporting multiple versions across time creates a distinct dependency problem.
+
+Promises such as old-client/new-server compatibility should not be made casually because time-version skew compounds maintenance cost.
+
+### 7. Monorepo is an implementation choice, not the core invariant
+
+The chapter explicitly allows virtual/federated approaches when privacy, security, legal, or scale constraints make a literal monorepo unsuitable.
+
+The stronger concept is a coherent source/dependency model with clear ordering and policy.
+
+## EngSense interpretation
+
+Candidate context signals:
+
+```text
+source_of_truth_clarity
+branch_lifetime
+integration_delay
+version_choice_count
+temporal_compatibility_window
+release_model
+repo_topology
+cross_repo_dependency_density
+```
+
+Candidate rules:
+
+- flag ambiguous Source of Truth as a coordination risk;
+- treat long-lived divergence as deferred integration cost;
+- distinguish release branches from development branches by expected lifecycle;
+- do not recommend a monorepo as a universal rule;
+- evaluate version multiplicity as an explicit complexity cost;
+- prefer trunk-style workflows only when testing/CI and integration discipline can support them.
+
+## Conflict candidates
+
+- branch isolation vs early integration;
+- flexibility of multiple versions vs ecosystem simplicity;
+- monorepo coherence vs privacy/security/scale isolation;
+- compatibility across time vs faster evolution.
+
+---
+
+# Chapter 17 — Code Search
+
+## Source scope
+
+This chapter is about **code discoverability at scale**.
+
+Code Search evolves from literal text search into a system for answering engineering questions:
+
+- where is this defined?
+- where is it used?
+- who changed it?
+- when?
+- what version was running?
+- what depends on it?
+
+## Source-derived principles
+
+### 1. Search quality affects engineering throughput
+
+Small knowledge gaps repeatedly interrupt larger tasks.
+
+Reducing the latency of "where?", "what?", "who?", and "when?" questions compounds across a large organization.
+
+### 2. Search should preserve historical context
+
+Links to exact source snapshots are important for:
+
+- incident debugging;
+- code review;
+- documentation;
+- archaeology;
+- postmortems.
+
+A link to current head can be misleading when debugging an older deployed binary.
+
+### 3. Centralized indexing can amortize repeated work
+
+At sufficient scale, per-developer local indexing duplicates enormous work.
+
+A shared index turns repeated local cost into shared infrastructure cost.
+
+This is explicitly scale-dependent; the chapter notes that a small project that fits comfortably in an IDE may not need such infrastructure.
+
+### 4. Search ranking and completeness are different product requirements
+
+Most interactive searches benefit from fast ranked results.
+
+Some tooling and migration workflows require exhaustive completeness.
+
+The system therefore supports both modes rather than forcing a single latency/completeness trade-off.
+
+### 5. Tooling affects code style indirectly
+
+A ubiquitous code browser encourages code that is easier to navigate:
+
+- shallower indirection;
+- named types;
+- discoverable symbols;
+- stable semantic references.
+
+This is a useful reminder that developer tools and code structure co-evolve.
+
+## EngSense interpretation
+
+Candidate quality dimensions:
+
+```text
+discoverability
+traceability
+historical_addressability
+navigation_cost
+search_completeness
+search_latency
+```
+
+Candidate rules:
+
+- consider discoverability when evaluating module/symbol structure in large codebases;
+- preserve version-specific references for incident/debugging workflows;
+- do not build organization-scale search infrastructure for a repository that does not justify it;
+- distinguish interactive search from exhaustive migration/audit search;
+- treat excessive indirection as a navigation cost when it materially harms code comprehension.
+
+## Important conflict candidate
+
+```text
+Abstraction depth
+vs
+Navigability/discoverability
+```
+
+This should later be compared directly against Ousterhout's deep-module argument.
+
+---
+
+# Chapter 18 — Build Systems and Build Philosophy
+
+## Source scope
+
+This chapter treats the build system as shared engineering infrastructure whose primary goals are:
+
+- **speed**;
+- **correctness/reproducibility**.
+
+It argues that at scale, unrestricted scripting flexibility prevents the build system from understanding enough about the dependency graph to safely optimize work.
+
+## Source-derived principles
+
+### 1. Build correctness means same inputs, same result
+
+A build should not silently depend on undeclared machine state.
+
+Reproducibility requires explicit inputs such as:
+
+- source;
+- tools;
+- toolchains;
+- dependencies;
+- relevant environment.
+
+### 2. Excess flexibility can reduce system power
+
+Task-based build systems let users express arbitrary actions.
+
+Artifact/declarative systems intentionally restrict that freedom so the system can reason about:
+
+- dependencies;
+- incremental rebuilds;
+- parallelism;
+- caching;
+- remote execution;
+- correctness.
+
+This is a strong example where **less user flexibility produces more global capability**.
+
+### 3. Hermeticity enables reuse
+
+If actions can read undeclared files, depend on local tool versions, or access arbitrary network state, cached results become less trustworthy.
+
+Sandboxing and explicit dependencies make distributed caching/execution practical.
+
+### 4. Tools are dependencies too
+
+Compilers and toolchains affect outputs just as source dependencies do.
+
+Treating tools as declared inputs reduces machine-specific build behavior.
+
+### 5. External dependencies must be deterministic
+
+Depending on mutable remote state can cause:
+
+- unreproducible builds;
+- hidden breakage;
+- supply-chain risk.
+
+The chapter strongly prefers explicit versions over "latest".
+
+### 6. Fine-grained modules improve incremental execution
+
+Smaller build targets increase scheduling and caching flexibility.
+
+However, they also increase dependency declaration/maintenance cost.
+
+Google offsets this cost with tooling.
+
+### 7. Visibility constrains coupling
+
+Build-level visibility rules can reinforce intended architecture boundaries and prevent accidental dependencies.
+
+### 8. Transitive dependencies can become accidental public contracts
+
+If target A uses C only because B depends on C, removing B→C can unexpectedly break A.
+
+Strict direct-dependency declaration avoids hidden coupling.
+
+## EngSense interpretation
+
+Candidate quality dimensions:
+
+```text
+build_reproducibility
+dependency_explicitness
+build_latency
+cacheability
+execution_parallelism
+environment_hermeticity
+dependency_visibility
+supply_chain_exposure
+```
+
+Candidate rules:
+
+- treat undeclared build inputs as hidden coupling;
+- prefer reproducibility over ad hoc local convenience for long-lived/shared builds;
+- recognize that restricting extension points can improve platform-level guarantees;
+- do not recommend fine-grained build targets without considering maintenance/tooling cost;
+- treat accidental transitive dependencies as architecture leakage;
+- prefer explicit dependency/version declarations where reproducibility matters.
+
+## Strong conflict candidates
+
+- flexibility vs analyzability;
+- coarse modules vs incremental build performance;
+- local convenience vs reproducibility;
+- transitive convenience vs explicit dependency ownership.
+
+---
+
+# Chapter 19 — Critique: Google's Code Review Tool
+
+## Source scope
+
+This chapter is less about review philosophy itself and more about **tooling design that makes the desired review process efficient**.
+
+Its strongest themes are:
+
+- focus;
+- workflow integration;
+- diff comprehension;
+- automation before human review;
+- actionable feedback;
+- lightweight approval state;
+- traceable review history.
+
+## Source-derived principles
+
+### 1. A tool should preserve its core purpose
+
+Critique integrates with search, editing, tests, static analysis, releases, and coverage, but does not attempt to become one giant "Code Central" interface.
+
+Links and integration are preferred over absorbing every neighboring workflow.
+
+### 2. Diff quality directly affects review quality
+
+Useful review tooling reduces visual noise and helps reviewers distinguish:
+
+- moved code;
+- changed code;
+- whitespace-only changes;
+- character-level edits.
+
+Review cost is partly a presentation problem.
+
+### 3. Automation should run before expensive human attention
+
+Static analyzers and presubmits surface issues before or during review, allowing reviewers to spend attention on semantic judgment.
+
+### 4. Local invariants can be enforced in workflow
+
+Project-specific presubmits can encode repository-specific requirements without pretending those requirements are universal.
+
+### 5. Negative review feedback should be actionable
+
+Critique's model avoids an unexplained global "thumbs down".
+
+Blocking concerns are attached to specific unresolved comments.
+
+This is highly relevant to AI review.
+
+### 6. Approval and correctness concerns are separate concepts
+
+The tool distinguishes:
+
+- LGTM;
+- gatekeeper approval;
+- unresolved concerns.
+
+This creates a richer state model than a single pass/fail score.
+
+### 7. Review history is future engineering evidence
+
+Historical comments and snapshots support:
+
+- auditing;
+- archaeology;
+- understanding why a change was made;
+- learning from past engineering decisions.
+
+### 8. Integration depth should be selective
+
+The tool embeds information when it directly improves the core review task and links out when embedding would create distraction.
+
+## EngSense interpretation
+
+Candidate review model:
+
+```text
+automated findings
++
+semantic review findings
++
+approval state
++
+unresolved concerns
++
+decision history
+```
+
+Candidate rules:
+
+- do not collapse review into one scalar score;
+- every blocking AI finding should be tied to a concrete issue and remediation path;
+- preserve optional/informational findings separately from blocking concerns;
+- use automation to reduce reviewer cognitive load;
+- preserve change rationale/history when it may help future maintenance.
+
+## Product-design implication
+
+EngSense itself should avoid becoming a giant all-in-one developer platform.
+
+The Skill should expose focused outputs and integrate with existing tools rather than duplicating formatter, linter, test runner, VCS, and static-analysis responsibilities.
+
+---
+
+# Chapter 20 — Static Analysis
+
+## Source scope
+
+This chapter studies how static analysis becomes useful at scale.
+
+The focus is not only analysis sophistication; usability, false positives, workflow integration, actionability, and feedback loops are treated as equally important.
+
+## Source-derived principles
+
+### 1. A technically correct warning can still be effectively false positive
+
+If a developer:
+
+- does not understand it;
+- cannot act on it;
+- judges it irrelevant;
+- repeatedly sees noise;
+
+the warning fails operationally even if the analysis is technically defensible.
+
+### 2. Signal quality matters more than finding volume
+
+Google explicitly optimizes for low effective false-positive rates and significant impact.
+
+The chapter's Tricorder criteria include:
+
+- understandable;
+- actionable;
+- easy to fix;
+- very low effective false-positive rate;
+- meaningful code-quality impact.
+
+### 3. Focus on newly introduced problems
+
+Highlighting all historical debt on every change overwhelms developers and charges current work for unrelated legacy problems.
+
+New/modified code is usually the highest-leverage place to surface ordinary findings.
+
+Some severe/security issues justify whole-codebase treatment.
+
+### 4. Anything mechanical should be automated
+
+If a fix is deterministic, the system should preferably apply or suggest the fix automatically rather than consume repeated human attention.
+
+Style issues are particularly suitable for automatic formatting/fixes.
+
+### 5. Put feedback where context already exists
+
+Code review is a strong integration point because developers are already thinking about the change.
+
+Static analysis can then reduce human review workload rather than creating a separate triage workflow.
+
+### 6. Analysis rules need feedback loops
+
+High "not useful" rates are evidence that:
+
+- the rule is wrong;
+- the message is unclear;
+- context detection is poor;
+- or the signal is too weak.
+
+Rules should be tuned or removed.
+
+### 7. Project-level configuration preserves shared expectations
+
+Google prefers project-level customization over personal suppression for many analyses so a team shares one view of what counts as a problem.
+
+### 8. Blocking checks require a higher evidence bar
+
+Compiler/gating checks should have effectively no false positives, be actionable, and focus on correctness-level issues.
+
+Not every useful recommendation belongs in a hard gate.
+
+## EngSense interpretation
+
+This chapter should strongly influence the Skill's finding policy.
+
+Candidate finding acceptance gate:
+
+```text
+A finding should normally be emitted only if it is:
+- understandable;
+- actionable;
+- relevant to the requested scope;
+- backed by evidence;
+- materially connected to a quality dimension or invariant;
+- high enough confidence to justify user attention.
+```
+
+Candidate severity/authority mapping:
+
+```text
+hard block
+  → near-zero ambiguity / invariant or correctness violation
+
+strong recommendation
+  → high-confidence quality issue
+
+guidance
+  → contextual improvement with trade-off
+
+note
+  → informational, non-blocking
+```
+
+Candidate anti-rules:
+
+- do not flood the user with legacy issues unrelated to the requested change;
+- do not emit stylistic findings that a formatter/linter should own;
+- do not retain a rule merely because it exists;
+- do not make warnings user-specific when the underlying invariant is project-wide.
+
+## Major implication for EngSense evals
+
+We must evaluate **precision**, not just recall.
+
+A Skill that finds 20 real issues plus 30 low-value/preference findings can be worse than one that reports 8 high-confidence actionable findings.
+
+Candidate eval metrics should therefore include:
+
+```text
+effective_false_positive_rate
+actionability
+finding_relevance
+duplicate_finding_rate
+preference_noise_rate
+missed_high_severity_issue_rate
+```
+
+---
+
+# Chapters 16–20 — Cross-chapter extraction
+
+## 1. Explicitness repeatedly enables scale
+
+Across version control, build systems, review tooling, and static analysis, the source repeatedly favors making important structure explicit:
+
+```text
+source of truth
+dependencies
+versions
+ownership
+approval state
+invariants
+analysis results
+```
+
+This allows automation to reason about the system.
+
+## 2. Restriction can be an enabling capability
+
+Several chapters challenge the assumption that more flexibility is always better.
+
+Examples:
+
+- One-Version removes dependency choice;
+- artifact-based build systems restrict arbitrary scripting;
+- strict dependencies forbid accidental transitive access;
+- hard compiler checks permit only near-zero-noise rules.
+
+A useful EngSense question is therefore:
+
+> Does this flexibility create real user value, or does it merely prevent the system from enforcing stronger guarantees?
+
+## 3. Human attention is a scarce engineering resource
+
+Review tooling and static analysis explicitly optimize for avoiding wasted attention.
+
+EngSense should do the same.
+
+This reinforces:
+
+- high-precision findings;
+- progressive disclosure;
+- automation of mechanical checks;
+- contextual routing;
+- suppression of preference-only noise.
+
+## 4. Provenance is a quality property
+
+Version history, exact source snapshots, review discussions, build inputs, and static-analysis context all preserve evidence about how software reached its current state.
+
+Candidate quality dimension:
+
+```text
+provenance_quality
+```
+
+## 5. Tooling and architecture shape each other
+
+Code Search encourages discoverable symbols.
+Build systems reward explicit dependency graphs.
+Static analysis can encode rules.
+Review systems shape feedback culture.
+
+Therefore EngSense should not evaluate source code in isolation when tooling constraints materially shape the design.
+
+## 6. Hard rules need a higher confidence threshold than guidance
+
+This is now strongly supported across Chapters 8 and 20.
+
+Candidate authority model:
+
+```text
+invariant / hard gate
+    very high confidence + low ambiguity
+
+rule
+    strong scoped evidence
+
+guidance
+    contextual recommendation
+
+heuristic
+    useful but defeasible
+
+preference
+    normally suppress
+```
+
+## New eval candidates
+
+1. A project uses two authoritative branches and engineers are unsure where a fix belongs.
+2. A long-lived feature branch is used as the main stability mechanism despite strong CI.
+3. A monorepo is proposed for repositories with incompatible security boundaries.
+4. A build depends on a globally installed compiler not declared in the build graph.
+5. A build downloads "latest" dependencies.
+6. A package depends on a transitive dependency it never declares directly.
+7. An AI reviewer emits an unexplained "needs work" verdict without actionable findings.
+8. An analyzer is technically correct but produces high user-dismissal rates.
+9. A linter-style issue consumes LLM review output even though an automatic formatter can fix it.
+10. A historical codebase has thousands of low-impact warnings and a new change is flooded with unrelated debt.
+11. A review UI embeds every neighboring tool and loses focus.
+12. A deep abstraction hierarchy makes symbol discovery materially expensive in a large codebase.
 

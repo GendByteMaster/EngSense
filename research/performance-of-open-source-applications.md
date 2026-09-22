@@ -5,7 +5,7 @@ Editor: Tavish Armstrong
 Official online edition: https://aosabook.org/en/  
 License: Creative Commons Attribution 3.0 Unported
 
-Research status: **IN PROGRESS**
+Research status: **COMPLETE — official POSA edition reviewed in full**
 
 This is a supplemental source for EngSense. It does not replace the mandatory commercial corpus in Issue #2.
 
@@ -26,8 +26,8 @@ POSA is particularly valuable for the unfinished EngSense performance lens becau
 - [x] Chapter 8 — Talos
 - [x] Chapter 9 — Zotonic
 - [x] Chapter 10 — Secrets of Mobile Network Performance
-- [ ] Chapter 11 — Warp
-- [ ] Chapter 12 — Working with Big Data in Bioinformatics
+- [x] Chapter 11 — Warp
+- [x] Chapter 12 — Working with Big Data in Bioinformatics
 
 ---
 
@@ -1741,3 +1741,963 @@ EngSense should not classify an entire product as "rewrite" or "refactor" when d
 14. Mobile API optimization reduces payload CPU cost while leaving several 100ms RTT protocol turns unchanged.
 15. TCP Fast Open-like optimization is enabled for non-idempotent operations without replay analysis.
 16. Very short DNS TTL is recommended for failover without pricing the mobile-latency cost.
+
+
+---
+
+# Chapter 11 — Warp
+
+## Source scope
+
+Warp is a high-performance HTTP server library written in Haskell and used beneath WAI applications such as Yesod and mighty.
+
+The chapter explains performance across several layers:
+
+- concurrency architecture;
+- GHC user threads and the runtime I/O manager;
+- benchmark methodology;
+- system-call count;
+- specialization and recalculation avoidance;
+- lock avoidance;
+- request parsing and ByteString representation;
+- streaming/resource management through conduit;
+- Slowloris protection;
+- response composition;
+- timeout/file-descriptor caching;
+- pinned-buffer allocation;
+- thundering-herd behavior.
+
+## Source-derived observations
+
+### 1. Runtime concurrency semantics can change the architecture/performance trade-off
+
+Traditional native-thread servers provide simple blocking control flow but can pay high context-switch cost.
+
+Event-driven servers reduce that cost but push developers toward callback/non-blocking control flow.
+
+GHC user threads attempt to combine:
+
+- thread-like source-code clarity;
+- runtime-managed non-blocking I/O;
+- cheap scheduling;
+- multicore dispatch.
+
+The lesson is not "green threads are best." It is:
+
+the runtime may change which architectural trade-offs are actually expensive.
+
+### 2. Benchmark tooling can become the bottleneck
+
+The team abandoned httperf for multicore server measurements because the load generator itself could saturate first.
+
+A performance benchmark must be capable of generating the workload it claims to measure.
+
+### 3. Profile before specializing
+
+Profiling revealed that standard HTTP date formatting consumed a surprisingly large share of CPU.
+
+Warp then:
+
+- implemented a specialized formatter;
+- cached repeated same-second results.
+
+This is a strong sequence:
+
+measure
+→ find repeated expensive work
+→ specialize
+→ cache only where reuse is real.
+
+### 4. Count system calls in hot paths
+
+Using strace exposed avoidable fcntl calls and led to using accept4 on Linux.
+
+The optimization target was not an abstract algorithm; it was kernel-crossing frequency.
+
+### 5. Data structures should match wire semantics
+
+Warp uses ByteString rather than Haskell String for HTTP byte streams.
+
+This avoids paying for Unicode/list semantics that the protocol does not require.
+
+The source also uses ByteString slicing/splicing to avoid copies while relying on immutability for safety.
+
+### 6. Standard general-purpose parsing abstractions can be too expensive in a proven hot path
+
+The team deliberately uses a hand-written HTTP parser instead of higher-level parsing libraries because profiling/performance requirements justified it.
+
+This should not become a generic anti-library rule.
+
+The source context is a high-throughput HTTP parser whose input format and hot path are tightly constrained.
+
+### 7. Lazy work can be a performance feature when non-use is common
+
+Some path decoding work is deferred by Haskell laziness and therefore avoided if an application never asks for the decoded form.
+
+This is another form of work elimination.
+
+### 8. Resource safety can justify a stronger abstraction than the locally fastest primitive
+
+Lazy I/O provided excellent composability but non-deterministic resource finalization could exhaust file descriptors under load.
+
+Conduit was chosen because it preserved streaming/composition while providing deterministic resource handling.
+
+Performance engineering includes resource-lifecycle guarantees, not only throughput.
+
+### 9. Streaming prevents wasted work after downstream failure
+
+Warp/conduit can produce/compress chunks incrementally rather than constructing the whole response in advance.
+
+If the network fails, later work and allocations never occur.
+
+Streaming therefore improves:
+
+- memory bounds;
+- responsiveness;
+- failure efficiency.
+
+### 10. Security protections belong in the performance architecture
+
+Slowloris protection is integrated into stream/timeout handling with a low-cost activity update.
+
+The design treats connection-resource exhaustion as part of server architecture rather than an external afterthought.
+
+### 11. Benchmark at different concurrency levels
+
+Warp appeared strong under high concurrency but had a severe low-concurrency static-file problem.
+
+Packet inspection showed header/body were sent in separate packets.
+
+Changing send behavior produced a very large improvement in that benchmark.
+
+A single concurrency profile would have hidden the problem.
+
+### 12. A generic convenience can be too expensive when instantiated per connection
+
+The standard timeout abstraction spawned a user thread per timeout.
+
+Warp built a shared timeout manager instead.
+
+This is a recurring performance pattern:
+
+semantically convenient local object
+× huge population
+= architectural cost.
+
+### 13. Avoid reference-count/lifecycle designs that are fragile under abnormal termination
+
+For file-descriptor caching, the team explicitly worried that killed threads could fail to decrement reference counts and leak descriptors.
+
+They reused a timeout-style cleanup approach instead of relying on delicate per-user accounting.
+
+Failure behavior influenced the cache design.
+
+### 14. Internal runtime locks can appear only at higher core counts
+
+Pinned-byte-array allocation used a global runtime lock that could become limiting beyond a certain scale.
+
+This is a cross-layer lesson:
+
+application code can become constrained by runtime internals only after hardware parallelism crosses a threshold.
+
+### 15. High-level code and low-level specialization can coexist
+
+Warp relies heavily on high-level Haskell abstractions while selectively using:
+
+- hand-written parsing;
+- memcpy;
+- sendfile;
+- CAS-based structures;
+- runtime/event-log investigation.
+
+The architecture is not ideologically "high-level" or "low-level"; it uses both according to measured cost.
+
+## EngSense interpretation
+
+Candidate signals:
+
+runtime_thread_model
+benchmark_generator_capacity
+system_call_frequency
+hot_path_standard_function
+wire_representation
+copy_avoidance
+lazy_work_elimination
+deterministic_resource_lifecycle
+streaming_failure_efficiency
+connection_resource_attack
+concurrency_profile_variation
+per_connection_overhead
+abnormal_termination_cleanup
+runtime_internal_lock
+high_level_low_level_mix
+
+Candidate rules:
+
+- include runtime scheduler/I/O semantics when comparing concurrency architectures;
+- verify the benchmark generator is not the limiting resource;
+- inspect syscall frequency when kernel transitions are significant in a hot path;
+- specialize standard-library behavior only after profiling proves it material;
+- represent wire data using structures aligned with protocol semantics;
+- prefer deterministic resource handling when lazy/deferred lifetimes can exhaust scarce resources;
+- use streaming when it bounds memory and avoids wasted downstream work;
+- evaluate performance across multiple concurrency/load shapes;
+- identify per-connection/per-request abstractions whose small cost multiplies dramatically at scale;
+- make cache/cleanup designs robust to abnormal termination;
+- investigate runtime/library locks when multicore scaling stops unexpectedly;
+- allow low-level specialization inside a high-level architecture when evidence justifies the boundary.
+
+## Conflict candidates
+
+- native threads vs event-driven architecture vs runtime-managed user threads;
+- general parsing abstraction vs hand-optimized hot path;
+- lazy I/O composability vs deterministic resource finalization;
+- copy avoidance vs lifetime/retention complexity;
+- local timeout simplicity vs shared timeout-manager complexity;
+- high-level portability vs platform/runtime-specific optimization.
+
+---
+
+# Chapter 12 — Working with Big Data in Bioinformatics
+
+## Source scope
+
+This chapter studies performance and scalability work on khmer, a bioinformatics preprocessing toolkit for very large genomic-read datasets.
+
+The implementation combines:
+
+- a C++ performance-critical core;
+- Python-facing APIs/scripts;
+- sequential data pumping/parsing;
+- k-mer hashing;
+- Bloom-filter structures;
+- profiling/instrumentation;
+- multithreading/OpenMP experiments;
+- large-memory/NUMA considerations.
+
+The authors explicitly state that correctness and utility take precedence over performance, while performance/scalability remain necessary because data volume can reach terabytes.
+
+## Source-derived observations
+
+### 1. Language boundaries can separate hot-path implementation from user-facing productivity
+
+khmer keeps performance-critical infrastructure in C++ while exposing a Python package and scripts for easier manipulation.
+
+This is a real two-language architecture driven by different priorities rather than language uniformity.
+
+### 2. Data movement can dominate the design even when it is not the current bottleneck
+
+The data pump is built around sequential access and large amounts of storage-to-memory transfer.
+
+The chapter asks explicitly about:
+
+- prefetch/readahead;
+- asynchronous input;
+- bypassing OS caches;
+- unnecessary memory copies;
+- parser interface overhead.
+
+Even when profiling later showed k-mer counting dominating one workload, data movement still mattered for future scaling and multithreading.
+
+### 3. Understand the code before trusting profiler output blindly
+
+The authors first traced execution paths manually, then used profilers to quantify hypotheses.
+
+Manual review found:
+
+- redundant uppercase conversions;
+- line-by-line input;
+- repeated value copying.
+
+Profiling then confirmed some assumptions and disproved others.
+
+Performance work benefits from combining structural understanding with measurement.
+
+### 4. Instrumentation changes the system being measured
+
+The chapter quantifies noticeable runtime overhead from profiling instrumentation.
+
+Profiler data therefore needs an understanding of observer effect.
+
+External elapsed-time measurement was used to calibrate that distortion.
+
+### 5. Measure before blaming I/O
+
+Despite processing large datasets, one measured workload spent the dominant share in k-mer counting rather than storage I/O.
+
+The intuitive "big data means disk-bound" assumption was wrong for that configuration.
+
+### 6. Optimization strategy can prioritize portable algorithmic gains over fragile toolchain tricks
+
+The team avoided more aggressive compiler/profile-guided optimizations because:
+
+- portability mattered;
+- build complexity mattered;
+- users were not necessarily build-system experts;
+- algorithmic changes had broader architecture-independent benefit.
+
+Maximum benchmark speed was not the only goal.
+
+### 7. Optimize adjacent stages when today's bottleneck may move
+
+Even though k-mer counting dominated, the team redesigned input/parser components for:
+
+- thread safety;
+- fewer copies;
+- prefetching;
+- maintainability/extensibility.
+
+They anticipated that improving the current bottleneck could expose the next one.
+
+This is a measured form of bottleneck migration planning, not speculative optimization of everything.
+
+### 8. Readability can justify one remaining copy/buffer in a hot pipeline
+
+The chapter keeps an intermediate line buffer because removing it would make already-complex buffer/parser logic harder to understand.
+
+The authors leave open removing it later only if measurement shows the region matters enough.
+
+This is a direct performance-vs-maintainability trade-off.
+
+### 9. Tiny per-byte work matters at billions of iterations
+
+Redundant toupper calls in a hot sequence-processing path became material at data scale.
+
+A bitmask-based normalization produced a significant end-to-end speed improvement in the reported experiment.
+
+Micro-optimization is justified when the operation count is enormous and measured.
+
+### 10. Memory-access locality can dominate compute cost
+
+Bloom-filter updates touch many memory pages.
+
+Batching updates by hash table can improve cache utilization.
+
+The optimization targets memory locality rather than arithmetic.
+
+### 11. Parallelism has a saturation point
+
+The chapter explicitly warns that adding threads eventually stops helping when storage bandwidth or another shared resource saturates.
+
+Beyond that point, additional threads mostly add blocking/wait.
+
+This is Amdahl/resource-ceiling reasoning grounded in workload.
+
+### 12. Thread-safe and multithreaded are different properties
+
+The core was changed to support safe concurrent access without forcing one specific threading library or execution model.
+
+This preserves caller choice while making concurrency possible.
+
+### 13. Compatibility can justify a small repeated overhead
+
+To preserve existing interfaces, thread-safe APIs look up per-thread state rather than requiring disruptive new call signatures.
+
+The architecture accepts a small lookup/system-call cost for compatibility.
+
+### 14. NUMA makes memory placement part of algorithm performance
+
+Large-memory scientific applications may run on machines where memory access cost depends on physical locality.
+
+The prefetch buffer is partitioned so threads allocate/use memory near their execution context.
+
+Performance reasoning must sometimes include hardware topology.
+
+### 15. Shared structures limit scaling even when input work parallelizes
+
+Bloom-filter tables remain shared because duplicating them is impractical.
+
+That shared state creates contention and requires synchronization/atomicity strategies.
+
+Parallelism is constrained by the data representation itself.
+
+### 16. Correctness remains the top invariant
+
+The authors explicitly state that performance/scalability improvements yield precedence to correctness and utility.
+
+This is an important authority rule for EngSense's performance lens.
+
+## EngSense interpretation
+
+Candidate signals:
+
+hot_path_language_boundary
+sequential_data_volume
+prefetch_readahead
+memory_copy_count
+code_review_before_profile
+profiler_observer_effect
+bottleneck_assumption
+portable_algorithmic_gain
+bottleneck_migration
+readability_buffer_tradeoff
+iteration_multiplicity
+memory_locality
+parallel_saturation
+thread_safety_vs_threading
+compatibility_overhead
+numa_topology
+shared_structure_contention
+
+Candidate rules:
+
+- allow multi-language architecture when hot-path and user-productivity needs differ materially;
+- make data movement and memory copying explicit in large-data pipelines;
+- combine code-path understanding with profiler evidence rather than using either alone;
+- account for instrumentation overhead when interpreting measurements;
+- verify intuitive bottlenecks under the representative workload;
+- prefer portable algorithm/data-structure improvements when build/toolchain complexity would burden users;
+- anticipate bottleneck migration only around adjacent, evidenced constraints;
+- preserve comprehensibility in hot code until measurement justifies removing the simplification;
+- justify micro-optimization by iteration multiplicity and measured end-to-end effect;
+- inspect cache/locality behavior for memory-intensive algorithms;
+- identify the shared resource that defines the parallelism ceiling;
+- distinguish making a library thread-safe from choosing a threading model;
+- allow small compatibility overhead when it avoids a disproportionately risky interface break;
+- include NUMA/hardware topology when large-memory workloads make locality material;
+- keep correctness above performance optimizations.
+
+## Conflict candidates
+
+- one-language simplicity vs hot-path native implementation;
+- no-copy pipeline vs understandable parser structure;
+- maximum compiler tuning vs portability/build simplicity;
+- immediate bottleneck focus vs preparation for bottleneck migration;
+- API compatibility vs per-call thread-state overhead;
+- more threads vs storage/memory/shared-state saturation;
+- local arithmetic optimization vs memory-locality optimization.
+
+---
+
+# Full-book synthesis — The Performance of Open Source Applications
+
+## Status
+
+The official online POSA edition has now been reviewed through:
+
+- Introduction;
+- Chapters 1–12.
+
+Research status: **COMPLETE**.
+
+The synthesis below is EngSense interpretation across the volume. It does not imply that every chapter author endorses one universal performance methodology.
+
+## 1. Performance begins with metric semantics
+
+Across Chrome, Talos, Infinispan, Warp, mobile networking, khmer, and other chapters, a performance number only becomes useful when the engineer knows:
+
+- what operation/user outcome it represents;
+- where the measurement boundary is;
+- what workload generated it;
+- what hardware/network/topology was involved;
+- whether the benchmark itself saturated;
+- whether the result was correct.
+
+Candidate EngSense rule:
+
+> Do not issue a strong performance recommendation until the metric and workload are semantically defined.
+
+## 2. Evidence has scope
+
+POSA repeatedly distinguishes:
+
+- code review/hypothesis;
+- microbenchmark;
+- component benchmark;
+- end-to-end benchmark;
+- profiler result;
+- production/user observation.
+
+A 13% micro-operation improvement may matter enormously at billions of iterations.
+A micro-benchmark regression may be irrelevant when network latency dominates the user's experience.
+
+EngSense should label performance evidence by scope.
+
+## 3. Eliminate work before accelerating work
+
+Recurring examples include:
+
+- Chrome connection/cache reuse;
+- EtherCalc removing unnecessary server DOM rendering;
+- Ninja avoiding daemon complexity by making startup cheap;
+- Warp caching repeated date formatting and file metadata;
+- khmer removing redundant per-base normalization;
+- DAnCE moving stable work out of the critical deployment path.
+
+A useful optimization order is:
+
+remove
+→ reuse/cache
+→ precompute
+→ batch/coalesce
+→ specialize
+→ micro-optimize remaining hot work.
+
+This is a heuristic, not a mandatory sequence.
+
+## 4. Data movement deserves first-class analysis
+
+POSA repeatedly finds cost in:
+
+- network round trips;
+- serialization;
+- buffer copies;
+- process/thread message copying;
+- storage-to-memory movement;
+- cache-line/page behavior;
+- system calls.
+
+EngSense performance reviews should explicitly ask:
+
+- how many bytes move;
+- how many times they are copied;
+- which address/process/node boundaries are crossed;
+- how many protocol turns occur;
+- what serialization/deserialization is paid.
+
+## 5. Latency is often coordination distance
+
+Chrome and mobile networking show DNS/TCP/TLS/RTT effects.
+DAnCE shows serialized deployment coordination.
+Warp shows packetization/system-call behavior.
+EtherCalc moves computation to the browser to remove network turns.
+
+A high-level function may be fast while the system remains slow because coordination is distant or repeated.
+
+## 6. Throughput, latency, memory, fairness, power, durability, and correctness are different dimensions
+
+POSA contains direct examples where improving one dimension can hurt another:
+
+- batching: throughput vs latency;
+- async persistence: latency vs durability;
+- speculation: latency vs bandwidth/battery;
+- connection reuse/caching: speed vs freshness/resources;
+- zero-copy/in-place: CPU vs lifetime/memory;
+- concurrency: throughput vs fairness/overload;
+- compact representations: speed/memory vs complexity.
+
+Do not compress "performance" into a single scalar.
+
+## 7. Overload behavior is part of performance
+
+Zotonic deliberately bounds scarce operations.
+EtherCalc uses rate limiting for fairness.
+Infinispan must size thread pools/resources.
+Queues and parallelism eventually hit shared resource limits.
+
+Candidate rule:
+
+> Evaluate the system after saturation, not only below saturation.
+
+Important questions:
+
+- Is work queued, rejected, shed, retried, or amplified?
+- Is memory bounded?
+- Which tenant/request can monopolize scarce capacity?
+- Does latency grow without bound?
+
+## 8. Parallelism is an ownership and bottleneck problem
+
+DAnCE gains concurrency by splitting state/responsibility.
+Infinispan pays for locks, pools, network, GC.
+Zotonic limits expensive operations.
+khmer reaches storage/shared-table limits.
+Warp finds runtime/global-lock scaling thresholds.
+
+"Add threads" is weak advice.
+
+EngSense should identify:
+
+- independent work;
+- shared state;
+- synchronization;
+- shared bandwidth/resource;
+- expected saturation point.
+
+## 9. Specialization is legitimate when evidence is local and strong
+
+POSA contains many justified specialized paths:
+
+- Warp's date/header/parser behavior;
+- pugixml hot parser logic;
+- specialized Infinispan serializers;
+- small-vs-large message strategies;
+- platform/runtime-specific networking;
+- khmer bit-level normalization.
+
+Candidate guard:
+
+specialization is justified when:
+- the operation is measured hot;
+- the workload is stable enough;
+- correctness is preserved;
+- a fallback/general path remains where needed;
+- the maintenance cost is bounded.
+
+## 10. High-level abstractions need observable cost
+
+DAnCE warns about hidden allocation/copy behavior.
+Zotonic modified a third-party HTTP abstraction whose internal copying was too expensive.
+Warp bypassed general parser/header machinery in proven hot paths.
+khmer keeps an intermediate buffer because readability currently outweighs its unproven cost.
+
+EngSense should neither worship nor reject abstraction.
+
+Ask:
+
+- what work does it generate;
+- what data does it move;
+- what locks/syscalls/allocations does it hide;
+- is that cost material under the measured workload?
+
+## 11. Performance optimization moves complexity
+
+Examples:
+
+- in-place parsing → lifetime constraints;
+- custom allocator → lifetime assumptions;
+- speculative networking → wasted work/battery;
+- shared timeout manager → global coordination structure;
+- direct I/O → alignment/housekeeping;
+- lock-free techniques → implementation/debugging complexity;
+- client-side computation → client CPU/resource responsibility.
+
+Every performance recommendation should state where complexity moves.
+
+## 12. Memory performance is largely a lifetime/ownership problem
+
+MemShrink shows transitive retention.
+Zotonic shows zero-copy slices retaining huge binaries.
+pugixml uses arena-like allocation because lifetimes align.
+khmer confronts page/cache/NUMA locality.
+
+Memory review should include:
+
+- owner lifetime;
+- retained graph size;
+- allocator strategy;
+- locality;
+- backing-buffer retention;
+- GC interaction.
+
+## 13. Cache advice is incomplete without cache semantics
+
+Across Chrome, Zotonic, Warp, DNS, Infinispan, and Firefox memory/performance systems, caching requires answers for:
+
+- authority;
+- freshness;
+- invalidation;
+- capacity;
+- eviction/timeout;
+- failure/staleness behavior;
+- resource ownership.
+
+"Add a cache" is not a complete recommendation.
+
+## 14. The benchmark and profiler are systems too
+
+POSA shows:
+
+- load generators saturating;
+- instrumentation altering runtime;
+- aggregators destroying raw evidence;
+- sampling/warm-up affecting variance;
+- topology-insensitive tools mismeasuring distributed scale.
+
+EngSense should treat measurement infrastructure as part of the evidence chain, with its own failure modes.
+
+## 15. Preserve raw evidence and provenance for important regressions
+
+Talos is especially strong here.
+
+Aggregation-only data can make later root-cause analysis impossible.
+
+For important performance systems, preserve enough information to answer:
+
+- which workload changed;
+- when;
+- on which environment;
+- with what raw samples;
+- under which configuration.
+
+## 16. Performance regressions need lifecycle management
+
+MemShrink and Infinispan emphasize continuous tracking.
+Talos adds metric ownership/removal.
+Ninja and khmer show the value of fast correctness feedback while optimizing.
+
+Performance work should include:
+
+measure
+→ change
+→ verify correctness
+→ encode regression signal
+→ assign ownership
+→ revisit/remove stale metrics.
+
+## 17. Correctness and safety outrank performance
+
+pugixml preserves malformed-input memory safety.
+Infinispan benchmark results are invalid if cluster state is wrong.
+Mobile protocol shortcuts require idempotency analysis.
+khmer explicitly prioritizes correctness/utility.
+Warp integrates Slowloris protection and deterministic resource handling.
+
+This should be an EngSense hard gate:
+
+> Performance evidence does not justify violating correctness, security, durability, or other explicit invariants.
+
+## 18. Durability/reliability semantics must be stated when optimizing I/O
+
+Infinispan's synchronous/asynchronous persistence trade-off is explicit.
+Mobile caching affects failover behavior.
+Warp cleanup design accounts for abnormal termination.
+GC pauses can look like distributed failures.
+
+Performance review must route into specialist persistence/distributed/reliability reasoning when semantics change.
+
+## 19. Workload classes can require different strategies
+
+Examples across POSA include:
+
+- small vs large messages;
+- desktop vs mobile networking;
+- high vs low concurrency;
+- hot vs long-tail content;
+- cached vs uncached behavior;
+- different k values/data volumes;
+- durable vs overflow stores.
+
+One "fastest architecture" often does not exist.
+
+EngSense should model the workload distribution, not only an average case.
+
+## 20. Hardware/runtime topology matters at sufficient scale
+
+POSA reaches:
+
+- OS syscall behavior;
+- event notification;
+- runtime global locks;
+- CPU cores;
+- GC;
+- memory pages/cache;
+- NUMA;
+- storage bandwidth;
+- radio power state.
+
+EngSense should keep these as specialist/contextual signals, not generic review noise.
+
+## 21. Maintainability is part of the performance budget
+
+The book repeatedly refuses maximum speed at any cost:
+
+- EtherCalc accepts worse microbenchmark performance for a simpler stack when user impact is negligible;
+- khmer keeps an intermediate buffer for comprehensibility;
+- khmer avoids aggressive compiler complexity for portability/usability;
+- Ninja avoids daemon infrastructure because a simpler architecture is already fast enough.
+
+Candidate rule:
+
+> Prefer the least complex design that demonstrably meets the performance requirement.
+
+## 22. Optimization can justify architectural change when the bottleneck is structural
+
+DAnCE needed new responsibility/parallel execution structure.
+EtherCalc moved work to clients/workers.
+MemShrink built broad observability/ownership infrastructure.
+Talos replaced parts of its measurement architecture.
+
+Performance should not be artificially limited to local micro-tuning when the bottleneck is architectural.
+
+## 23. Performance observability is an architectural capability
+
+The strongest examples include:
+
+- about:memory;
+- Talos raw-data/statistical pipeline;
+- Infinispan benchmark tooling;
+- Warp event logs/strace/tcpdump/profilers;
+- khmer custom instrumentation/TAU.
+
+Candidate quality dimension:
+
+performance_observability.
+
+A system that is hard to measure is harder to keep fast safely.
+
+## 24. Performance findings should name a verification method
+
+Depending on the claim, verification may require:
+
+- representative benchmark;
+- end-to-end latency test;
+- profiler;
+- syscall trace;
+- packet capture;
+- memory/heap analysis;
+- cache/memory locality tool;
+- multi-core/topology run;
+- production observation;
+- regression dashboard.
+
+"Looks faster" is not adequate verification.
+
+---
+
+# EngSense candidate additions after POSA
+
+## New/strengthened context signals
+
+\`\`\`text
+performance_metric_semantics
+evidence_scope
+benchmark_generator_capacity
+measurement_observer_effect
+workload_distribution
+system_call_frequency
+data_movement_volume
+protocol_round_trip_count
+memory_locality
+numa_topology
+runtime_internal_lock
+saturation_resource
+overload_policy
+performance_observability
+raw_measurement_retention
+metric_ownership
+hot_path_iteration_multiplicity
+\`\`\`
+
+## New/strengthened quality dimensions
+
+\`\`\`text
+end_to_end_latency
+throughput
+resource_efficiency
+memory_retention
+fairness
+overload_resilience
+performance_observability
+benchmark_reproducibility
+measurement_actionability
+energy_efficiency
+\`\`\`
+
+## Performance evidence hierarchy candidate
+
+From stronger/scope-broader to narrower, while recognizing that each can answer different questions:
+
+\`\`\`text
+production/user observation
+representative end-to-end benchmark
+representative component/distributed benchmark
+profiler/trace tied to representative workload
+microbenchmark of proven hot operation
+static cost hypothesis / code inspection
+unsupported intuition
+\`\`\`
+
+Do not interpret this as "production evidence always replaces microbenchmarks." A microbenchmark may be the correct tool for validating one already-proven hot operation.
+
+## Performance finding gate candidate
+
+Before EngSense emits a material performance recommendation, require most of:
+
+- explicit metric;
+- representative workload or clear limitation;
+- current evidence;
+- identified constrained resource/bottleneck;
+- invariant impact;
+- complexity-placement analysis;
+- appropriate verification plan;
+- evidence scope/confidence;
+- specialist escalation where concurrency, networking, persistence, statistics, or hardware semantics dominate.
+
+## New eval groups to build
+
+### Measurement validity
+- load generator saturates before target;
+- profiler overhead changes conclusion;
+- lossy aggregation hides workload regression;
+- benchmark result is fast but incorrect;
+- microbenchmark conclusion is generalized beyond scope.
+
+### Data movement
+- repeated serialization across local process boundaries;
+- unnecessary buffer copies;
+- high RTT ignored while CPU handler is optimized;
+- zero-copy retains large backing storage.
+
+### Parallelism and overload
+- threads added past storage/network saturation;
+- shared mutable state serializes "parallel" work;
+- unbounded expensive work overwhelms service;
+- thread pool/queue sizing omitted.
+
+### Specialization
+- proven hot path justifies specialized implementation;
+- speculative low-level optimization without measured hotspot;
+- one-time specialization removes repeated branch/format cost.
+
+### Memory/lifetime
+- long-lived object retains short-lived graph;
+- GC assumed to remove lifecycle concerns;
+- NUMA/locality ignored for large-memory parallel workload.
+
+### Cache semantics
+- cache suggested without authority/freshness/invalidation;
+- DNS/resource cache improves latency but breaks failover semantics;
+- per-request/shared cache placement trade-off.
+
+---
+
+# POSA — final research classification
+
+## What this source is strong evidence for
+
+- measurement-first performance engineering;
+- end-to-end bottleneck reasoning;
+- performance observability;
+- data movement/copy/serialization cost;
+- workload-specific specialization;
+- bounded concurrency and overload behavior;
+- memory lifetime/locality;
+- cache semantics;
+- benchmark validity;
+- performance regression infrastructure;
+- architecture-level performance changes.
+
+## What this source is not sufficient to finalize alone
+
+POSA is a case-study collection from its publication era.
+
+It does not independently settle:
+
+- modern lock-free memory-ordering correctness;
+- modern distributed consistency theory;
+- current HTTP transport/protocol best practices;
+- current managed-runtime/JIT/GC behavior;
+- formal performance statistics;
+- security-sensitive side-channel optimization.
+
+Those remain specialist areas and/or require modern primary sources.
+
+## Research conclusion
+
+POSA strongly supports a dedicated EngSense performance lens, but that lens should not be a catalog of "fast code" rules.
+
+Its central question should be:
+
+> What user/system metric is failing, under which workload, because of which constrained resource or coordination cost—and what is the smallest measured change that fixes it without weakening more important invariants?
+
+The source repeatedly shows that good performance engineering combines:
+
+- system understanding;
+- measurement;
+- architecture;
+- data representation;
+- resource ownership;
+- workload semantics;
+- verification;
+- maintainability.

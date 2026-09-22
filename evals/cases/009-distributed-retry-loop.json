@@ -1,0 +1,54 @@
+{
+  "id": "distributed-retry-loop",
+  "title": "Distributed retry loop must preserve idempotency and failure semantics",
+  "mode": "focused",
+  "task": "Review a retry helper proposed for a distributed payment-like operation.",
+  "context": [
+    "The operation crosses a network boundary.",
+    "The remote side may process a request even when the client times out.",
+    "The proposed helper retries automatically on timeout.",
+    "No idempotency key or duplicate suppression is shown.",
+    "Backoff and retry budget are unspecified."
+  ],
+  "evidence": [
+    "Timeout does not prove the remote operation failed.",
+    "A duplicate request could repeat the side effect.",
+    "The helper currently treats every timeout as safe to retry."
+  ],
+  "snippet": "for attempt in range(5):\n    try:\n        return await charge(request)\n    except TimeoutError:\n        continue",
+  "tempting_wrong_recommendation": [
+    "Clean up the loop stylistically without discussing retry semantics.",
+    "Recommend exponential backoff as sufficient by itself.",
+    "Assume timeout means the remote operation did not execute."
+  ],
+  "expected_decision_properties": [
+    "Treat idempotency/duplicate side effects as the primary correctness concern.",
+    "Do not approve retries until retry safety is established.",
+    "Identify timeout, retry budget, backoff, and duplicate suppression/idempotency as distributed-system semantics.",
+    "Defer detailed retry policy to specialized distributed-systems guidance where project semantics are missing."
+  ],
+  "unacceptable_reasoning": [
+    "Timeout means the operation failed and can always be retried.",
+    "Exponential backoff alone makes retries safe.",
+    "This is only a code-style/refactoring problem."
+  ],
+  "expected_quality_dimensions": [
+    "correctness",
+    "reliability",
+    "operability",
+    "failure_semantics"
+  ],
+  "expected_tradeoffs": [
+    "availability/retry vs duplicate side-effect risk",
+    "latency vs retry budget"
+  ],
+  "expected_authority": "invariant",
+  "verification_expectations": [
+    "Add tests for timeout-after-remote-success.",
+    "Verify idempotency or duplicate suppression behavior.",
+    "Verify retry budget/backoff and terminal failure behavior."
+  ],
+  "specialist_boundary": [
+    "Detailed retry/idempotency semantics require distributed-systems/domain-specific review."
+  ]
+}

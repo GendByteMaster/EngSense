@@ -1,0 +1,55 @@
+{
+  "id": "typescript-union-vs-class-hierarchy",
+  "title": "TypeScript discriminated union vs class hierarchy",
+  "mode": "refactoring",
+  "task": "Review a proposal to replace a small closed set of request states with an abstract base class and subclass hierarchy.",
+  "context": [
+    "The code is TypeScript.",
+    "The state set is closed and known: idle, loading, success, error.",
+    "Consumers primarily pattern-match on state kind.",
+    "There is no independent lifecycle or behavioral polymorphism per subtype.",
+    "The current representation uses a discriminated union."
+  ],
+  "evidence": [
+    "Exhaustive switch statements are already checked by TypeScript.",
+    "The proposed classes add constructors and methods but no new invariant boundary.",
+    "Runtime data is serialized/deserialized as plain objects."
+  ],
+  "snippet": "type LoadState =\n  | { kind: 'idle' }\n  | { kind: 'loading' }\n  | { kind: 'success'; data: Data }\n  | { kind: 'error'; error: ErrorInfo };",
+  "tempting_wrong_recommendation": [
+    "Replace the union with classes because object-oriented design is cleaner.",
+    "Introduce an abstract base class to make the model extensible.",
+    "Prefer inheritance without evidence of open-ended subtype behavior."
+  ],
+  "expected_decision_properties": [
+    "Keep the discriminated union for the current closed-state model.",
+    "Use TypeScript's structural typing and exhaustive narrowing as positive evidence.",
+    "Recognize that a class hierarchy may be justified only if real behavioral/lifecycle polymorphism appears.",
+    "Avoid making extensibility a goal when the state space is intentionally closed."
+  ],
+  "unacceptable_reasoning": [
+    "Classes are inherently more maintainable than unions.",
+    "Every domain concept should be modeled as an object hierarchy.",
+    "Closed state machines should be made open for future extensibility by default."
+  ],
+  "expected_quality_dimensions": [
+    "comprehension",
+    "type_safety",
+    "maintainability",
+    "serialization_clarity"
+  ],
+  "expected_tradeoffs": [
+    "closed explicit state model vs open class hierarchy",
+    "language idiom vs transplanted OOP pattern"
+  ],
+  "expected_authority": "guidance",
+  "verification_expectations": [
+    "Run TypeScript typecheck.",
+    "Verify exhaustive handling remains enforced.",
+    "Verify serialization/deserialization behavior is unchanged."
+  ],
+  "revisit_when": [
+    "Subtypes gain meaningful independent behavior or lifecycle.",
+    "The state model becomes intentionally open to third-party implementations."
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "id": "large-cohesive-function",
+  "title": "Long but cohesive parser should not be split by line count",
+  "mode": "focused",
+  "task": "Review a 170-line parser function and decide whether it should be decomposed.",
+  "context": [
+    "The function implements one grammar production with many branches.",
+    "Branches share parser cursor state and error context.",
+    "Extracted helpers would each receive and mutate the same parser state.",
+    "Existing tests cover the grammar behavior well.",
+    "No independent persistence, networking, retry, or business-policy responsibility exists."
+  ],
+  "evidence": [
+    "All branches belong to one grammar rule.",
+    "The function has one externally meaningful reason to change: grammar evolution.",
+    "Proposed extractions are mostly 3-8 line wrappers around local branches."
+  ],
+  "snippet": "def parse_expression(parser):\n    # precedence and grammar branches sharing parser state\n    ...",
+  "tempting_wrong_recommendation": [
+    "Split the function because it exceeds an arbitrary line limit.",
+    "Create a class per grammar branch.",
+    "Treat function length as direct evidence of multiple responsibilities."
+  ],
+  "expected_decision_properties": [
+    "Do not recommend decomposition solely because of line count.",
+    "Recognize locality and shared parser state as meaningful context.",
+    "Allow targeted extraction only where it creates a real semantic unit or invariant boundary.",
+    "Preserve the option to refactor if independent responsibilities emerge."
+  ],
+  "unacceptable_reasoning": [
+    "Functions over 20 lines are bad.",
+    "Every branch should be a separate method.",
+    "Shorter functions always reduce cognitive load."
+  ],
+  "expected_quality_dimensions": [
+    "comprehension",
+    "locality",
+    "cognitive_complexity",
+    "maintainability"
+  ],
+  "expected_tradeoffs": [
+    "small functions vs locality of behavior",
+    "decomposition vs navigation cost"
+  ],
+  "expected_authority": "guidance",
+  "verification_expectations": [
+    "Run parser regression tests.",
+    "If extraction is proposed, verify it reduces a real conceptual burden rather than only moving lines."
+  ],
+  "revisit_when": [
+    "The function gains independent concerns such as I/O, persistence, or retry policy.",
+    "Grammar branches stop sharing state and become independently testable semantic units."
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "id": "complexity-displacement",
+  "title": "Infrastructure simplification moves consistency logic into every caller",
+  "mode": "architecture",
+  "task": "Review a proposal to remove a central invariant-enforcing component and let each caller implement the rule locally.",
+  "context": [
+    "A shared component currently validates and normalizes identifiers before persistence.",
+    "Five callers use the component.",
+    "The proposal removes it to make the core service smaller.",
+    "Each caller would then implement normalization and validation independently."
+  ],
+  "evidence": [
+    "The normalization rule is identical across callers.",
+    "Past bugs occurred when one caller implemented the rule differently.",
+    "The shared component has a small stable API.",
+    "Removing it reduces one module but duplicates the invariant five times."
+  ],
+  "snippet": "shared normalize_id(x) -> proposed per-caller normalization logic",
+  "tempting_wrong_recommendation": [
+    "Remove the shared component because fewer modules means less complexity.",
+    "Treat caller duplication as harmless because each implementation is short.",
+    "Measure complexity only by code inside the core service."
+  ],
+  "expected_decision_properties": [
+    "Keep the shared invariant-enforcing boundary.",
+    "Identify the proposal as complexity displacement from one owned location to multiple callers.",
+    "Count multiplicity and divergence risk, not just local line count.",
+    "Avoid turning this into a universal rule that all shared helpers are good."
+  ],
+  "unacceptable_reasoning": [
+    "Fewer modules always means simpler architecture.",
+    "Short duplicated logic is never a maintenance problem.",
+    "Centralization is automatically better regardless of ownership or bottleneck risk."
+  ],
+  "expected_quality_dimensions": [
+    "maintainability",
+    "correctness",
+    "coupling",
+    "comprehension"
+  ],
+  "expected_tradeoffs": [
+    "local simplicity vs repeated caller complexity",
+    "central invariant enforcement vs distributed flexibility"
+  ],
+  "expected_authority": "strong_recommendation",
+  "verification_expectations": [
+    "Verify all callers use the same normalization contract.",
+    "Run regression tests for previously divergent inputs.",
+    "Confirm the shared boundary does not introduce a new performance or availability bottleneck."
+  ]
+}

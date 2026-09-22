@@ -1,0 +1,56 @@
+{
+  "id": "large-multi-responsibility-function",
+  "title": "Large function combines independent responsibilities",
+  "mode": "refactoring",
+  "task": "Review a large function that parses input, writes to persistence, and owns retry/backoff policy.",
+  "context": [
+    "The function parses an external payload.",
+    "It opens a database transaction and persists records.",
+    "It also retries a remote notification with backoff.",
+    "Parsing, persistence, and retry behavior change for different reasons.",
+    "Tests currently require broad setup to exercise any one concern."
+  ],
+  "evidence": [
+    "Recent history changed parsing without touching persistence.",
+    "A separate change modified retry policy without changing parsing.",
+    "Failure handling for database and remote notification is interleaved."
+  ],
+  "snippet": "async def process(payload):\n    parsed = parse(payload)\n    async with db.transaction(): ...\n    for attempt in range(...): await notify(...)",
+  "tempting_wrong_recommendation": [
+    "Keep the function intact solely to preserve locality.",
+    "Split every branch into a tiny helper without identifying responsibility boundaries.",
+    "Refactor by line count rather than reasons to change."
+  ],
+  "expected_decision_properties": [
+    "Recommend decomposition along real responsibility boundaries.",
+    "Keep cohesive parsing logic together rather than fragmenting it mechanically.",
+    "Separate persistence and retry/notification policy where their lifecycle and failure semantics differ.",
+    "Preserve behavior and specialist invariants during the refactor."
+  ],
+  "unacceptable_reasoning": [
+    "Long functions are always bad.",
+    "Locality always outweighs independent reasons to change.",
+    "Every conditional should become a separate function."
+  ],
+  "expected_quality_dimensions": [
+    "cohesion",
+    "coupling",
+    "testability",
+    "maintainability",
+    "failure_semantics"
+  ],
+  "expected_tradeoffs": [
+    "locality vs independent responsibility boundaries",
+    "decomposition vs navigation cost"
+  ],
+  "expected_authority": "strong_recommendation",
+  "verification_expectations": [
+    "Run parsing regression tests.",
+    "Run persistence/transaction tests.",
+    "Run notification retry/failure tests.",
+    "Verify the refactor preserves transaction and retry semantics."
+  ],
+  "specialist_boundary": [
+    "Database transaction and distributed retry semantics require their domain guidance during implementation."
+  ]
+}

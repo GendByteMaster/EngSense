@@ -1,0 +1,58 @@
+{
+  "id": "unstable-duplication",
+  "title": "Temporary duplication under diverging requirements",
+  "mode": "refactoring",
+  "task": "Review two similar validation flows and decide whether to extract a shared abstraction now.",
+  "context": [
+    "Two workflows currently share about 20 lines of validation logic.",
+    "One workflow is for internal admin imports and the other for public user uploads.",
+    "Requirements are changing independently.",
+    "Recent commits changed one path without changing the other.",
+    "A proposed shared helper would need mode flags for current differences."
+  ],
+  "evidence": [
+    "The duplicated code looks structurally similar.",
+    "The concepts have different trust boundaries and error semantics.",
+    "A common helper proposal already includes boolean flags and callback hooks."
+  ],
+  "snippet": "validateUpload(input, isAdmin=true, allowPartial=false, onError=...)\nvalidateUpload(input, isAdmin=false, allowPartial=true, onError=...)",
+  "tempting_wrong_recommendation": [
+    "Extract immediately because duplication violates DRY.",
+    "Use mode flags to force both workflows through one generic helper.",
+    "Assume similar lines imply one stable domain concept."
+  ],
+  "expected_decision_properties": [
+    "Tolerate the duplication temporarily.",
+    "Identify diverging requirements and trust semantics as evidence that the concept is not yet stable.",
+    "Reject flag-heavy abstraction as likely complexity relocation rather than simplification.",
+    "Recommend revisiting abstraction after a stable shared invariant emerges."
+  ],
+  "unacceptable_reasoning": [
+    "Duplicate code is always a bug.",
+    "One helper is automatically easier to maintain than two explicit paths.",
+    "Line similarity proves semantic identity."
+  ],
+  "expected_quality_dimensions": [
+    "maintainability",
+    "locality",
+    "coupling",
+    "security_boundary"
+  ],
+  "expected_tradeoffs": [
+    "DRY vs duplication until stable",
+    "centralization vs independent evolution"
+  ],
+  "expected_authority": "guidance",
+  "verification_expectations": [
+    "Keep tests for both workflows independent.",
+    "Verify future synchronized changes before extracting a common invariant."
+  ],
+  "revisit_when": [
+    "The two paths repeatedly change together.",
+    "A shared invariant can be expressed without workflow-mode flags.",
+    "The trust/error semantics converge."
+  ],
+  "specialist_boundary": [
+    "If security semantics determine whether admin and public validation may share logic, require security review before merging the boundaries."
+  ]
+}

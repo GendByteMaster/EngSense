@@ -1,0 +1,54 @@
+{
+  "id": "stable-duplicated-invariant",
+  "title": "Stable duplicated invariant is an abstraction opportunity",
+  "mode": "refactoring",
+  "task": "Review the same normalization and validation invariant duplicated across several independent callers.",
+  "context": [
+    "Five callers normalize identifiers using the same algorithm.",
+    "The invariant has been stable for a year.",
+    "Changes to the rule must be applied consistently everywhere.",
+    "Past bugs came from one caller missing an update.",
+    "The logic does not depend on caller-specific mode flags."
+  ],
+  "evidence": [
+    "Repository history shows three synchronized edits to all five copies.",
+    "The same edge cases and error semantics are required in every caller.",
+    "A shared pure function/module can express the invariant without caller-specific branches."
+  ],
+  "snippet": "normalize -> validate checksum -> canonicalize case  # copied in five callers",
+  "tempting_wrong_recommendation": [
+    "Keep duplication forever because abstraction is risky.",
+    "Treat every duplicated block as independent despite synchronized changes.",
+    "Build a generic framework instead of a small invariant-focused abstraction."
+  ],
+  "expected_decision_properties": [
+    "Recommend centralizing the stable shared invariant.",
+    "Use the smallest abstraction that expresses the common rule.",
+    "Identify synchronized change history and divergence bugs as evidence.",
+    "Avoid expanding the abstraction to unrelated caller-specific behavior."
+  ],
+  "unacceptable_reasoning": [
+    "Duplication is always safer than abstraction.",
+    "Any abstraction requires a framework or interface hierarchy.",
+    "Repeated synchronized changes are irrelevant evidence."
+  ],
+  "expected_quality_dimensions": [
+    "correctness",
+    "maintainability",
+    "cohesion",
+    "testability"
+  ],
+  "expected_tradeoffs": [
+    "DRY/stable invariant vs local specialization",
+    "central consistency vs caller independence"
+  ],
+  "expected_authority": "strong_recommendation",
+  "verification_expectations": [
+    "Add shared invariant tests covering all known edge cases.",
+    "Run caller-level regression tests after centralization.",
+    "Verify no caller-specific semantics were accidentally absorbed."
+  ],
+  "revisit_when": [
+    "Caller semantics diverge enough that the shared abstraction requires mode flags or caller-specific branches."
+  ]
+}

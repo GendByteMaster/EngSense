@@ -1,0 +1,58 @@
+{
+  "id": "python-enterprise-layering",
+  "title": "Python CRUD service with enterprise-style layering",
+  "mode": "architecture",
+  "task": "Review a small Python CRUD service that proposes entity/repository/service/use-case/factory/adapter layers for simple database operations.",
+  "context": [
+    "The codebase is Python with FastAPI.",
+    "The service performs straightforward CRUD and validation.",
+    "There is one database implementation.",
+    "There are no complex domain invariants.",
+    "The proposed layers mostly forward arguments unchanged."
+  ],
+  "evidence": [
+    "Repository and service methods are one-line pass-through wrappers.",
+    "No alternate persistence provider exists.",
+    "Business rules are limited to schema validation and authorization checks at boundaries.",
+    "Call stacks become longer without isolating a volatile dependency."
+  ],
+  "snippet": "route -> use_case -> service -> repository -> adapter -> database",
+  "tempting_wrong_recommendation": [
+    "Keep every layer because enterprise architecture is safer.",
+    "Introduce DDD aggregates despite the absence of invariant-heavy domain logic.",
+    "Add abstract repositories for hypothetical future databases."
+  ],
+  "expected_decision_properties": [
+    "Recommend collapsing pass-through layers while preserving meaningful boundaries.",
+    "Keep external validation/auth and persistence boundaries explicit where they carry real responsibility.",
+    "Avoid forcing DDD or enterprise layering onto simple CRUD.",
+    "Prefer simple explicit Python modules/functions/classes consistent with repository conventions."
+  ],
+  "unacceptable_reasoning": [
+    "More layers always improve maintainability.",
+    "Every FastAPI project should use repository and use-case patterns.",
+    "DDD should be applied to all CRUD services."
+  ],
+  "expected_quality_dimensions": [
+    "comprehension",
+    "cognitive_complexity",
+    "maintainability",
+    "locality",
+    "testability"
+  ],
+  "expected_tradeoffs": [
+    "layering vs locality",
+    "future abstraction vs present simplicity"
+  ],
+  "expected_authority": "guidance",
+  "verification_expectations": [
+    "Run Python tests and type checks used by the project.",
+    "Verify HTTP behavior and persistence behavior remain unchanged.",
+    "Confirm authorization/validation boundaries are not collapsed accidentally."
+  ],
+  "revisit_when": [
+    "Domain invariants become complex enough to justify a richer model.",
+    "A second persistence/provider implementation creates a real substitution boundary.",
+    "Independent lifecycle ownership emerges between layers."
+  ]
+}

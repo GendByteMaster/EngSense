@@ -1,0 +1,53 @@
+{
+  "id": "unbounded-queue-backpressure",
+  "title": "Unbounded queue hides downstream slowdown until memory exhaustion",
+  "mode": "architecture",
+  "task": "Review a background ingestion pipeline that uses an unbounded in-memory queue between producers and a slower storage consumer.",
+  "context": [
+    "Producers can accept work faster than storage can persist it during incidents.",
+    "The queue is unbounded.",
+    "The process shares memory with request-serving code.",
+    "No drop, backpressure, admission-control, or spill-to-disk policy exists."
+  ],
+  "evidence": [
+    "Load tests show queue depth rising continuously when storage latency increases.",
+    "Memory usage tracks queue depth.",
+    "The current design reports successful enqueue before durable persistence."
+  ],
+  "snippet": "queue = asyncio.Queue()  # default unbounded\nawait queue.put(item)",
+  "tempting_wrong_recommendation": [
+    "Keep the queue because decoupling producer and consumer is always good.",
+    "Only increase available memory.",
+    "Treat the issue as a minor performance optimization."
+  ],
+  "expected_decision_properties": [
+    "Identify unbounded growth and missing backpressure as a reliability issue.",
+    "Require an explicit overload policy such as bounded admission, backpressure, shedding, or durable buffering.",
+    "Distinguish accepted-in-memory from durably persisted work.",
+    "Avoid prescribing one overload strategy without workload/loss semantics."
+  ],
+  "unacceptable_reasoning": [
+    "Queues automatically improve resilience.",
+    "More memory makes unbounded queues safe.",
+    "Producer/consumer decoupling removes the need for overload semantics."
+  ],
+  "expected_quality_dimensions": [
+    "reliability",
+    "operability",
+    "resource_bounds",
+    "failure_semantics"
+  ],
+  "expected_tradeoffs": [
+    "throughput decoupling vs bounded resource use",
+    "availability vs load shedding/backpressure"
+  ],
+  "expected_authority": "strong_recommendation",
+  "verification_expectations": [
+    "Load test with intentionally slowed storage.",
+    "Verify queue bounds and overload behavior.",
+    "Verify caller-visible semantics when work is rejected, delayed, or only buffered."
+  ],
+  "specialist_boundary": [
+    "Exact capacity, durability, and shedding policy depend on workload and product semantics."
+  ]
+}

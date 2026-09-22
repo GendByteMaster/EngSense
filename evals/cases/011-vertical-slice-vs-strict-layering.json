@@ -1,0 +1,57 @@
+{
+  "id": "vertical-slice-vs-strict-layering",
+  "title": "Vertical slice locality vs strict horizontal layering",
+  "mode": "architecture",
+  "task": "Review a proposal to move a small feature from a cohesive vertical slice into global controller/service/repository directories solely for consistency with a layering template.",
+  "context": [
+    "The feature has one endpoint, one use-case module, one persistence query, and feature-specific tests.",
+    "No other feature reuses the use-case logic.",
+    "The current slice keeps feature code physically close.",
+    "Dependency direction is already one-way and explicit.",
+    "The proposed horizontal move does not create a shared invariant or provider boundary."
+  ],
+  "evidence": [
+    "Current imports do not violate architectural dependency direction.",
+    "The proposed move increases navigation across four directories.",
+    "No shared service/repository abstraction emerges from the move."
+  ],
+  "snippet": "features/export/{route.py, service.py, query.py, tests/} -> controllers/, services/, repositories/, tests/",
+  "tempting_wrong_recommendation": [
+    "Move code purely because strict layering is always cleaner.",
+    "Treat directory shape as proof of architectural correctness.",
+    "Create shared base service/repository classes to justify the horizontal layers."
+  ],
+  "expected_decision_properties": [
+    "Prefer the cohesive vertical slice in the current context.",
+    "Distinguish dependency direction from physical folder uniformity.",
+    "Recognize locality/navigation cost as a real quality dimension.",
+    "Allow horizontal/shared layers only when reuse, policy, or lifecycle boundaries become real."
+  ],
+  "unacceptable_reasoning": [
+    "Every application must use controller/service/repository directories.",
+    "Vertical slices are inherently less modular.",
+    "Uniform folder structure always outweighs feature locality."
+  ],
+  "expected_quality_dimensions": [
+    "locality",
+    "discoverability",
+    "maintainability",
+    "coupling",
+    "comprehension"
+  ],
+  "expected_tradeoffs": [
+    "strict layering vs vertical-slice locality",
+    "consistency vs navigation cost"
+  ],
+  "expected_authority": "guidance",
+  "verification_expectations": [
+    "Verify dependency direction remains valid.",
+    "Run feature tests.",
+    "Check whether any real cross-feature reuse or policy boundary is introduced."
+  ],
+  "revisit_when": [
+    "Multiple features share stable service/persistence policy.",
+    "The vertical slice begins violating dependency boundaries.",
+    "Shared lifecycle/ownership requires a common module."
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "id": "known-scale-ceiling",
+  "title": "Simple current architecture with a known future scale ceiling",
+  "mode": "architecture",
+  "task": "Review a proposal to replace a simple single-node coordinator with a distributed coordination system before current load requires it.",
+  "context": [
+    "The current coordinator handles peak load with large headroom.",
+    "A known scale ceiling exists at roughly 20x current traffic.",
+    "Reaching that ceiling would require a migration.",
+    "Traffic growth is uncertain and no forecast shows the ceiling will be reached soon.",
+    "The distributed replacement would add consensus, failover, observability, and operational complexity."
+  ],
+  "evidence": [
+    "Current production metrics show stable latency and utilization.",
+    "No current availability requirement demands multi-node coordination.",
+    "The proposed design is motivated by theoretical future scale."
+  ],
+  "snippet": "single coordinator today -> proposed distributed consensus cluster",
+  "tempting_wrong_recommendation": [
+    "Replace the simple design immediately because it cannot scale forever.",
+    "Treat the existence of any future ceiling as present technical debt.",
+    "Ignore migration complexity because distributed architecture is more scalable."
+  ],
+  "expected_decision_properties": [
+    "Keep the current simple design while documenting the known ceiling.",
+    "Identify the distributed replacement as premature under current evidence.",
+    "Record the migration trigger and crossing cost instead of demanding infinite scalability.",
+    "Preserve observability needed to detect approach to the ceiling."
+  ],
+  "unacceptable_reasoning": [
+    "A system is badly designed unless it scales indefinitely.",
+    "Distributed architecture is automatically more future-proof.",
+    "Known future limits must always be removed immediately."
+  ],
+  "expected_quality_dimensions": [
+    "maintainability",
+    "operability",
+    "reversibility",
+    "human_scalability"
+  ],
+  "expected_tradeoffs": [
+    "simplicity now vs future scalability",
+    "current operational cost vs migration preparedness"
+  ],
+  "expected_authority": "guidance",
+  "verification_expectations": [
+    "Confirm current production headroom with metrics.",
+    "Document the scale ceiling and migration trigger.",
+    "Verify the current architecture exposes signals needed to detect approaching limits."
+  ],
+  "revisit_when": [
+    "Observed load approaches the documented ceiling.",
+    "Availability requirements require coordinator redundancy.",
+    "Migration lead time becomes longer than remaining scale headroom."
+  ]
+}

@@ -116,7 +116,7 @@ The eval folder remains lightweight development evidence. A model-execution plat
 - [x] Supporting files are documented as required parts of the Skill.
 - [x] Optional `agents/openai.yaml` metadata added; implicit invocation enabled; no tool dependencies declared.
 - [x] Final install smoke test in a clean Codex repository via GitHub Actions using `npx skills add https://github.com/GendByteMaster/EngSense -a codex -y`.
-- [ ] Final install smoke test in a supported ChatGPT Skills surface, when available to the release tester.
+- [ ] Final install smoke test in a supported ChatGPT Skills surface, when available to an eligible Business/Enterprise/Healthcare/Edu release tester.
 
 ## 9. Public repository readiness
 
@@ -158,8 +158,8 @@ A v1.0 release requires all of the following:
 - [ ] acceptance criteria in Issue #1 satisfied;
 - [ ] final representative behavior review complete;
 - [ ] installation smoke tests complete;
-- [ ] documentation/repository audit complete;
-- [ ] redistribution/license decision complete;
+- [x] documentation/repository audit complete;
+- [x] redistribution/license decision complete (MIT);
 - [ ] release notes prepared;
 - [ ] version/tag created only after the above gates pass.
 

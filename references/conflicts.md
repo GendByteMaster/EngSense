@@ -53,6 +53,14 @@ For each pair, ask which side dominates under the current context.
 | Durable explicit schema | Serialize internal object graph | long-lived/versioned/interoperable persistence required | only short-lived/private cache state with controlled identical runtime version |
 | Shared semantic core/IR | Direct per-consumer translation | many transformations/backends share stable semantics | one narrow path; IR adds translation concepts without leverage |
 | Machine contract | Human-readable presentation | automation, versioning, unambiguous fields matter | only human consumption; machine contract adds unnecessary surface |
+| Maximum reliability | Product/change velocity and cost | severe failure consequence; explicit user need; exhausted error budget; weak recovery | additional reliability is not user-visible; engineering cost dominates; strong recovery/reversibility |
+| Manual judgment | Automation | ambiguous/high-context decision; automation blast radius is high; human verification is a required control | stable repeated procedure; human error/latency dominates; scope and rollback are bounded |
+| Uniform service guarantees | Differentiated service classes | users require one semantic guarantee; differentiation would create confusing surface/operations | workload classes have materially different latency/throughput/criticality needs and can be expressed safely |
+| Immediate root-cause investigation | Stabilize/mitigate first | impact is contained; evidence may disappear; mitigation itself risks corruption | active severe user/data impact; safe containment can reduce blast radius quickly |
+| Small independent rollout | Coordinated transition | changes are reversible; old/new coexist safely; attribution matters | mixed-version state is more dangerous; invariant spans tightly coupled components |
+| Replication | Independent backup/recovery | failure model is infrastructure/node loss and replicas are independent enough | destructive bug/operator/config error can propagate; historical restore is required |
+| Broad alert coverage | Human attention/actionability | missed detection cost dominates and alerts are actionable | noisy/duplicate signals consume attention; service-level symptoms can aggregate lower-level causes |
+| Local retry | Global overload safety | isolated/partial backend failure; retry budget is bounded; idempotency and deadlines are clear | service-wide saturation; layered retries amplify load; caller can no longer benefit |
 
 ---
 

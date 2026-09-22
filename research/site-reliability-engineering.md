@@ -74,13 +74,13 @@ Therefore:
 
 ### Part III — Practices
 
-- [ ] Part III introduction
-- [ ] Chapter 10 — Practical Alerting
-- [ ] Chapter 11 — Being On-Call
-- [ ] Chapter 12 — Effective Troubleshooting
-- [ ] Chapter 13 — Emergency Response
-- [ ] Chapter 14 — Managing Incidents
-- [ ] Chapter 15 — Postmortem Culture: Learning from Failure
+- [x] Part III introduction
+- [x] Chapter 10 — Practical Alerting
+- [x] Chapter 11 — Being On-Call
+- [x] Chapter 12 — Effective Troubleshooting
+- [x] Chapter 13 — Emergency Response
+- [x] Chapter 14 — Managing Incidents
+- [x] Chapter 15 — Postmortem Culture: Learning from Failure
 - [ ] Chapter 16 — Tracking Outages
 - [ ] Chapter 17 — Testing for Reliability
 - [ ] Chapter 18 — Software Engineering in SRE

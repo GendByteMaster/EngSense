@@ -11,9 +11,9 @@ This file prevents the implemented EngSense core from being mistaken for a compl
 
 Completed research notes are tracked in the repository. The completed AOSA Volume 1, AOSA Volume 2, POSA, and Software Engineering at Google notes are integrated into `main`.
 
-## Supplemental research in progress
+## Completed supplemental full-text sources
 
-- *Site Reliability Engineering: How Google Runs Production Systems* — official complete online edition at `sre.google`; Foreword, Preface, Parts I–IV, and Chapters 1–32 studied on `research/site-reliability-engineering`. This source strengthens reliability/operability synthesis but does **not** replace any mandatory commercial source.
+- *Site Reliability Engineering: How Google Runs Production Systems* — official complete online edition at `sre.google`; Foreword, Preface, Parts I–V, Chapters 1–34, Appendices A–F, and Bibliography studied in full. This source strengthens reliability/operability synthesis but does **not** replace any mandatory commercial source.
 
 ## Mandatory corpus still open
 

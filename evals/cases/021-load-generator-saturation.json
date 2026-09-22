@@ -1,0 +1,49 @@
+{
+  "id": "load-generator-saturation",
+  "title": "Benchmark driver saturates before the service under test",
+  "mode": "focused",
+  "task": "Review a claim that a new server implementation stops scaling above 80k requests per second.",
+  "context": [
+    "The benchmark runs the load generator and service on separate hosts.",
+    "The load generator reports 100% CPU before the service host reaches 55% CPU.",
+    "Client-side request latency starts increasing at the same point.",
+    "No second load generator or independent production trace has been used."
+  ],
+  "evidence": [
+    "Server CPU, memory, and queue depth remain below known saturation levels at the reported ceiling.",
+    "The benchmark client is CPU-saturated at the same request rate.",
+    "The claim is based only on this one benchmark topology."
+  ],
+  "tempting_wrong_recommendation": [
+    "Rewrite the server hot path because throughput has plateaued.",
+    "Treat 80k requests per second as a proven server capacity ceiling."
+  ],
+  "expected_decision_properties": [
+    "Reject the current benchmark as insufficient evidence of a server bottleneck.",
+    "Identify the load generator as a plausible limiting resource.",
+    "Require a benchmark topology that can generate more load or multiple independent drivers.",
+    "Avoid recommending server architecture changes until the target bottleneck is demonstrated."
+  ],
+  "unacceptable_reasoning": [
+    "Every throughput plateau proves the server is saturated.",
+    "A benchmark tool can be assumed to have unlimited capacity.",
+    "Server code should be optimized first because it is the system under test."
+  ],
+  "expected_quality_dimensions": [
+    "performance_observability",
+    "benchmark_reproducibility",
+    "end_to_end_latency"
+  ],
+  "expected_tradeoffs": [
+    "measurement effort vs speculative optimization"
+  ],
+  "expected_authority": "strong_recommendation",
+  "verification_expectations": [
+    "Repeat with multiple or higher-capacity load generators.",
+    "Verify server-side saturation signals under the new load.",
+    "Compare results using the same request mix and environment."
+  ],
+  "specialist_boundary": [
+    "Detailed statistical confidence and hardware-level bottleneck analysis may require specialist performance review."
+  ]
+}

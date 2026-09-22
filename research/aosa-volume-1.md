@@ -35,11 +35,11 @@ This note keeps separate:
 - [x] Chapter 13 — The NoSQL Ecosystem
 - [x] Chapter 14 — Python Packaging
 - [x] Chapter 15 — Riak and Erlang/OTP
-- [ ] Chapter 16 — Selenium WebDriver
-- [ ] Chapter 17 — Sendmail
-- [ ] Chapter 18 — SnowFlock
-- [ ] Chapter 19 — SocialCalc
-- [ ] Chapter 20 — Telepathy
+- [x] Chapter 16 — Selenium WebDriver
+- [x] Chapter 17 — Sendmail
+- [x] Chapter 18 — SnowFlock
+- [x] Chapter 19 — SocialCalc
+- [x] Chapter 20 — Telepathy
 - [ ] Chapter 21 — Thousand Parsec
 - [ ] Chapter 22 — Violet
 - [ ] Chapter 23 — VisTrails
@@ -2146,3 +2146,776 @@ and verify current technology-specific claims separately.
 10. A repeated domain-specific process pattern is copied across many modules instead of becoming a shared behavior abstraction.
 11. A public stable API and an internal experimental API are forced to use the same compatibility policy.
 12. An architecture is described as simpler because a subsystem was removed, but its responsibilities were merely pushed into every caller.
+
+
+---
+
+# Chapter 16 — Selenium WebDriver
+
+## Source scope
+
+This chapter describes Selenium WebDriver during the Selenium 2.0 beta period and explicitly warns that browser implementations would evolve after the chapter was written.
+
+The architectural problem is unusually combinatorial:
+
+- many browsers;
+- many operating systems;
+- many language bindings;
+- native and JavaScript implementation paths;
+- remote-process communication;
+- cross-browser behavior differences.
+
+## Source-derived observations
+
+### 1. Architecture should reflect the user-visible behavior being promised
+
+WebDriver deliberately aims to emulate what a user can actually do in a browser.
+
+This led the project away from lower-level APIs that exposed implementation mechanisms users could not directly exercise.
+
+The resulting API therefore encodes a product-level semantic goal, not merely browser internals.
+
+### 2. Complexity can be concentrated instead of distributed
+
+The chapter explicitly describes software complexity as "lumpy."
+
+WebDriver prefers to isolate difficult behavior in a few implementation locations so API consumers do not all have to understand or reproduce it.
+
+This is especially visible in the move from many low-level typing commands toward a smaller high-level API.
+
+### 3. Role-based interfaces prevent irrelevant capability exposure
+
+WebDriver uses narrower capability interfaces such as JavaScript execution rather than placing every optional operation on the base interface.
+
+The intent is to avoid APIs where implementations must advertise unsupported operations.
+
+### 4. Cross-product implementation cost must be designed out
+
+With X browsers and Y language bindings, a naive implementation creates X×Y maintenance cost.
+
+WebDriver pushes logic into browser drivers so language bindings can remain thin.
+
+This is a strong example of architecture reducing a combinatorial maintenance surface.
+
+### 5. Remote-call cost should shape API granularity
+
+Every WebDriver method invocation can ultimately become a remote call.
+
+The chapter explicitly identifies tension between:
+
+- fine-grained expressive APIs;
+- coarser APIs that reduce round trips.
+
+This means method granularity can be a distributed-systems decision rather than only a cleanliness/style decision.
+
+### 6. Shared semantic implementation reduces divergence
+
+Browser Automation Atoms extracted duplicated browser logic into shared JavaScript implementations.
+
+This reduced:
+
+- duplicate fixes;
+- behavioral divergence;
+- language/browser-specific maintenance;
+- contributor knowledge requirements.
+
+### 7. Architectural decisions affect contributor economics
+
+The source tree was reorganized because Ruby/Python layout conventions were making contribution awkward.
+
+After restructuring around each language's ecosystem expectations, community contributions improved.
+
+Architecture therefore includes repository organization and contributor affordances.
+
+### 8. A compatibility bridge can make migration incremental
+
+The atomized implementation also enabled an emulation layer for older Selenium APIs backed by WebDriver.
+
+This let users migrate gradually rather than requiring a simultaneous ecosystem transition.
+
+### 9. Tight native integration brings capability and maintenance cost
+
+Browser-native integration gives WebDriver more control and higher user-behavior fidelity, but drivers can require major rewrites as browser internals/platform constraints evolve.
+
+### 10. Security properties can invalidate an otherwise useful escape hatch
+
+The Firefox extension's mechanism for escaping browser sandbox restrictions also created a powerful remote-control surface.
+
+This is an explicit reminder that an architectural escape hatch changes the trust boundary.
+
+## EngSense interpretation
+
+Candidate context signals:
+
+```text
+variation_axis_count
+cross_product_maintenance_cost
+api_round_trip_cost
+optional_capability
+capability_discoverability
+user_semantic_fidelity
+driver_platform_coupling
+migration_bridge_need
+contributor_ecosystem_fit
+escape_hatch_security_surface
+```
+
+Candidate rules:
+
+- when multiple independent variation axes exist, actively search for architecture that prevents multiplicative implementation cost;
+- prefer capability interfaces over unsupported-operation APIs when optional behavior is real;
+- include RPC/IPC cost when evaluating API granularity;
+- concentrate repeated cross-platform semantics when doing so genuinely reduces divergence;
+- treat repository/package organization as a contributor-facing interface in multi-language projects;
+- preserve incremental migration paths when replacing a widely used API;
+- evaluate powerful escape hatches as security/trust-boundary changes, not just convenience features.
+
+## Conflict candidates
+
+- API expressiveness vs RPC round-trip cost;
+- narrow role interfaces vs feature discoverability;
+- native integration vs implementation portability;
+- shared semantics vs platform-native differences;
+- powerful escape hatch vs security boundary;
+- internal complexity concentration vs local implementation simplicity.
+
+---
+
+# Chapter 17 — Sendmail
+
+## Source scope
+
+Sendmail is an unusually long-lived case study.
+
+It began as a quick network-mail forwarding hack before the modern Internet stabilized and then evolved through:
+
+- incompatible networks;
+- vendor forks;
+- changing standards;
+- rapid Internet growth;
+- hostile security conditions;
+- commercial/product expectations;
+- new protocols and authentication/security requirements.
+
+The chapter is therefore especially valuable for EngSense as evidence about **architecture under decades of environmental change**.
+
+## Source-derived observations
+
+### 1. Original design decisions reflect the environment in which they were made
+
+Early sendmail ran in a much smaller, more trusted network and on machines with radically different resource constraints.
+
+Some later-criticized choices were reasonable under those original conditions.
+
+For example, more sophisticated queue architectures were unattractive when:
+
+- memory was scarce;
+- daemon processes were relatively costly;
+- robust database packages did not yet exist;
+- traffic volumes were much smaller.
+
+### 2. Scale exposes knees, not just linear slowdown
+
+The queue implementation worked acceptably until filesystem behavior changed around sufficiently large directory sizes, after which performance could drop by roughly an order of magnitude.
+
+This shows why scaling behavior cannot always be extrapolated from small workloads.
+
+### 3. New dependencies increase both capability and moving parts
+
+DNS, external maps/databases, TLS, filtering, DKIM-like mechanisms, and other facilities expanded what sendmail could do.
+
+They also increased architectural and operational complexity.
+
+### 4. Security assumptions can become obsolete
+
+The early design prioritized reliable delivery in a relatively benign environment.
+
+Later Internet conditions shifted priorities toward:
+
+- rejecting malicious traffic early;
+- reducing privilege;
+- minimizing trust in all input;
+- adding filtering and abuse protection.
+
+The architecture had to change because the threat model changed.
+
+### 5. Rejecting bad input earlier can dramatically reduce cost
+
+The chapter describes moving filtering decisions earlier in the SMTP conversation because rejecting after accepting and processing an entire message is more expensive.
+
+This is a concrete "fail/reject early" optimization tied to actual processing cost.
+
+### 6. New requirements can break old abstraction boundaries
+
+SMTP pipelining and security behavior required deeper TCP/IP awareness.
+
+This reduced earlier network abstraction/generalization.
+
+The architecture became less theoretically portable in order to support the environment that actually mattered.
+
+### 7. Product maturity changes release economics
+
+Early/frequent releases provide broad real-world testing.
+
+But as a project becomes critical infrastructure or a commercial product, users increasingly demand stability while still wanting new features.
+
+The chapter describes this tension as persistent rather than fully solvable.
+
+### 8. Backward compatibility is not automatically virtuous
+
+In retrospect, the author states he would have been more willing to break seriously broken early practices rather than preserve them indefinitely.
+
+This is strong evidence that compatibility has an opportunity cost and should be proportional to the maturity/adoption of the surface.
+
+### 9. Tool sophistication must match the problem
+
+The retrospective explicitly warns against both:
+
+- overusing heavyweight tools for simple problems;
+- reinventing tools that already solve the need well.
+
+### 10. Some representation choices have security implications
+
+The author identifies null-terminated strings as an internal abstraction he would avoid in a modern redesign because length/value pairs provide stronger safety properties.
+
+## EngSense interpretation
+
+Candidate context signals:
+
+```text
+environment_age
+original_constraint_validity
+threat_model_change
+scale_knee_risk
+release_maturity
+compatibility_maturity
+privilege_requirement
+early_rejection_value
+dependency_moving_parts
+tooling_complexity_fit
+```
+
+Candidate rules:
+
+- evaluate historical code in the context of the constraints that produced it before judging it;
+- re-evaluate architecture when the threat model changes materially;
+- look for nonlinear scale thresholds rather than assuming smooth degradation;
+- prefer rejecting invalid/adversarial work before expensive downstream processing when semantics permit;
+- do not preserve broken behavior solely because it exists, especially before ecosystem dependence becomes entrenched;
+- do not keep an abstraction pure when real required protocol semantics make the abstraction misleading or prohibitively expensive;
+- match tooling complexity to actual task complexity.
+
+## Strong conflict candidates
+
+- backward compatibility vs correcting broken semantics;
+- abstract portability vs protocol-specific capability;
+- early/frequent releases vs product stability;
+- security hardening vs historical convenience;
+- tool reuse vs over-tooling;
+- dependency capability vs moving-parts complexity.
+
+---
+
+# Chapter 18 — SnowFlock
+
+## Source scope
+
+SnowFlock explores rapid cloning of running virtual machines.
+
+Its core challenge is to create many clones quickly without eagerly copying an entire VM's memory and disk state.
+
+The architecture relies on:
+
+- a minimal architectural descriptor;
+- lazy state transfer;
+- Copy-on-Write;
+- on-demand memory fetch;
+- multicast/cooperative prefetch behavior;
+- compact atomic presence tracking;
+- transient clone storage;
+- network isolation.
+
+## Source-derived observations
+
+### 1. Late binding can avoid paying for unused state
+
+The key design decision is to postpone copying most VM state until a clone actually needs it.
+
+Only a small descriptor is required to make the clone schedulable.
+
+The rest is transferred lazily.
+
+### 2. Copy-on-Write preserves a consistent snapshot while allowing progress
+
+The parent continues running and modifying its own state while clones observe the snapshot corresponding to cloning time.
+
+CoW isolates those two views without copying everything eagerly.
+
+### 3. Workload similarity can create cooperative optimization opportunities
+
+Sibling clones tend to execute similar code and access overlapping state.
+
+SnowFlock exploits that temporal locality so one requested memory page can be useful to multiple clones.
+
+### 4. Simple atomic state can tame concurrency
+
+A page-presence bitmap with atomic bit operations coordinates:
+
+- Xen;
+- memtap;
+- multiple virtual CPUs;
+- asynchronous arrivals.
+
+The chapter explicitly presents this simple representation as a major reason the concurrency design remains tractable.
+
+### 5. Do not reinvent adjacent scheduling/policy infrastructure without need
+
+SnowFlock delegates resource-allocation policy to existing cluster-management software rather than absorbing quotas/scheduling into the VM-cloning subsystem.
+
+### 6. Isolation should follow the new threat/failure surface
+
+Cloned virtual networks are isolated to prevent collisions and mutual denial-of-service behavior.
+
+A specialized router VM provides firewalling, throttling, and NAT, while the authors acknowledge that this router becomes a scalability bottleneck.
+
+### 7. Centralized convenience can create a scale ceiling
+
+The router VM simplifies networking but centralizes traffic and therefore limits scalability.
+
+The chapter explicitly identifies this rather than presenting the design as universally sufficient.
+
+### 8. Simplicity beat anticipated sophistication
+
+The authors expected to need complicated prefetching.
+
+Instead, a simple "fetch memory when needed" approach performed well for many workloads.
+
+### 9. Scale reveals hidden bottlenecks
+
+The chapter's explicit lesson is that each significant jump in scale can expose new failure points and invalidate assumptions.
+
+A TCP/IP page-distribution approach that works at smaller scale fails at hundreds of clones, while the more constrained multicast design scales better.
+
+## EngSense interpretation
+
+Candidate context signals:
+
+```text
+state_transfer_volume
+lazy_materialization_value
+snapshot_consistency_need
+workload_similarity
+shared_state_locality
+concurrency_coordination_complexity
+central_bottleneck
+scale_step
+adjacent_infrastructure_reuse
+network_isolation_need
+```
+
+Candidate rules:
+
+- consider lazy materialization when large state is expensive and only a subset is likely to be consumed;
+- use Copy-on-Write or equivalent snapshot mechanisms when readers need a stable view while the origin continues mutating;
+- prefer simple explicit coordination state when it can replace complex lock interactions;
+- keep subsystem scope narrow by delegating unrelated scheduling/policy to mature infrastructure;
+- identify convenience centralization as a potential scale ceiling;
+- test at materially larger scales rather than extrapolating from small systems;
+- do not implement speculative optimization until simpler demand-driven behavior is measured and shown insufficient.
+
+## Strong conflict candidates
+
+- eager copying vs lazy state transfer;
+- centralized convenience vs distributed scalability;
+- sophisticated prediction vs simple demand-driven behavior;
+- isolation/security vs network simplicity;
+- custom infrastructure vs reuse of existing policy/scheduling systems.
+
+---
+
+# Chapter 19 — SocialCalc
+
+## Source scope
+
+SocialCalc is a browser-based spreadsheet engine and collaboration system.
+
+The chapter covers:
+
+- spreadsheet command execution;
+- recalculation/render scheduling;
+- viewport rendering;
+- audit/undo behavior;
+- extensible formatting;
+- real-time command broadcasting;
+- distributed-team development lessons.
+
+## Source-derived observations
+
+### 1. Commands form a reusable behavioral boundary
+
+Spreadsheet changes are expressed as commands.
+
+Because commands are the unit of mutation:
+
+- they can be executed;
+- logged;
+- converted into undo operations;
+- broadcast to collaborators.
+
+One representation supports several capabilities.
+
+### 2. Command logging creates provenance naturally
+
+Executed commands form an audit trail without requiring a completely separate change-history mechanism.
+
+The architecture's mutation model makes provenance an emergent capability.
+
+### 3. Rendering only visible state avoids scaling work with total document size
+
+The view maintains a fixed visible table and updates its contents as the user scrolls.
+
+The rendered DOM therefore scales with the viewport rather than total sheet size.
+
+This is a concrete example of virtualization driven by the actual user-visible working set.
+
+### 4. A clean command boundary made collaboration unexpectedly cheap
+
+Real-time collaboration could broadcast the same sheet commands to remote users.
+
+Because the mutation semantics were already centralized, networking did not require rewriting spreadsheet operations.
+
+### 5. Conceptual integrity can resist feature creep
+
+The author credits a clear UX design vision with helping a malleable engine converge instead of accumulating every possible feature.
+
+This is a reminder that extensibility increases the need for explicit product/design boundaries.
+
+### 6. Durable project history accelerates onboarding
+
+The team kept design notes, matrices, discussion context, and artifacts in shared wiki-style documentation.
+
+A new contributor could reconstruct prior decisions without relying entirely on direct hand-holding.
+
+### 7. Asynchronous collaboration can improve artifact quality
+
+Time-zone separation forced the team to hand off work using self-descriptive:
+
+- design sketches;
+- code;
+- tests.
+
+The chapter presents this as improving trust and continuity.
+
+### 8. Prototypes can be decision instruments
+
+The team sometimes implemented alternative designs to explore disagreement rather than trying to settle every dispute abstractly.
+
+Working prototypes could then be replaced when a stronger design emerged.
+
+## EngSense interpretation
+
+Candidate context signals:
+
+```text
+mutation_command_model
+auditability
+undoability
+collaboration_transport
+visible_working_set
+feature_creep_pressure
+decision_artifact_quality
+async_handoff_need
+prototype_reversibility
+```
+
+Candidate rules:
+
+- centralizing mutations around a stable command/event representation can unlock logging, undo, replay, and collaboration when those capabilities are real requirements;
+- render/process the active working set rather than entire datasets when UI semantics allow it;
+- treat project decision history as onboarding infrastructure;
+- in asynchronous teams, require handoff artifacts to be self-descriptive enough for progress without synchronous explanation;
+- use prototypes to resolve uncertain design questions when implementation cost is low and the prototype is disposable;
+- pair highly malleable/extensible systems with an explicit product/design vision to resist incoherent feature growth.
+
+## Conflict candidates
+
+- extensibility vs conceptual integrity;
+- discussion/consensus vs prototype-driven exploration;
+- full rendering simplicity vs viewport virtualization;
+- synchronous clarification vs asynchronous artifact quality;
+- one-off mutation code vs command-based architecture.
+
+---
+
+# Chapter 20 — Telepathy
+
+## Source scope
+
+Telepathy is a modular communications framework built on D-Bus.
+
+Its architecture separates:
+
+- protocol-specific Connection Managers;
+- account management;
+- channel dispatch;
+- clients/UIs;
+- process boundaries;
+- generated interface specifications.
+
+The chapter also records several iterations where initially plausible APIs were replaced after real use exposed weaknesses.
+
+## Source-derived observations
+
+### 1. Process boundaries provide more than modularity
+
+Telepathy's separate D-Bus components allow:
+
+- language independence;
+- license independence;
+- UI independence;
+- privilege isolation;
+- restartability.
+
+The architecture uses process separation to satisfy several independent constraints at once.
+
+### 2. Optional interfaces preserve heterogeneous capabilities
+
+Different communication protocols do not all support:
+
+- avatars;
+- rosters;
+- geolocation;
+- group behavior;
+- messaging features.
+
+Telepathy exposes optional interfaces rather than pretending every protocol supports one identical capability set.
+
+### 3. Interface specifications can be executable architecture artifacts
+
+Telepathy extends its XML IDL with:
+
+- documentation;
+- semantic type names;
+- version/deprecation metadata;
+- binding hints;
+- exception information.
+
+This specification can then drive documentation and language bindings.
+
+### 4. Canonical external identity can hide protocol-specific normalization
+
+Telepathy handles protocol-dependent identifier semantics through connection-specific handles rather than asking every client to implement normalization rules.
+
+The abstraction centralizes a domain invariant that clients would otherwise repeatedly get wrong.
+
+### 5. Stateless discovery improves restartability
+
+Components can rediscover currently running services from D-Bus rather than depending on a separate persistent registration manager.
+
+This helps services restart and reconstruct their view.
+
+### 6. IPC granularity has measurable cost
+
+Early versions required many small D-Bus calls to discover object properties.
+
+Later versions batch immutable information into properties/signals so clients can avoid many round trips.
+
+This independently reinforces Selenium's lesson that remote-call cost should shape API design.
+
+### 7. Include immutable information at object-announcement time
+
+If clients immediately need stable metadata to decide whether they care about an object, including that information in the creation signal avoids redundant follow-up calls.
+
+### 8. Pseudo-synchronous wrappers can hide asynchronous reality badly
+
+Telepathy removed pseudo-synchronous D-Bus APIs after observing:
+
+- blocked event processing;
+- confusing ordering/state behavior;
+- deadlock potential between mutually calling services.
+
+The lesson is not "sync APIs are always bad"; it is that an abstraction becomes dangerous when it hides concurrency semantics that still determine correctness.
+
+### 9. API evolution should respond to implemented/user-valued reality
+
+An overly complex presence interface was replaced by a simpler one that captured functionality people actually used and implementations actually provided.
+
+Compatibility support remained for legacy clients.
+
+### 10. Iterative specification evolution can reduce systemic cost
+
+Telepathy's lessons emphasize fewer round trips, richer announcement information, and more direct representation of actual capabilities.
+
+The architecture became simpler for clients as the specification learned from real usage.
+
+## EngSense interpretation
+
+Candidate context signals:
+
+```text
+process_isolation_value
+language_independence_need
+privilege_separation
+restartability
+protocol_capability_variance
+idl_generation_value
+identity_normalization_owner
+ipc_round_trip_cost
+async_semantics
+legacy_interface_support
+```
+
+Candidate rules:
+
+- use process boundaries when they provide concrete isolation, restartability, language, or privilege benefits—not merely for visual modularity;
+- model heterogeneous capabilities explicitly rather than returning unsupported-operation failures;
+- use machine-readable interface specifications when multiple bindings/docs must remain consistent;
+- centralize protocol-specific identity normalization when domain equality rules differ across providers;
+- avoid synchronous-looking abstractions that conceal correctness-relevant asynchronous ordering;
+- batch immutable/commonly requested metadata across IPC boundaries where round trips dominate;
+- simplify public APIs when real usage shows the original abstraction was more general than needed, while pricing migration/compatibility.
+
+## Strong conflict candidates
+
+- process isolation vs IPC overhead;
+- asynchronous correctness vs synchronous API convenience;
+- optional capabilities vs uniform API simplicity;
+- rich general interface vs simpler proven capability set;
+- stateless discovery vs centralized registry control;
+- normalized identity abstraction vs raw provider identifiers.
+
+---
+
+# Chapters 16–20 — Cross-case synthesis
+
+## 1. Complexity placement is a first-class design decision
+
+Selenium states this directly, while Telepathy and SocialCalc demonstrate it structurally.
+
+Complexity can be:
+
+- concentrated in drivers/services;
+- repeated in clients;
+- encoded declaratively;
+- hidden in transport semantics;
+- pushed into user workflows.
+
+EngSense should ask:
+
+> Who pays for this complexity, how many times, and at what lifecycle stage?
+
+## 2. Interface granularity depends on transport cost
+
+Both Selenium and Telepathy independently discovered that APIs crossing process/network boundaries cannot be reviewed only as object/interface design.
+
+Round-trip cost can justify:
+
+- coarser operations;
+- batching;
+- immutable metadata snapshots;
+- fewer follow-up calls.
+
+Candidate quality dimension:
+
+```text
+interaction_round_trip_cost
+```
+
+## 3. Strong abstractions should centralize real invariants
+
+Examples:
+
+- Selenium centralizes browser-driving semantics;
+- SocialCalc centralizes mutation as commands;
+- Telepathy centralizes protocol identifier normalization;
+- SnowFlock centralizes page-presence state.
+
+This differs from abstraction for style.
+
+The abstraction is valuable because it protects a repeated invariant or prevents combinatorial duplication.
+
+## 4. Historical context must be part of code review
+
+Sendmail shows perhaps the strongest example in AOSA so far:
+
+```text
+today's awkward architecture
+may be yesterday's rational solution
+under different hardware, tooling, standards, threat model, and scale.
+```
+
+EngSense should distinguish:
+
+- obsolete rationale;
+- still-valid rationale;
+- accidental historical residue.
+
+## 5. Threat models are architecture inputs that can change over time
+
+Sendmail and Selenium both show capabilities that became security concerns under broader exposure.
+
+A review should not assume the trust model at system creation remains valid.
+
+## 6. Simplicity must be validated at scale
+
+SnowFlock strongly supports simple designs, but also insists that scale exposes hidden bottlenecks.
+
+EngSense should avoid both:
+
+- speculative distributed complexity;
+- confidence based only on small-scale success.
+
+## 7. Command/event representations can create leverage beyond the original feature
+
+SocialCalc's command model supports:
+
+- mutation;
+- undo;
+- audit;
+- collaboration.
+
+This resembles LLVM's IR lesson: a well-chosen representation can become an architectural multiplexer.
+
+## 8. Abstractions must respect asynchronous/distributed semantics
+
+Telepathy's pseudo-sync problem is a strong warning against making an API look locally synchronous when ordering, callbacks, or deadlocks remain part of correctness.
+
+Candidate rule:
+
+> Do not hide a semantic property merely to simplify surface syntax if callers still need that property to reason correctly.
+
+## 9. Ecosystem/repository ergonomics can affect system sustainability
+
+Selenium's source-layout change and SocialCalc's durable wiki show that architecture includes the developer system around the code.
+
+Contributor friction and knowledge continuity can be structural quality concerns at project scale.
+
+## 10. Product maturity changes the correct engineering trade-off
+
+Sendmail moved from an experimental project environment toward critical/product stability expectations.
+
+SocialCalc needed product-level conceptual integrity to contain feature creep.
+
+EngSense should include product maturity and audience criticality when evaluating:
+
+- compatibility;
+- release cadence;
+- API stability;
+- experimentation tolerance.
+
+## New eval candidates
+
+1. An API exposes ten low-level remote calls where almost every caller immediately executes the same sequence.
+2. A multi-platform system repeats the same browser/device semantics independently in every language binding.
+3. A supposedly convenient synchronous IPC wrapper can deadlock when two peers call each other.
+4. An API advertises methods that half of its implementations can only reject as unsupported.
+5. A mature network service is reviewed under today's threat assumptions without checking why historical privileges/protocol choices existed.
+6. A queue/storage design looks healthy at 1,000 items but crosses a severe nonlinear performance knee at 10,000.
+7. A new security requirement invalidates an old abstraction that intentionally hid protocol-specific details.
+8. A distributed system introduces complex predictive prefetching before testing simple demand paging at target scale.
+9. A centralized router simplifies deployment but becomes the throughput ceiling for the entire cluster.
+10. A spreadsheet/editor maintains separate ad hoc logic for undo, audit, collaboration, and mutation even though one command representation could serve all four.
+11. A distributed communications framework lets every client reimplement protocol-specific identity normalization.
+12. A public API is designed for broad hypothetical capabilities while actual implementations and users rely on a much smaller feature set.
+13. A repository's language layout follows one ecosystem's conventions and materially discourages contributors from other supported languages.
+14. A project retains fast experimental release habits after becoming critical infrastructure without redefining its stability contract.

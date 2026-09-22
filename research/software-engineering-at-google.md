@@ -31,11 +31,11 @@ No source is treated as absolute authority.
 - [x] Chapter 8 — Style Guides and Rules
 - [x] Chapter 9 — Code Review
 - [x] Chapter 10 — Documentation
-- [ ] Chapter 11 — Testing Overview
-- [ ] Chapter 12 — Unit Testing
-- [ ] Chapter 13 — Test Doubles
-- [ ] Chapter 14 — Larger Testing
-- [ ] Chapter 15 — Deprecation
+- [x] Chapter 11 — Testing Overview
+- [x] Chapter 12 — Unit Testing
+- [x] Chapter 13 — Test Doubles
+- [x] Chapter 14 — Larger Testing
+- [x] Chapter 15 — Deprecation
 - [ ] Chapter 16 — Version Control and Branch Management
 - [ ] Chapter 17 — Code Search
 - [ ] Chapter 18 — Build Systems and Build Philosophy
@@ -1517,3 +1517,626 @@ For non-trivial decisions, record:
 A local rule can be mandatory inside a repository while remaining non-universal outside it.
 
 This distinction is essential for a context-aware Skill.
+
+
+---
+
+# Chapter 11 — Testing Overview
+
+## Source scope
+
+This chapter frames automated testing as infrastructure for **safe change**, not merely as a bug-catching activity.
+
+It introduces two independent axes:
+
+- **test size** — runtime/resource constraints;
+- **test scope** — how much behavior/code the test intends to validate.
+
+It also emphasizes speed, determinism, hermeticity, and trust in the test suite.
+
+## Source-derived principles
+
+### 1. Tests enable change
+
+The value of a test suite is strongly connected to whether engineers can modify a system with confidence.
+
+A test suite that only catches some bugs but slows every change, flakes often, or creates unrelated maintenance work can become a net drag.
+
+### 2. Trust is a first-class property of testing
+
+A failing test has value only if engineers believe the failure is meaningful.
+
+Flakiness, slowness, and brittle expectations reduce trust, and once trust is lost, engineers begin ignoring or bypassing tests.
+
+### 3. Size and scope are different
+
+A narrowly scoped test can still be medium-sized if it needs a browser or external process.
+
+A broader behavior test can still be small if heavyweight dependencies are replaced.
+
+EngSense must therefore avoid treating labels such as "unit", "integration", and "E2E" as sufficient descriptions of test cost or fidelity.
+
+### 4. Smaller tests are usually faster and more deterministic
+
+Google favors smaller tests because constraints reduce major sources of nondeterminism.
+
+But the chapter does **not** claim that all important behavior belongs in small tests.
+
+### 5. A healthy suite is a portfolio
+
+Google presents the familiar rough 80/15/5 distribution as a guideline, not a universal law.
+
+The actual blend should reflect local architecture and organizational reality.
+
+### 6. Coverage is a weak proxy
+
+Code coverage can reveal untested code, but it measures execution, not whether useful behavior was verified.
+
+Turning a coverage threshold into a target can distort behavior.
+
+### 7. Test what you cannot afford to break
+
+Important behaviors include more than ordinary correctness:
+
+- failure handling;
+- accessibility;
+- security;
+- performance;
+- dependency compatibility.
+
+### 8. Human testing still has a role
+
+Creative exploration and qualitative judgment remain valuable where the expected answer cannot be completely encoded.
+
+When exploratory testing discovers a reproducible defect, automation should usually capture the regression.
+
+## EngSense interpretation
+
+Candidate testing dimensions:
+
+```text
+test_speed
+test_determinism
+test_hermeticity
+test_fidelity
+test_scope
+test_maintenance_cost
+failure_diagnosticity
+suite_trust
+```
+
+Candidate rules:
+
+- do not recommend "more tests" without identifying the risk to mitigate;
+- do not use code coverage as a standalone quality judgment;
+- prefer the smallest test that gives sufficient confidence for the targeted risk;
+- use larger tests where cross-component or production-like fidelity is the risk;
+- treat flaky tests as reliability debt, not harmless noise;
+- evaluate a test suite as a portfolio rather than a single test category.
+
+## EngSense correction
+
+The roadmap should not encode a fixed "unit tests are always best" doctrine.
+
+The stronger rule is:
+
+> use the least expensive test that gives adequate confidence for the failure mode being protected.
+
+---
+
+# Chapter 12 — Unit Testing
+
+## Source scope
+
+This chapter focuses on **maintainable** narrow-scope tests.
+
+Its main concern is not simply whether a test passes today, but whether the test remains useful as implementation details change.
+
+## Source-derived principles
+
+### 1. A test should break for meaningful behavior changes
+
+Brittle tests often fail when implementation changes but user-observable behavior does not.
+
+This creates change friction without increasing product confidence.
+
+### 2. Test through the public API of the unit
+
+Tests that depend on private implementation details encode incidental structure into the test suite.
+
+The relevant notion of "public" is architectural, not merely language visibility.
+
+### 3. Prefer state over interaction
+
+State-oriented tests validate outcomes.
+
+Interaction tests often validate how an implementation arrived there and therefore couple the test to internal structure.
+
+### 4. Test behaviors, not methods
+
+A non-trivial method can implement several behaviors, and a behavior can span several methods.
+
+Behavior is therefore a more stable testing unit than method count.
+
+### 5. Tests should be obvious on inspection
+
+Tests do not have their own tests.
+
+Logic, loops, conditionals, hidden setup, and clever helpers therefore carry a higher clarity cost than similar constructs in production code.
+
+### 6. DAMP can beat DRY in tests
+
+Some duplication is acceptable when it keeps a test descriptive and locally understandable.
+
+DRY remains useful, but removing duplication is not the primary objective of test code.
+
+### 7. Failure messages are part of test quality
+
+A good test should make a failure diagnosable without forcing the engineer to reverse-engineer the assertion.
+
+### 8. Shared infrastructure is production-like code
+
+Once test infrastructure has many callers, it becomes a product with compatibility and maintenance obligations and should itself be tested.
+
+## EngSense interpretation
+
+Strong candidate rules:
+
+```text
+production DRY pressure
+!=
+test DRY pressure
+```
+
+and:
+
+```text
+behavioral stability > structural mirroring
+```
+
+Candidate review checks:
+
+- Does this test validate user-relevant behavior or an implementation detail?
+- Would a semantics-preserving refactor break it?
+- Is setup hiding facts essential to understanding the case?
+- Is a helper improving clarity, or merely eliminating repetition?
+- Is the failure output diagnostic?
+
+## Conflict candidates
+
+- DRY vs local test readability;
+- implementation isolation vs behavior fidelity;
+- shared setup vs explicit setup;
+- method-oriented structure vs behavior-oriented structure.
+
+---
+
+# Chapter 13 — Test Doubles
+
+## Source scope
+
+This chapter treats doubles as a trade-off mechanism, not a default testing style.
+
+It distinguishes:
+
+- fakes;
+- stubs;
+- interaction tests/mocks.
+
+Its recurring concern is **fidelity versus speed/determinism/constructability**.
+
+## Source-derived principles
+
+### 1. Prefer real implementations when practical
+
+If the real dependency is fast, deterministic, and simple to construct, using it generally gives better fidelity and makes the test less coupled to implementation details.
+
+### 2. Fakes are usually the strongest double
+
+A well-maintained fake can preserve state and behavior while remaining fast and hermetic.
+
+The difficulty is maintaining behavioral compatibility with the real implementation.
+
+Contract tests can help validate that relationship.
+
+### 3. Stubbing is useful but easy to overuse
+
+Stubbing is appropriate for targeted return values or difficult-to-trigger error paths.
+
+Heavy stubbing can make a test unreadable, brittle, and dependent on duplicated knowledge of the implementation contract.
+
+### 4. Prefer state testing over interaction testing
+
+Interaction testing often proves only that a call occurred, not that the intended system outcome occurred.
+
+It is best reserved for cases where the interaction itself matters or state cannot be observed economically.
+
+### 5. Mocking can freeze APIs
+
+When thousands of tests fabricate a dependency's behavior independently, API evolution becomes harder because those copies may encode invalid assumptions.
+
+### 6. Testability affects architecture
+
+Dependency substitution can require architecture that allows dependencies to be replaced.
+
+But EngSense must not turn this into "always create an interface."
+
+The architectural cost of testability must be justified by the actual testing need.
+
+## EngSense interpretation
+
+Candidate dependency-test decision sequence:
+
+```text
+1. Can the real implementation be used cheaply and deterministically?
+   yes → prefer it.
+
+2. Is a maintained high-fidelity fake available?
+   yes → consider the fake.
+
+3. Is one specific response/error required?
+   yes → targeted stubbing may be appropriate.
+
+4. Is the interaction itself the behavior of interest?
+   yes → narrowly scoped interaction testing may be appropriate.
+
+5. Otherwise:
+   reassess test scope or add a larger-scope test.
+```
+
+Important anti-rule:
+
+> Do not introduce production abstraction solely to satisfy a mocking framework unless the testability benefit is worth the additional production complexity.
+
+This will need comparison with Fowler, Feathers, and Ousterhout before becoming normative.
+
+---
+
+# Chapter 14 — Larger Testing
+
+## Source scope
+
+This chapter explains why larger tests are necessary despite being slower, less hermetic, and more expensive.
+
+Their primary purpose is **fidelity and risk mitigation** for behavior that narrower tests cannot validate.
+
+## Source-derived principles
+
+### 1. Larger tests close fidelity gaps
+
+Narrow tests can miss:
+
+- incorrect doubles;
+- deployment/configuration problems;
+- real service contracts;
+- emergent system behavior;
+- performance/load characteristics;
+- user-facing application behavior.
+
+### 2. Fidelity and hermeticity often conflict
+
+Higher fidelity tends to introduce:
+
+- more infrastructure;
+- more concurrency;
+- more external state;
+- more nondeterminism.
+
+The best test environment is therefore context-dependent.
+
+### 3. End-to-end combinatorics do not scale
+
+As system connectivity grows, full path enumeration becomes impractical.
+
+The response is not "more E2E tests", but strategic decomposition and targeted integration boundaries.
+
+### 4. Use the smallest possible larger test
+
+Even integration testing benefits from reduced scope.
+
+Pairwise or boundary-focused tests can provide stronger diagnostic value than enormous end-to-end flows.
+
+### 5. Test strategy should follow risk vectors
+
+The chapter covers multiple larger-test categories:
+
+- functional;
+- browser/device;
+- performance/load/stress;
+- configuration;
+- exploratory;
+- A/B differential;
+- UAT;
+- canary/prober;
+- disaster recovery/chaos;
+- human evaluation.
+
+These are not interchangeable.
+
+### 6. Production behavior can be a test surface
+
+Probers, canary analysis, and production monitoring share structural properties with larger tests.
+
+This connects pre-release verification with runtime verification.
+
+### 7. Realistic data matters
+
+Handcrafted test data can reflect author bias and fail to cover important real-world distributions.
+
+But copied production data introduces privacy, scale, and operational concerns.
+
+### 8. Large-test maintenance cost is real
+
+A high-fidelity test that is too slow or flaky can be ignored and lose value.
+
+Developer workflow integration remains important even when tests cannot run on every edit.
+
+## EngSense interpretation
+
+Candidate test-strategy model:
+
+```text
+risk
+  ↓
+required fidelity
+  ↓
+smallest viable scope
+  ↓
+environment/hermeticity choice
+  ↓
+verification method
+  ↓
+workflow placement
+```
+
+Candidate rule:
+
+Do not choose a test type by ideology. Choose it by the failure mode that must be detected.
+
+Examples:
+
+- database contract → integration/contract test;
+- load collapse → performance/load test;
+- config packaging failure → deployment/config smoke test;
+- emergent distributed behavior → larger functional/system test;
+- unknown user-flow bug → exploratory test;
+- migration behavior drift → A/B differential test.
+
+## Strong conflict candidate
+
+```text
+Hermeticity
+vs
+Production fidelity
+```
+
+Neither dominates universally.
+
+---
+
+# Chapter 15 — Deprecation
+
+## Source scope
+
+This chapter treats removal as a core software-engineering capability.
+
+Systems accumulate ongoing maintenance, ecosystem, cognitive, compatibility, and operational costs even when their feature set no longer grows.
+
+## Source-derived principles
+
+### 1. Code is a liability when separated from user value
+
+Functionality delivers value; code carries continuing cost.
+
+More code or more systems are not inherently assets.
+
+### 2. Old does not mean obsolete
+
+Age alone is not a valid deprecation reason.
+
+Deprecation is justified when a system is demonstrably obsolete and replacement/migration economics support removal.
+
+### 3. Duplicate systems create ecosystem drag
+
+Keeping old and new implementations indefinitely can introduce:
+
+- compatibility requirements;
+- transformation layers;
+- split expertise;
+- maintenance duplication;
+- constraints on evolution of the replacement.
+
+### 4. Replacement is often more expensive than expected
+
+In-place evolution can be cheaper than wholesale migration once deprecation and user migration costs are included.
+
+### 5. Design for eventual removal
+
+Useful design questions include:
+
+- Can consumers migrate incrementally?
+- Can components be replaced independently?
+- Are dependencies discoverable?
+- Can new use of the old system be prevented?
+
+### 6. Advisory deprecation rarely finishes migration by itself
+
+Warnings can reduce new adoption but usually do not move existing users without stronger incentives, tooling, ownership, or deadlines.
+
+### 7. Compulsory deprecation requires resources and enforcement
+
+A deadline without migration support becomes an unfunded mandate.
+
+A migration program without enforcement can remain unfinished indefinitely.
+
+### 8. Warnings must be actionable and relevant
+
+Excessive warnings produce alert fatigue.
+
+The best warning appears when the user can actually do something about it and provides a concrete next action.
+
+### 9. Discovery is part of migration correctness
+
+Static references, runtime observations, tests, and staged outages can expose hidden dependencies.
+
+### 10. Prevent backsliding
+
+A migration can never complete if new dependencies on the deprecated system continue to appear.
+
+## EngSense interpretation
+
+Candidate lifecycle dimensions:
+
+```text
+maintenance_cost
+migration_cost
+ecosystem_drag
+dependency_visibility
+replacement_readiness
+deprecation_reversibility
+consumer_migration_cost
+backsliding_risk
+```
+
+Candidate rule:
+
+When comparing "keep old system" and "replace it", EngSense must include the cost of:
+
+- migration;
+- overlap period;
+- hidden consumers;
+- compatibility;
+- removal;
+- support of both systems;
+- future constraints created by coexistence.
+
+Do not compare only the implementation quality of old vs new.
+
+## Strong lifecycle decision frame
+
+```text
+build
+support
+evolve
+deprecate
+remove
+```
+
+These are all engineering phases.
+
+A design that is easy to create but impossible to evolve or retire is not necessarily a good long-lived design.
+
+---
+
+# Chapters 11–15 — Cross-chapter extraction
+
+## 1. Testing is risk allocation, not ritual
+
+The combined testing chapters strongly reject simplistic doctrines such as:
+
+```text
+more tests = better
+more mocks = better
+unit tests = always better
+E2E = most realistic therefore best
+coverage = quality
+```
+
+A better EngSense model is:
+
+```text
+failure mode
+   ↓
+required confidence
+   ↓
+cheapest sufficient verification
+   ↓
+maintenance/trust cost
+```
+
+## 2. Test quality is multidimensional
+
+Candidate dimensions:
+
+```text
+speed
+determinism
+hermeticity
+fidelity
+scope
+diagnosticity
+maintainability
+trust
+risk coverage
+```
+
+No single metric should replace this profile.
+
+## 3. Test architecture can reveal production architecture problems
+
+Difficulty testing a system may reveal:
+
+- tight coupling;
+- hidden dependencies;
+- poor boundaries;
+- uncontrolled external effects.
+
+But EngSense must distinguish:
+
+```text
+design improvement for real modularity
+vs
+production complexity added only to appease a test framework
+```
+
+## 4. DAMP vs DRY becomes a first-class EngSense conflict
+
+This is one of the clearest source-backed examples of contextual engineering rules.
+
+In production code, reducing duplication often lowers change cost.
+
+In tests, local readability can be more important because tests should be trivially inspectable and stable.
+
+Therefore:
+
+> DRY is a heuristic with different weight depending on code role.
+
+## 5. Fidelity vs isolation becomes another first-class conflict
+
+Mocks, fakes, hermetic integration environments, staging, and production probes occupy different points in a trade-off space.
+
+EngSense should not label one point universally superior.
+
+## 6. Lifecycle cost must include removal
+
+Chapter 15 extends the decision model beyond creation and maintenance.
+
+Candidate total lifecycle model:
+
+```text
+engineering lifecycle cost
+├── implementation
+├── verification
+├── operation
+├── maintenance
+├── migration
+├── compatibility
+├── deprecation
+└── removal
+```
+
+This is a major addition to the original EngSense quality model.
+
+## New eval candidates
+
+1. 95% coverage but tests assert almost nothing.
+2. A unit test mocks every dependency and breaks on harmless refactoring.
+3. A real lightweight dependency is replaced with a complex mock layer.
+4. A test suite is mostly E2E and takes an hour.
+5. A distributed service has excellent unit coverage but no contract/integration test.
+6. Two systems coexist indefinitely because removal cost was ignored.
+7. A deprecated API emits warnings but gives users no migration path.
+8. A migration removes old usage but tooling still permits new dependencies.
+9. Test duplication is removed into a helper that hides each scenario's essential inputs.
+10. A large production-like test is replaced by a smaller test that loses the only coverage of an emergent failure mode.
+

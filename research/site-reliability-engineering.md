@@ -88,11 +88,11 @@ Therefore:
 - [x] Chapter 20 — Load Balancing in the Datacenter
 - [x] Chapter 21 — Handling Overload
 - [x] Chapter 22 — Addressing Cascading Failures
-- [ ] Chapter 23 — Managing Critical State: Distributed Consensus for Reliability
-- [ ] Chapter 24 — Distributed Periodic Scheduling with Cron
-- [ ] Chapter 25 — Data Processing Pipelines
-- [ ] Chapter 26 — Data Integrity: What You Read Is What You Wrote
-- [ ] Chapter 27 — Reliable Product Launches at Scale
+- [x] Chapter 23 — Managing Critical State: Distributed Consensus for Reliability
+- [x] Chapter 24 — Distributed Periodic Scheduling with Cron
+- [x] Chapter 25 — Data Processing Pipelines
+- [x] Chapter 26 — Data Integrity: What You Read Is What You Wrote
+- [x] Chapter 27 — Reliable Product Launches at Scale
 
 ### Part IV — Management
 

@@ -1,0 +1,60 @@
+{
+  "id": "rust-java-style-layering",
+  "title": "Rust code with Java-style trait/factory layering",
+  "mode": "refactoring",
+  "task": "Review a Rust module that introduces a trait, boxed dynamic dispatch, factory, adapter, and service wrapper around one concrete local implementation.",
+  "context": [
+    "The code is Rust 2024 edition.",
+    "There is one local implementation.",
+    "No plugin or runtime substitution boundary exists.",
+    "The trait mirrors the concrete type methods one-for-one.",
+    "The factory always returns Box<dyn Repository>.",
+    "The concrete type could be constructed directly without changing behavior."
+  ],
+  "evidence": [
+    "Repository search finds no second implementation.",
+    "No caller depends on dynamic dispatch.",
+    "Tests exercise behavior without requiring substitution.",
+    "The abstraction adds heap allocation and indirection."
+  ],
+  "snippet": "trait UserRepository { fn get(&self, id: UserId) -> Result<User>; }\nstruct SqliteUserRepository { ... }\nfn make_repository() -> Box<dyn UserRepository> { Box::new(SqliteUserRepository::new()) }",
+  "tempting_wrong_recommendation": [
+    "Keep the architecture because dependency inversion is always cleaner.",
+    "Add more traits so every concrete type has an interface.",
+    "Prefer dynamic dispatch simply because it looks more abstract."
+  ],
+  "expected_decision_properties": [
+    "Recommend simplifying toward direct concrete construction for the current context.",
+    "Recognize that Rust traits are useful when they define a real capability or substitution boundary, not as mandatory interfaces.",
+    "Avoid unnecessary Box<dyn Trait> when static concrete code is sufficient.",
+    "Preserve the option to introduce a trait later if a real provider or polymorphic boundary appears."
+  ],
+  "unacceptable_reasoning": [
+    "Rust should copy Java-style interface layering.",
+    "Every dependency should be represented by a trait.",
+    "Dynamic dispatch is automatically more maintainable.",
+    "Concrete construction is inherently untestable."
+  ],
+  "expected_quality_dimensions": [
+    "comprehension",
+    "cognitive_complexity",
+    "maintainability",
+    "performance",
+    "testability"
+  ],
+  "expected_tradeoffs": [
+    "dependency inversion vs concrete simplicity",
+    "runtime polymorphism vs zero-cost/static structure"
+  ],
+  "expected_authority": "guidance",
+  "verification_expectations": [
+    "Run Rust tests after simplification.",
+    "Run clippy/type checking used by the repository.",
+    "Confirm no caller requires runtime substitution."
+  ],
+  "revisit_when": [
+    "A second real repository implementation appears.",
+    "A plugin/provider boundary requires runtime substitution.",
+    "Independent test substitution becomes a real architectural requirement."
+  ]
+}

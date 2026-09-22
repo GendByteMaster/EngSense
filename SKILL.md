@@ -92,6 +92,7 @@ Do not load every module for every task.
 - `principles/evidence-driven-abstraction.md`
 - `principles/performance-engineering.md`
 - `principles/change-strategy.md`
+- `principles/representation-design.md`
 
 ### References
 
@@ -177,7 +178,8 @@ Use or consult:
 - API/protocol compatibility → `domains/api-design.md`;
 - test fidelity/strategy → `domains/testing.md`;
 - performance trade-off/evidence quality → `principles/performance-engineering.md`;
-- rewrite/refactor/migration strategy → `principles/change-strategy.md`.
+- rewrite/refactor/migration strategy → `principles/change-strategy.md`;
+- data/intermediate/persisted representation decisions → `principles/representation-design.md`.
 
 Require deeper specialist review when correctness depends on:
 

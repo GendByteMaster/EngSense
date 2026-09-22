@@ -111,6 +111,10 @@ It does not judge model quality. Behavioral scoring will be added separately.
 26. Indefinite old/new implementation coexistence
 27. Mature tested subsystem with a credible rewrite path
 28. Coordinated cross-cutting representation migration
+29. Internal runtime object graph used as durable storage
+30. Dependency order discovered through retry instead of an explicit graph
+31. Human CLI presentation scraped as a machine protocol
+32. Normalization layer erases a provider capability required for correctness
 
 The suite intentionally includes:
 

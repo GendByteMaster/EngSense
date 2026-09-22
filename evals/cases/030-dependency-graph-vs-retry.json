@@ -1,0 +1,48 @@
+{
+  "id": "dependency-graph-vs-retry",
+  "title": "Execution order is discovered through repeated failed attempts",
+  "mode": "architecture",
+  "task": "Review a build/deployment scheduler that repeatedly attempts tasks and retries those whose prerequisites are not ready.",
+  "context": [
+    "Hundreds of tasks have partial-order dependencies.",
+    "Retries are used to discover order at runtime.",
+    "Parallel execution is limited because readiness is not known in advance.",
+    "Dependency metadata already exists in configuration but is not modeled explicitly."
+  ],
+  "evidence": [
+    "Logs show many predictable failed attempts before tasks eventually succeed.",
+    "The retry loop consumes measurable startup time.",
+    "Independent tasks cannot be scheduled confidently in parallel."
+  ],
+  "tempting_wrong_recommendation": [
+    "Increase retry speed and polling frequency.",
+    "Keep implicit ordering because adding a graph abstraction is overengineering."
+  ],
+  "expected_decision_properties": [
+    "Recognize dependency order as first-class domain data rather than a retry side effect.",
+    "Recommend constructing an explicit dependency graph or equivalent partial-order representation.",
+    "Use the representation to validate cycles/readiness and expose independent work for scheduling.",
+    "Avoid claiming a graph is necessary for tiny local workflows where the complexity would not pay off."
+  ],
+  "unacceptable_reasoning": [
+    "Retries are a sufficient dependency model.",
+    "Graphs are always more scalable regardless of workload.",
+    "Parallelism should be added before dependency semantics are represented."
+  ],
+  "expected_quality_dimensions": [
+    "maintainability",
+    "performance",
+    "correctness",
+    "operability"
+  ],
+  "expected_tradeoffs": [
+    "explicit representation complexity vs repeated runtime discovery",
+    "up-front planning vs failed execution attempts"
+  ],
+  "expected_authority": "strong_recommendation",
+  "verification_expectations": [
+    "Validate dependency cycles and missing prerequisites before execution.",
+    "Compare retry/failure counts and startup time.",
+    "Verify independent tasks can execute concurrently without violating order."
+  ]
+}

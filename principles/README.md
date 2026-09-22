@@ -13,6 +13,7 @@ The following modules are based only on sources that have been read in full:
 - `evidence-driven-abstraction.md`
 - `performance-engineering.md`
 - `change-strategy.md`
+- `representation-design.md`
 
 Primary completed sources:
 

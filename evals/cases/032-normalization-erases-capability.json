@@ -1,0 +1,51 @@
+{
+  "id": "normalization-erases-capability",
+  "title": "Common model erases provider-specific capability required for correctness",
+  "mode": "architecture",
+  "task": "Review a provider-normalization layer that converts two storage providers into one lowest-common-denominator object.",
+  "context": [
+    "Provider A exposes strong conditional-write semantics.",
+    "Provider B does not provide the same guarantee.",
+    "The normalized model represents both providers as supporting a generic write operation.",
+    "Callers rely on conditional writes to prevent lost updates."
+  ],
+  "evidence": [
+    "The normalization layer drops the capability distinction.",
+    "One caller now performs the same write path for both providers.",
+    "Provider B can violate the caller's lost-update invariant under concurrency."
+  ],
+  "tempting_wrong_recommendation": [
+    "Keep the uniform model because provider differences should always be hidden.",
+    "Emulate the guarantee silently even though no correct implementation is available."
+  ],
+  "expected_decision_properties": [
+    "Recognize that the provider difference is domain-relevant rather than incidental.",
+    "Preserve or expose the capability distinction explicitly.",
+    "Prevent callers from assuming semantics a provider cannot guarantee.",
+    "Keep normalization for truly incidental differences where it remains useful."
+  ],
+  "unacceptable_reasoning": [
+    "A clean abstraction must make all providers look identical.",
+    "Lowest-common-denominator APIs are always safer.",
+    "Provider-specific capabilities should never appear in an application model."
+  ],
+  "expected_quality_dimensions": [
+    "correctness",
+    "abstraction_quality",
+    "evolvability",
+    "compatibility"
+  ],
+  "expected_tradeoffs": [
+    "uniform representation vs semantic truth",
+    "simple caller API vs explicit capability handling"
+  ],
+  "expected_authority": "strong_recommendation",
+  "verification_expectations": [
+    "Add capability-aware tests for both providers.",
+    "Verify callers cannot invoke conditional semantics when unsupported.",
+    "Exercise concurrent lost-update scenarios."
+  ],
+  "specialist_boundary": [
+    "Exact storage consistency/conditional-write guarantees require provider/database-specific verification."
+  ]
+}

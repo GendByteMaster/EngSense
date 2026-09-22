@@ -1,0 +1,51 @@
+{
+  "id": "internal-object-persistence",
+  "title": "Internal runtime object graph proposed as durable storage format",
+  "mode": "architecture",
+  "task": "Review a proposal to persist application state by serializing internal runtime objects directly.",
+  "context": [
+    "The state must survive application upgrades for years.",
+    "The object graph contains implementation-specific classes and private fields.",
+    "A second language/runtime consumer is planned.",
+    "No explicit schema version or migration mechanism exists."
+  ],
+  "evidence": [
+    "Previous class renames already broke old development snapshots.",
+    "The serialized form exposes runtime-specific type names.",
+    "Consumers need only a stable subset of the object's semantic data."
+  ],
+  "tempting_wrong_recommendation": [
+    "Use direct object serialization because it requires the least code.",
+    "Treat runtime class compatibility as a storage implementation detail."
+  ],
+  "expected_decision_properties": [
+    "Reject opaque internal object serialization as the long-lived durable contract.",
+    "Recommend an explicit versionable representation containing the semantic data consumers actually need.",
+    "Require migration/compatibility handling for persisted versions.",
+    "Avoid overdesigning a universal format beyond the known consumers and lifecycle."
+  ],
+  "unacceptable_reasoning": [
+    "If the language can serialize an object, the result is a stable schema.",
+    "Internal implementation names are harmless in long-lived persisted data.",
+    "A second runtime can always reproduce the same object graph."
+  ],
+  "expected_quality_dimensions": [
+    "compatibility",
+    "evolvability",
+    "migration_cost",
+    "knowledge_resilience"
+  ],
+  "expected_tradeoffs": [
+    "persistence convenience vs schema stability",
+    "internal flexibility vs durable compatibility"
+  ],
+  "expected_authority": "strong_recommendation",
+  "verification_expectations": [
+    "Round-trip representative historical versions through the migration path.",
+    "Verify the explicit representation can be consumed without internal runtime classes.",
+    "Test mixed-version read/upgrade behavior."
+  ],
+  "specialist_boundary": [
+    "Database-engine durability and schema-migration mechanics may require database-specific review."
+  ]
+}

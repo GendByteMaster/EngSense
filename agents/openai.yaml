@@ -1,0 +1,7 @@
+interface:
+  display_name: "EngSense"
+  short_description: "Context-aware software engineering judgment"
+  default_prompt: "Use EngSense to evaluate this software-engineering decision from repository evidence, preserve relevant invariants, compare the real trade-offs, and recommend the smallest justified change."
+
+policy:
+  allow_implicit_invocation: true

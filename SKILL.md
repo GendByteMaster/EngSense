@@ -65,13 +65,22 @@ Start with:
 1. this file;
 2. `decision-framework.md`;
 3. `review-workflow.md` when reviewing code or a change;
-4. only the references relevant to the decision.
+4. `languages/general.md` when language idioms materially affect the choice;
+5. the matching language module for Rust, TypeScript, or Python when relevant;
+6. only the references relevant to the decision.
 
 Load `references/conflicts.md` whenever valid principles pull in different directions.
 
 Do not load every reference for every task.
 
-Future language/domain/lens modules should be loaded only when relevant.
+Current language modules:
+
+- `languages/general.md`
+- `languages/rust.md`
+- `languages/typescript.md`
+- `languages/python.md`
+
+Future domain/lens modules should be loaded only when relevant.
 
 ## Context first
 

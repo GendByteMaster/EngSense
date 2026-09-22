@@ -71,11 +71,13 @@ python evals/validate.py
 The validator checks:
 
 - valid JSON;
-- unique IDs;
+- unique, well-formed IDs;
 - required fields;
+- unknown fields;
 - supported modes;
 - supported authority levels;
-- non-empty expected/unacceptable property lists.
+- required non-empty string lists;
+- optional list/string field shapes.
 
 It does not judge model quality. Behavioral scoring will be added separately.
 

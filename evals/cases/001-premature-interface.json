@@ -1,0 +1,56 @@
+{
+  "id": "premature-interface",
+  "title": "Premature interface around one concrete implementation",
+  "mode": "refactoring",
+  "task": "Review a proposal to introduce an interface, factory, adapter, and dependency-injection layer around a single local implementation.",
+  "context": [
+    "The implementation is repository-internal.",
+    "There is exactly one real implementation.",
+    "No external provider boundary exists.",
+    "Tests can exercise the concrete type directly.",
+    "No current caller requires substitution."
+  ],
+  "evidence": [
+    "Repository search finds no second implementation.",
+    "The proposed abstraction mirrors the concrete implementation's methods one-for-one.",
+    "The factory always returns the same concrete type."
+  ],
+  "snippet": "interface UserStore { getUser(id: string): Promise<User> }\nclass MongoUserStore implements UserStore { ... }\nfunction createUserStore(): UserStore { return new MongoUserStore(...) }",
+  "tempting_wrong_recommendation": [
+    "Recommend the abstraction because dependency inversion is always cleaner.",
+    "Claim the interface is necessary for unit testing without checking whether real substitution is required.",
+    "Add strategy/factory layers for hypothetical future implementations."
+  ],
+  "expected_decision_properties": [
+    "Prefer the concrete implementation for the current context.",
+    "Identify additional indirection as real complexity with no demonstrated capability benefit.",
+    "Treat the absence of a variation boundary as evidence against the abstraction.",
+    "Avoid presenting the conclusion as a universal ban on interfaces."
+  ],
+  "unacceptable_reasoning": [
+    "Interfaces are always best practice.",
+    "Every dependency should be abstracted.",
+    "A second provider might exist someday, therefore abstraction is required now.",
+    "Concrete classes are inherently untestable."
+  ],
+  "expected_quality_dimensions": [
+    "comprehension",
+    "cognitive_complexity",
+    "coupling",
+    "maintainability"
+  ],
+  "expected_tradeoffs": [
+    "dependency inversion vs concrete simplicity",
+    "future flexibility vs current indirection"
+  ],
+  "expected_authority": "guidance",
+  "verification_expectations": [
+    "Confirm the concrete implementation preserves current tests and behavior.",
+    "Check that no current caller depends on a substitution contract."
+  ],
+  "revisit_when": [
+    "A second real provider appears.",
+    "An external provider/platform boundary is introduced.",
+    "A real independent substitution requirement appears."
+  ]
+}

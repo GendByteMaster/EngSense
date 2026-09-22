@@ -4,6 +4,8 @@ EngSense is a standalone Agent Skill: the directory contains a required `SKILL.m
 
 The Skill depends on its supporting files, so install the **whole EngSense directory**, not only `SKILL.md`.
 
+EngSense also includes optional OpenAI metadata at `agents/openai.yaml`. It provides user-facing metadata and keeps implicit invocation enabled. No MCP/tool dependencies are declared.
+
 Official OpenAI references:
 
 - Build skills: https://developers.openai.com/docs/build-skills
@@ -29,6 +31,8 @@ The resulting layout should contain:
     └── skills/
         └── engsense/
             ├── SKILL.md
+            ├── agents/
+            │   └── openai.yaml
             ├── decision-framework.md
             ├── review-workflow.md
             ├── principles/
@@ -56,6 +60,8 @@ Expected layout:
 ~~~text
 ~/.codex/skills/engsense/
 ├── SKILL.md
+├── agents/
+│   └── openai.yaml
 ├── decision-framework.md
 ├── review-workflow.md
 ├── principles/
@@ -100,6 +106,8 @@ Typical flow:
 In supported ChatGPT experiences, an installed Skill can be selected explicitly and may also be invoked automatically when its name/description match the task.
 
 Availability and sharing controls depend on the current product and workspace settings. Refer to the current Help Center page rather than assuming the same UI exists on every plan or surface.
+
+OpenAI's current Skill format also supports optional `agents/openai.yaml` metadata for user-facing interface settings, invocation policy, and tool dependency declarations. EngSense uses only the interface/invocation metadata and intentionally declares no external tool dependency.
 
 ## Development checkout
 

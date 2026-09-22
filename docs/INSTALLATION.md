@@ -37,7 +37,7 @@ npx skills add https://github.com/GendByteMaster/EngSense -a codex -g -y
 
 The EngSense source is the GitHub repository URL above. EngSense does not need its own npm package.
 
-The `skills` CLI is a third-party open Agent Skills installer rather than an OpenAI product. Review its current repository/package documentation before using it in locked-down or security-sensitive environments.
+The `skills` CLI is a third-party open Agent Skills installer rather than an OpenAI product. Its upstream repository is `vercel-labs/skills`: https://github.com/vercel-labs/skills. Review its current repository/package documentation before using it in locked-down or security-sensitive environments.
 
 ## Codex — repository scope
 

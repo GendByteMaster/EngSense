@@ -1,6 +1,6 @@
 # EngSense Decision Framework
 
-Status: **Phase 1 foundation — provisional while the mandatory research corpus remains open**
+Status: **implemented core framework — source-specific coverage remains intentionally incomplete while the mandatory research corpus is open**
 
 Use this framework for non-trivial engineering decisions. Skip unnecessary ceremony for small, obvious changes.
 

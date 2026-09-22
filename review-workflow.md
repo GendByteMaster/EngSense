@@ -1,6 +1,6 @@
 # EngSense Review Workflow
 
-Status: **Phase 1 foundation**
+Status: **implemented core review workflow — source-specific lenses remain gated by research status**
 
 Use this workflow for focused code review, refactoring review, and architecture-quality review.
 

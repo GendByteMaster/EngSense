@@ -1,0 +1,54 @@
+{
+  "id": "persistence-rolling-migration",
+  "title": "Schema migration must survive mixed application versions",
+  "mode": "architecture",
+  "task": "Review a schema migration that renames a persisted field while application instances are deployed gradually.",
+  "context": [
+    "Old and new application versions will run concurrently during rollout.",
+    "Old code reads and writes field 'name'.",
+    "New code expects field 'display_name'.",
+    "The proposed migration renames the column in one destructive step.",
+    "Rollback may restore old application binaries."
+  ],
+  "evidence": [
+    "Deployment is rolling, not atomic.",
+    "No compatibility adapter or dual-read/write period is planned.",
+    "Rollback after the rename would leave old binaries unable to read the new schema."
+  ],
+  "snippet": "ALTER TABLE users RENAME COLUMN name TO display_name;",
+  "tempting_wrong_recommendation": [
+    "Approve because the migration is simple and syntactically valid.",
+    "Assume all application instances switch versions at once.",
+    "Treat rollback as an operations-only concern."
+  ],
+  "expected_decision_properties": [
+    "Reject the one-step rename for a rolling deployment unless atomic rollout is guaranteed.",
+    "Require a compatibility-safe migration sequence such as additive schema, dual compatibility, backfill, cutover, and later removal.",
+    "Include rollback and mixed-version behavior in the design.",
+    "Treat persisted schema as a high-inertia compatibility surface."
+  ],
+  "unacceptable_reasoning": [
+    "Database migrations only need to work for the newest application version.",
+    "A reversible SQL statement is sufficient rollback planning.",
+    "Schema names are private implementation details during rolling deployment."
+  ],
+  "expected_quality_dimensions": [
+    "compatibility",
+    "migration_cost",
+    "reversibility",
+    "reliability"
+  ],
+  "expected_tradeoffs": [
+    "migration simplicity vs mixed-version compatibility",
+    "fast cleanup vs staged reversibility"
+  ],
+  "expected_authority": "invariant",
+  "verification_expectations": [
+    "Test old-app/new-schema and new-app/old-schema compatibility for intended rollout stages.",
+    "Test backfill and restart after partial migration.",
+    "Test rollback before destructive cleanup."
+  ],
+  "specialist_boundary": [
+    "Database-specific locking, DDL transaction, and replication behavior requires database-specialist review."
+  ]
+}

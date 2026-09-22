@@ -1,0 +1,58 @@
+{
+  "id": "real-provider-boundary",
+  "title": "Real provider boundary justifies abstraction",
+  "mode": "architecture",
+  "task": "Review whether a provider abstraction is justified for two production implementations with different SDKs and lifecycle behavior.",
+  "context": [
+    "The service supports both Yandex and Edge TTS providers.",
+    "Provider selection is runtime-configurable.",
+    "Callers should not depend on either provider SDK.",
+    "Provider-specific authentication, retry behavior, and capability metadata differ.",
+    "Both implementations are used in production."
+  ],
+  "evidence": [
+    "Two concrete providers exist.",
+    "Current callers contain provider-specific branches.",
+    "Tests duplicate provider-selection behavior.",
+    "Changing one provider SDK leaks into higher application layers."
+  ],
+  "snippet": "if provider == 'yandex': ...\nelif provider == 'edge': ...",
+  "tempting_wrong_recommendation": [
+    "Keep everything concrete because interfaces are overengineering.",
+    "Duplicate provider-specific logic in every caller.",
+    "Create one lowest-common-denominator interface that hides meaningful capability differences."
+  ],
+  "expected_decision_properties": [
+    "Recognize a real provider boundary and recommend a stable abstraction.",
+    "Keep provider-specific behavior behind the provider boundary.",
+    "Avoid forcing materially different optional capabilities into false uniformity.",
+    "Prefer explicit capability discovery or scoped sub-interfaces when providers differ."
+  ],
+  "unacceptable_reasoning": [
+    "All provider implementations must expose identical capabilities.",
+    "Any abstraction is unnecessary because two if-branches are simpler.",
+    "Provider SDK details should remain visible to callers for flexibility."
+  ],
+  "expected_quality_dimensions": [
+    "coupling",
+    "evolvability",
+    "testability",
+    "compatibility",
+    "extension_safety"
+  ],
+  "expected_tradeoffs": [
+    "abstraction vs locality",
+    "uniform interface vs optional capabilities",
+    "indirection vs provider isolation"
+  ],
+  "expected_authority": "strong_recommendation",
+  "verification_expectations": [
+    "Run provider contract tests for both implementations.",
+    "Verify runtime provider selection.",
+    "Verify provider-specific capability behavior remains explicit."
+  ],
+  "revisit_when": [
+    "Provider capabilities converge enough to simplify the abstraction.",
+    "Only one provider remains and substitution is no longer required."
+  ]
+}

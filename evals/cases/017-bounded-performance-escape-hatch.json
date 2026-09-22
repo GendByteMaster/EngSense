@@ -1,0 +1,55 @@
+{
+  "id": "bounded-performance-escape-hatch",
+  "title": "Measured performance fast path through an otherwise clean abstraction",
+  "mode": "architecture",
+  "task": "Review a proposal to add a specialized fast path that bypasses part of a generic abstraction for one measured hot path.",
+  "context": [
+    "The generic path remains correct and is used by most implementations.",
+    "Profiling shows one specific conversion path consumes a dominant share of CPU.",
+    "The specialized implementation can be selected only when both endpoints support the same native format.",
+    "Fallback to the generic path remains available."
+  ],
+  "evidence": [
+    "A benchmark shows a material end-to-end latency and CPU improvement.",
+    "The optimization condition is explicit and testable.",
+    "The fast path can be contained behind the existing public API."
+  ],
+  "snippet": "if native_compatible(src, dst): return native_bridge(src, dst)\nreturn generic_bridge(src, dst)",
+  "tempting_wrong_recommendation": [
+    "Reject the fast path because all calls must go through the abstraction.",
+    "Delete the generic abstraction and specialize every path.",
+    "Approve an unmeasured bypass with no containment."
+  ],
+  "expected_decision_properties": [
+    "Accept a bounded fast path if the measured benefit is material and semantics remain equivalent.",
+    "Keep the generic path as the default/fallback.",
+    "Require explicit eligibility conditions and tests.",
+    "Treat the exception as controlled architecture rather than proof that the abstraction should be removed."
+  ],
+  "unacceptable_reasoning": [
+    "Layering violations are always bugs.",
+    "Performance automatically justifies bypassing boundaries.",
+    "One fast path means the abstraction is useless."
+  ],
+  "expected_quality_dimensions": [
+    "performance",
+    "maintainability",
+    "correctness",
+    "operability"
+  ],
+  "expected_tradeoffs": [
+    "strict layering vs measured performance",
+    "generic interoperability vs specialized optimization"
+  ],
+  "expected_authority": "guidance",
+  "verification_expectations": [
+    "Benchmark both paths.",
+    "Verify semantic equivalence for eligible inputs.",
+    "Verify fallback behavior when native compatibility is absent.",
+    "Keep the fast-path condition observable/testable."
+  ],
+  "revisit_when": [
+    "The fast path becomes the dominant path and the generic abstraction no longer reflects reality.",
+    "Maintenance cost of keeping both paths exceeds the measured benefit."
+  ]
+}

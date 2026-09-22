@@ -21,11 +21,11 @@ POSA is particularly valuable for the unfinished EngSense performance lens becau
 - [x] Chapter 3 — Ninja
 - [x] Chapter 4 — Parsing XML at the Speed of Light
 - [x] Chapter 5 — MemShrink
-- [ ] Chapter 6 — Applying Optimization Principle Patterns to Component Deployment and Configuration Tools
-- [ ] Chapter 7 — Infinispan
-- [ ] Chapter 8 — Talos
-- [ ] Chapter 9 — Zotonic
-- [ ] Chapter 10 — Secrets of Mobile Network Performance
+- [x] Chapter 6 — Applying Optimization Principle Patterns to Component Deployment and Configuration Tools
+- [x] Chapter 7 — Infinispan
+- [x] Chapter 8 — Talos
+- [x] Chapter 9 — Zotonic
+- [x] Chapter 10 — Secrets of Mobile Network Performance
 - [ ] Chapter 11 — Warp
 - [ ] Chapter 12 — Working with Big Data in Bioinformatics
 
@@ -813,3 +813,931 @@ Likewise, EtherCalc improved significantly by deleting unnecessary server render
 This supports a performance-specific anti-overengineering rule:
 
 > Add machinery only after evidence shows doing less cannot meet the target.
+
+
+---
+
+# Chapter 6 — Applying Optimization Principle Patterns to Component Deployment and Configuration Tools
+
+## Source scope
+
+This chapter studies DAnCE/LE-DAnCE, deployment and configuration infrastructure for distributed real-time and embedded systems.
+
+The motivating systems have:
+
+- strict latency and QoS requirements;
+- limited CPU, memory, and network resources;
+- deployment plans with hardware/software dependencies;
+- distributed lifecycle management;
+- large numbers of components and nodes.
+
+The chapter uses concrete deployment bottlenecks to derive reusable optimization principles.
+
+## Source-derived observations
+
+### 1. Performance patterns should be applied to an observed bottleneck, not as decoration
+
+The authors begin from measured deployment delays and identify three major classes of cost:
+
+- XML-to-runtime-plan conversion;
+- repeated analysis and data-structure work;
+- serialized deployment phases.
+
+The optimization catalog is used after the bottleneck is known.
+
+### 2. High-level abstractions still need a cost model
+
+The chapter explicitly warns that convenient abstractions can hide:
+
+- reallocations;
+- copies;
+- lookup complexity;
+- representation conversion.
+
+The lesson is not to avoid abstraction, but to understand its operational behavior in the expected workload.
+
+### 3. Choose data structures from actual access patterns
+
+One generator originally used random-access containers although the real workload only needed sequential traversal.
+
+Switching to a representation aligned with the actual operation profile substantially reduced insertion/reallocation cost.
+
+This reinforces:
+
+expected operations
+→ data structure
+rather than
+generic familiarity
+→ data structure.
+
+### 4. Shift expensive stable work out of the critical path
+
+Deployment plans that rarely change can be converted/preprocessed before latency-critical deployment begins.
+
+This is a general "shifting in time" pattern:
+
+stable expensive computation
+→ precompute once
+→ consume cheaper representation on the critical path.
+
+### 5. Pre-analysis can trade a small first pass for less repeated allocation
+
+The system can inspect the plan to determine final sizes before constructing sub-plans.
+
+That extra pass reduces repeated growth/copying later.
+
+This is an important anti-rule:
+
+one pass
+is not automatically
+faster than two passes.
+
+### 6. Specification does not require implementation mimicry
+
+The OMG specification defines externally required behavior but leaves implementation degrees of freedom.
+
+LE-DAnCE introduced new internal abstractions without violating the specification.
+
+A specification is a contract, not necessarily an internal architecture blueprint.
+
+### 7. Separation of concerns can improve performance, not only maintainability
+
+The original deployment logic mixed generic plan analysis with component-specific lifecycle work.
+
+That shared mutable state made parallelization difficult.
+
+Introducing Locality Managers and Installation Handlers created clearer ownership and enabled more concurrent execution.
+
+This is a useful counterexample to the idea that every layer/indirection is a performance penalty.
+
+### 8. Synchronous interfaces can constrain future parallelism
+
+The chapter explicitly recommends designing module interactions so asynchronous execution is possible.
+
+Even where an external interface remains synchronous, an implementation may introduce asynchronous coordination internally.
+
+### 9. Parallelization requires minimizing synchronization, not merely adding threads
+
+The authors emphasize that lock-heavy parallel code can serialize itself or create difficult race/deadlock behavior.
+
+Partitioned state and separated responsibilities can be more important than thread count.
+
+### 10. Performance improvement can require architectural change, not local tuning
+
+The most serious deployment delay came from serialized architecture.
+
+Fixing it required changing responsibility placement and execution structure, not optimizing one function.
+
+## EngSense interpretation
+
+Candidate signals:
+
+critical_path_latency
+stable_precomputable_input
+abstraction_hidden_cost
+operation_profile
+preallocation_value
+specification_degrees_of_freedom
+parallelization_blocked_by_shared_state
+sync_interface_constraint
+synchronization_cost
+architecture_level_bottleneck
+
+Candidate rules:
+
+- apply optimization patterns only after identifying the relevant bottleneck;
+- require a cost model for high-level abstractions used in hot paths;
+- choose containers/data structures from actual operation patterns;
+- move stable expensive computation outside the critical path when validity is preserved;
+- accept an extra analysis pass when it removes larger repeated allocation/copy cost;
+- treat specifications as behavioral constraints rather than mandatory internal structure;
+- use separation of concerns when it creates independent state ownership and parallelism opportunities;
+- keep module interfaces compatible with asynchronous execution where future concurrency is material;
+- prefer reduced shared state/coordination over simply adding more threads;
+- escalate from local optimization to architecture change when serialization is structural.
+
+## Conflict candidates
+
+- abstraction convenience vs hidden runtime cost;
+- one-pass simplicity vs pre-analysis/preallocation;
+- literal specification structure vs implementation degrees of freedom;
+- extra indirection vs parallelization opportunity;
+- synchronous simplicity vs asynchronous scalability;
+- parallelism vs synchronization complexity.
+
+---
+
+# Chapter 7 — Infinispan
+
+## Source scope
+
+Infinispan is a distributed in-memory data grid whose primary product motivation is low-latency scalable data access.
+
+The chapter covers:
+
+- embedded-library and remote-server deployment modes;
+- peer-to-peer clustering;
+- scalability benchmarking;
+- network tuning;
+- serialization;
+- persistence;
+- lock-free/concurrent structures;
+- thread pools;
+- garbage collection.
+
+## Source-derived observations
+
+### 1. Benchmark tools must understand the topology they claim to measure
+
+Generic server-load tools can measure a remote endpoint but cannot necessarily measure distributed scale-out behavior.
+
+Radar Gun was built specifically to:
+
+- launch multiple nodes;
+- vary cluster sizes/configurations;
+- run workloads in parallel;
+- aggregate results.
+
+Performance tooling must model the architecture under test.
+
+### 2. Correctness checks belong inside performance benchmarks
+
+Radar Gun performs validity/status checks before and after benchmark stages.
+
+A fast result from an invalid cluster is not a useful performance result.
+
+This strongly supports:
+
+performance gate
++
+correctness gate.
+
+### 3. Performance has multiple dimensions
+
+Radar Gun records:
+
+- transactions/sec;
+- read/write behavior separately;
+- means/medians/deviation/min/max;
+- memory footprint.
+
+For an in-memory grid, memory behavior and GC responsiveness matter alongside request speed.
+
+### 4. Distributed bottlenecks often live in the network stack
+
+The chapter calls network communication the most expensive subsystem in typical Infinispan operation.
+
+Meaningful tuning includes:
+
+- protocol/bundling/fragmentation;
+- thread pools;
+- socket buffers;
+- OS/network equipment.
+
+Application-level optimization alone may miss the real bottleneck.
+
+### 5. Serialization cost includes CPU and bytes-on-wire
+
+Serialization can consume a significant part of request processing and also amplify network cost through larger payloads.
+
+A more compact representation improves two resources at once:
+
+- CPU;
+- network bandwidth/latency.
+
+### 6. Fast defaults and optimized custom paths can coexist
+
+Unknown application objects fall back to general Java serialization.
+
+Applications with stronger performance requirements can register specialized externalizers.
+
+This is a useful two-tier design:
+
+works-by-default
++
+explicit optimized specialization.
+
+### 7. Durability semantics and latency are a direct trade-off
+
+Synchronous persistence blocks application work until data is written.
+
+Asynchronous persistence improves response latency but creates uncertainty about whether the latest data reached durable storage.
+
+This is not a style preference; it changes failure semantics.
+
+### 8. Different persistence goals justify different storage structures
+
+A paging/overflow store needs efficient random access.
+
+A durability mirror may prefer append-oriented fast writes.
+
+"Disk storage" is not one workload.
+
+### 9. Non-blocking concurrency can earn complexity under sustained load
+
+Infinispan uses advanced lock-free/transactional techniques because high multi-core concurrency is a central product requirement.
+
+The chapter explicitly acknowledges the implementation complexity and frames it as worthwhile under load.
+
+This should remain specialist guidance, not a generic recommendation.
+
+### 10. Thread pools are finite resources with context-switching cost
+
+Asynchronous design still requires sizing pools to expected concurrent work.
+
+"Make it async" does not eliminate capacity planning.
+
+### 11. GC pauses can become distributed-system failures
+
+A long JVM pause can make a node look unavailable to peers.
+
+Local runtime behavior can therefore trigger cluster-level failure handling.
+
+This is an important cross-layer performance/reliability interaction.
+
+### 12. Continuous benchmarking helps preserve a performance-first product contract
+
+The chapter recommends benchmark/profile tooling and CI-style performance regression checks as normal engineering infrastructure.
+
+## EngSense interpretation
+
+Candidate signals:
+
+distributed_benchmark_topology
+benchmark_correctness_gate
+multi_metric_performance
+network_dominance
+serialization_cpu_and_wire_cost
+generic_fallback_vs_specialized_path
+durability_latency_tradeoff
+persistence_workload_shape
+lock_free_justification
+thread_pool_capacity
+gc_pause_failure_semantics
+continuous_performance_ci
+
+Candidate rules:
+
+- benchmark the real deployment topology, not an easier substitute;
+- reject benchmark results when correctness/state validity fails;
+- track multiple performance dimensions instead of one throughput scalar;
+- investigate network/serialization layers in distributed systems before assuming application code dominates;
+- let general fallbacks coexist with opt-in optimized serializers/paths;
+- treat sync-vs-async persistence as a durability decision, not only a speed decision;
+- choose persistence structures from their actual access/durability role;
+- reserve lock-free/non-blocking complexity for measured concurrency needs and specialist review;
+- size asynchronous resources explicitly;
+- include runtime pauses in distributed failure analysis;
+- keep performance regression testing continuous for performance-centric products.
+
+## Conflict candidates
+
+- correctness validation overhead vs benchmark speed;
+- general serialization convenience vs specialized wire efficiency;
+- synchronous durability vs response latency;
+- lock-free throughput vs implementation complexity;
+- large thread pools vs context-switch/memory cost;
+- long GC pause vs peer failure detection.
+
+---
+
+# Chapter 8 — Talos
+
+## Source scope
+
+Talos is Mozilla's long-running Firefox performance testing and regression-detection system.
+
+The chapter is primarily about fixing the measurement system itself:
+
+- noisy tests;
+- undocumented metrics;
+- lossy aggregation;
+- statistical validity;
+- raw-data retention;
+- rewrite vs refactor;
+- migration;
+- team ownership and performance culture.
+
+## Source-derived observations
+
+### 1. A performance number is useless if nobody can explain what it means
+
+The team discovered years-old tests whose metric semantics were poorly understood.
+
+Before changing thresholds or optimizing Firefox, they first had to understand:
+
+- what event was measured;
+- how samples were transformed;
+- what environmental factors contributed noise.
+
+Metric semantics are part of the system contract.
+
+### 2. Aggregation can destroy the evidence needed to diagnose regressions
+
+Talos and Graph Server repeatedly reduced raw page measurements into averages.
+
+A regression on one page could be hidden by improvement elsewhere, and later investigators could not reconstruct the original signal.
+
+This is a strong observability/provenance lesson:
+
+preserve enough raw data to revisit analysis.
+
+### 3. Statistical sample size and warm-up behavior must be measured
+
+The project experimentally determined a larger sample count and identified early iterations as unusually noisy.
+
+The correct benchmark procedure came from analyzing variance, not from arbitrary convention.
+
+### 4. Store discarded samples when future analysis may need them
+
+Even samples excluded from the current calculation were retained.
+
+This protects future re-analysis when statistical methods change.
+
+### 5. Every benchmark needs an owner and documented intent
+
+Talos introduced explicit ownership and documentation for each test.
+
+A metric without a responsible maintainer becomes long-lived operational debt.
+
+### 6. Performance regressions should be attributable, not merely detectable
+
+Per-page analysis improved the ability to tell developers which workload regressed.
+
+Actionability is a quality dimension for performance monitoring.
+
+### 7. Rewrite vs refactor should be decided per subsystem
+
+Graph Server's data model could not support the new raw-data/statistical requirements, so it was replaced.
+
+The Talos runner was refactored instead, partly to preserve comparability with historical behavior.
+
+The chapter later reflects that this runner decision increased complexity and might have been better as a parallel replacement.
+
+There is no one rewrite answer for the whole system.
+
+### 8. Fear of losing the old oracle can create expensive hybrid architecture
+
+Trying to produce both old and new result flows inside one live harness caused major migration complexity.
+
+A parallel implementation plus side-by-side comparison may be cleaner when the old system can serve as an external oracle.
+
+### 9. Total rewrite cost includes organizational adoption, not only code effort
+
+The project invested heavily in explaining new measurement semantics to developers and users.
+
+A technically correct measurement system that nobody trusts or understands fails operationally.
+
+### 10. Performance testing is a statistics problem as well as a software problem
+
+The eventual system uses explicit statistical methods for outlier/noise/regression analysis rather than ad hoc spike detection.
+
+This creates a specialist boundary:
+
+EngSense should not invent statistical validity from intuition.
+
+### 11. Re-evaluating historical tests can justify deleting low-value measurements
+
+As the team understood tests better, some were fixed and others were disabled because they did not provide useful evidence.
+
+Metrics should have lifecycle/removal rules too.
+
+## EngSense interpretation
+
+Candidate signals:
+
+metric_semantic_clarity
+raw_measurement_retention
+aggregation_information_loss
+sample_size_evidence
+warmup_noise
+benchmark_ownership
+regression_attribution
+measurement_system_rewrite
+old_system_oracle
+migration_hybrid_cost
+performance_statistics_boundary
+metric_removal
+
+Candidate rules:
+
+- require a clear semantic definition for every performance metric;
+- preserve raw measurements when aggregation would block future diagnosis/re-analysis;
+- determine sample/warm-up policy from measured variance;
+- assign ownership and rationale to long-lived benchmarks;
+- make regression reports actionable at the smallest meaningful workload unit;
+- choose rewrite/refactor separately for measurement, storage, execution, and reporting subsystems;
+- consider parallel replacement when hybrid old/new execution creates excessive coupling;
+- include adoption/trust/documentation cost in performance-infrastructure migrations;
+- defer statistical significance methodology to validated statistical techniques;
+- delete or retire metrics that no longer provide meaningful evidence.
+
+## Conflict candidates
+
+- compact aggregate metrics vs diagnostic raw data;
+- historical comparability vs clean measurement-system replacement;
+- refactor-in-place vs side-by-side rewrite;
+- statistical sensitivity vs false-positive noise;
+- metric continuity vs deleting meaningless tests.
+
+---
+
+# Chapter 9 — Zotonic
+
+## Source scope
+
+Zotonic is an Erlang web framework/CMS designed for dynamic sites with strong caching, lightweight processes, failure isolation, and overload resistance.
+
+The chapter focuses on:
+
+- hot-data caching;
+- cached rendered fragments;
+- duplicate-work suppression;
+- deliberate bottlenecks;
+- database connection pools;
+- Erlang process/message costs;
+- request context;
+- Webmachine changes;
+- benchmark scope vs real-life performance.
+
+## Source-derived observations
+
+### 1. Traffic distributions matter
+
+The design assumes many sites have:
+
+- a small number of very hot pages;
+- a long tail;
+- repeated shared fragments.
+
+Caching policy is chosen around that observed access shape.
+
+### 2. Duplicate in-flight work can be coalesced
+
+When multiple requests need the same rendering while it is being calculated, later requests wait for the first result instead of recomputing it.
+
+This single-flight/memo pattern reduces burst amplification.
+
+### 3. Deliberate bottlenecks can improve total availability
+
+Zotonic intentionally restricts concurrency for scarce/expensive operations such as:
+
+- image resizing;
+- template compilation;
+- database connections.
+
+A request may fail/timeout while the system remains alive.
+
+This is a strong overload principle:
+
+bounded rejection
+can be healthier than
+unbounded parallel work.
+
+### 4. Connection pools should reflect resource scarcity, not request count
+
+Many concurrent requests share a much smaller number of database connections.
+
+Each request acquires a connection only for the query/transaction period.
+
+This reduces idle resource ownership.
+
+### 5. Cache proximity matters
+
+In-process memory access avoids both network/process messaging and serialization cost compared with a separate cache service.
+
+The simpler topology can also reduce operational complexity.
+
+### 6. Cache invalidation can be dependency-aware
+
+The depcache records dependencies and invalidates cached renderings when underlying resources change.
+
+Performance gains do not remove the need for correctness/freshness semantics.
+
+### 7. Caches need pressure valves
+
+Both central and request-local caches have size/lifetime controls.
+
+A cache without resource bounds becomes another memory problem.
+
+### 8. Runtime semantics determine whether message passing is cheap
+
+Erlang processes are inexpensive, but message data may be copied.
+
+Large request context objects therefore should not be moved between processes casually.
+
+This is a strong anti-rule:
+
+cheap actors/processes
+do not imply
+cheap messages.
+
+### 9. Sometimes doing more work in one process is faster and simpler
+
+Zotonic keeps much request processing in the accepting process because passing a large Context would cost more than function calls.
+
+Concurrency boundaries should reflect data-movement cost.
+
+### 10. Copying can paradoxically be a memory optimization
+
+A small reference into a large binary may keep the whole binary alive.
+
+Copying the small relevant slice can release the large backing object sooner.
+
+This is an excellent example of why generic zero-copy advice is unsafe.
+
+### 11. A third-party abstraction may be correct conceptually but wrong operationally
+
+Webmachine fit the HTTP model but copied large dispatch structures and repeated callbacks in ways that became bottlenecks at Zotonic scale.
+
+The team modified the library rather than treating the abstraction as untouchable.
+
+### 12. Microbenchmarks can identify local overhead without predicting system performance
+
+The chapter explicitly distinguishes simplified request benchmarks from real dynamic-site behavior where caching and access patterns dominate.
+
+### 13. Full-stack performance matters more than one layer's score
+
+The conclusion emphasizes web server, request handling, caching, runtime, and database behavior working together.
+
+## EngSense interpretation
+
+Candidate signals:
+
+hotset_distribution
+duplicate_inflight_work
+bounded_expensive_operation
+connection_pool_scarcity
+cache_proximity
+cache_dependency_invalidation
+cache_resource_bound
+message_copy_cost
+large_context_transfer
+sub_binary_retention
+third_party_abstraction_overhead
+microbenchmark_scope
+full_stack_performance
+
+Candidate rules:
+
+- design caching around measured access distributions;
+- coalesce identical in-flight work during bursts;
+- intentionally bound expensive/scarce operations to protect the system from overload;
+- allocate scarce connections/resources only for the period they are needed;
+- include cache/process/network placement in the performance cost model;
+- pair caches with explicit invalidation and resource bounds;
+- evaluate message/data-copy cost independently of task/process creation cost;
+- keep work local when moving large context costs more than local calls;
+- allow copying when it releases a much larger retained allocation;
+- modify/replace third-party abstractions when measured overhead is structural;
+- label microbenchmark conclusions narrowly;
+- judge web performance across the full stack.
+
+## Conflict candidates
+
+- parallelism vs overload protection;
+- external shared cache vs in-process locality;
+- actor isolation vs message-copy overhead;
+- zero-copy vs transitive memory retention;
+- generic HTTP abstraction vs measured request-path cost;
+- microbenchmark ranking vs real workload behavior.
+
+---
+
+# Chapter 10 — Secrets of Mobile Network Performance
+
+## Source scope
+
+This chapter explains why mobile application performance is often limited by network latency rather than nominal bandwidth.
+
+It covers:
+
+- cellular network topology;
+- radio power states;
+- RTT;
+- TCP handshakes/slow start;
+- initial congestion windows;
+- keepalive;
+- HTTP pipelining;
+- TLS handshakes;
+- DNS caching.
+
+## Source-derived observations
+
+### 1. Throughput can be irrelevant when round-trip count dominates
+
+Small transactions may transfer very little data but require several protocol exchanges.
+
+At high RTT, latency is bounded by the number of round trips rather than link bandwidth.
+
+This strongly supports:
+
+count protocol turns,
+not only bytes.
+
+### 2. Physical/power-management behavior belongs in application performance reasoning
+
+Mobile radios transition between active, idle, and disconnected states to save battery.
+
+Those transitions introduce startup latency.
+
+The application's network timing can therefore interact with device power policy.
+
+### 3. Network topology can improve by moving control closer to the resource
+
+Later mobile networks shift some control from a distant controller toward the cell site, eliminating backhaul round trips for certain operations.
+
+This is another complexity-placement/latency lesson:
+
+place coordination close to the thing being coordinated
+when remote turns dominate.
+
+### 4. Connection establishment is a first-class cost
+
+TCP setup can cost an RTT before application data begins.
+
+Connection reuse is therefore often more valuable than tiny payload-level CPU optimizations.
+
+### 5. Protocol optimizations can change correctness assumptions
+
+TCP Fast Open can send application data before the conventional handshake completes, but the chapter highlights idempotency caveats for request data.
+
+Faster protocol use may require stricter operation semantics.
+
+### 6. Tuning must account for uncertain and changing network conditions
+
+A larger initial congestion window can improve small transfers but also increases congestion risk.
+
+The right value is an empirical risk/reward decision, not "larger is faster."
+
+### 7. Request size matters differently from response size when control is asymmetric
+
+When clients cannot tune the same transport parameters as servers, minimizing client request payloads can become particularly valuable.
+
+Optimization opportunities depend on which side controls the stack.
+
+### 8. Keepalive preserves more than handshake work
+
+Reusing a connection preserves both:
+
+- handshake cost;
+- learned congestion-window state.
+
+State reuse can improve later operations in multiple ways.
+
+### 9. Pipelining amortizes RTT but adds ecosystem/security constraints
+
+Reducing round-trip impact can improve throughput, yet historical proxy compatibility and denial-of-service concerns limited adoption.
+
+Protocol optimization must include deployment compatibility and abuse surface.
+
+### 10. "TLS is slow" can misdiagnose the actual cost
+
+The chapter attributes much observed TLS delay on high-latency links to extra handshake round trips rather than cryptographic CPU alone.
+
+This is a strong measurement-framing example.
+
+### 11. DNS TTL is a performance/availability policy trade-off
+
+Short TTLs improve failover responsiveness but trigger more DNS lookups.
+
+Longer caching improves client latency but can retain stale destinations.
+
+### 12. Stale-while-refresh/failure-driven refresh are policy alternatives with different compatibility assumptions
+
+The chapter discusses cache strategies that reduce synchronous DNS latency while noting that some can conflict with DNS-based load distribution.
+
+An optimization should state what operational policy it invalidates.
+
+## EngSense interpretation
+
+Candidate signals:
+
+round_trip_count
+network_rtt
+radio_power_state
+coordination_distance
+connection_setup_cost
+request_idempotency
+initial_window_risk
+client_server_control_asymmetry
+connection_state_reuse
+protocol_ecosystem_compatibility
+tls_handshake_cost
+dns_ttl_policy
+stale_cache_policy
+
+Candidate rules:
+
+- count network round trips when latency dominates;
+- include device power/radio state in mobile performance analysis;
+- move latency-sensitive coordination closer to the resource when architecture permits;
+- reuse connections/state before micro-optimizing small request handlers;
+- require idempotency/safety analysis for protocol shortcuts that can replay requests;
+- tune transport parameters from measured network conditions and congestion risk;
+- account for which side actually controls the transport stack;
+- distinguish cryptographic compute from handshake/network latency;
+- treat DNS caching as an availability/performance policy;
+- document which failover/load-balancing semantics an aggressive cache optimization changes.
+
+## Conflict candidates
+
+- bandwidth optimization vs RTT reduction;
+- battery conservation vs connection startup latency;
+- connection reuse vs stale/resource retention;
+- aggressive transport startup vs congestion risk;
+- fast-open latency vs idempotency requirements;
+- long DNS cache vs failover freshness;
+- stale DNS response vs load-distribution correctness.
+
+---
+
+# Chapters 6–10 — Cross-case synthesis
+
+## 1. The measurement system itself must be engineered
+
+Infinispan needs topology-aware benchmarks.
+Talos had to repair its statistical meaning and data pipeline.
+Zotonic warns about microbenchmark scope.
+Mobile networking requires RTT-aware measurement.
+
+EngSense performance review should ask:
+
+- What exactly is measured?
+- What topology/environment is represented?
+- Is correctness verified?
+- Is raw evidence retained?
+- Can the result be reproduced?
+- Does the metric map to user/system impact?
+
+## 2. Performance data should preserve diagnostic structure
+
+Talos's averages hid individual page regressions.
+Infinispan records separate reads/writes and distribution statistics.
+
+A single scalar often destroys the shape needed to identify a bottleneck.
+
+This aligns with EngSense's existing refusal to collapse software quality into one score.
+
+## 3. Parallelism is limited by shared state, synchronization, and scarce resources
+
+DAnCE gained parallelism by separating responsibility/state.
+Infinispan pays attention to locks, thread pools, and GC.
+Zotonic intentionally limits concurrency around expensive/scarce operations.
+
+"More concurrency" is not itself a performance strategy.
+
+Candidate question:
+
+> Which independent work exists, which state/resources are shared, and where should concurrency be bounded?
+
+## 4. Overload control can intentionally reduce local throughput to protect system behavior
+
+Zotonic's worker bottlenecks and connection pools are explicit examples.
+
+Performance includes behavior after demand exceeds capacity.
+
+A system that is fastest before saturation but collapses catastrophically afterward may be worse than one with bounded queues/rejection.
+
+## 5. Caching requires semantics, not only storage
+
+Zotonic uses dependency invalidation and request-local lifetime bounds.
+Mobile DNS caching interacts with failover/load distribution.
+Infinispan can act as cache or authoritative distributed store with different persistence semantics.
+
+EngSense should require:
+
+- authority;
+- freshness;
+- invalidation;
+- capacity;
+- failure behavior
+
+for cache recommendations.
+
+## 6. Precompute and reuse are recurring forms of "shift work in time"
+
+DAnCE preprocesses stable deployment data.
+Mobile keepalive preserves connection/congestion state.
+Zotonic caches render/data/access checks.
+Infinispan optimizes known serialization forms.
+
+The trade-off is usually:
+
+less critical-path work
+vs
+state, invalidation, memory, or preprocessing cost.
+
+## 7. Data movement is often the actual cost
+
+Examples:
+
+- DAnCE repeated realloc/copy;
+- Infinispan serialization/network transfer;
+- Zotonic Erlang message copying;
+- mobile protocol round trips.
+
+Performance review should make movement explicit:
+
+- bytes copied;
+- processes crossed;
+- nodes crossed;
+- protocol turns;
+- serialization boundaries.
+
+## 8. "Zero copy" is contextual rather than universally good
+
+pugixml already showed lifetime coupling.
+Zotonic shows a small reference can retain a much larger binary, making a copy beneficial.
+
+EngSense should treat zero-copy as a specialist trade-off among:
+
+- CPU;
+- memory lifetime;
+- ownership complexity;
+- cache locality.
+
+## 9. Performance and reliability frequently share the same mechanism
+
+Infinispan GC pauses can trigger cluster failure detection.
+Zotonic's deliberate bottlenecks keep the overall service responsive.
+Mobile connection/cache choices interact with failover.
+DAnCE operates in reliability-sensitive real-time deployments.
+
+Performance changes need failure-mode review when they affect:
+
+- timeouts;
+- queues;
+- durability;
+- node liveness;
+- retries;
+- overload.
+
+## 10. Rewrite decisions can differ for adjacent subsystems
+
+Talos is a useful refinement of the AOSA Volume 2 rewrite model:
+
+- reporting/storage system: rewrite;
+- test harness: refactor, later regretted in part;
+- migration: old/new side-by-side comparison still needed for trust.
+
+EngSense should not classify an entire product as "rewrite" or "refactor" when different subsystems have different replacement economics.
+
+## New eval candidates
+
+1. Distributed cache benchmark reports endpoint latency but cannot vary cluster size and is used to claim linear scalability.
+2. Performance benchmark is faster but silently produces incorrect distributed state.
+3. A system stores only aggregate performance averages and cannot identify which workload regressed.
+4. Generic container is retained in a deployment hot path despite a simpler sequential-only access profile.
+5. Expensive stable deployment metadata is reparsed on every critical-path operation instead of precomputed.
+6. Team adds threads to a deployment system whose shared mutable state forces most work back through locks.
+7. Async persistence is recommended solely for speed without acknowledging reduced durability guarantees.
+8. Large JVM GC pauses are analyzed as a network failure only.
+9. Hundreds of identical requests simultaneously compute the same expensive rendering instead of coalescing work.
+10. Service accepts unlimited expensive image-processing work and collapses under restart traffic rather than bounding concurrency.
+11. Actor-based request pipeline copies a large request context across many processes because processes are assumed to be universally cheap.
+12. Zero-copy slice retains a huge backing buffer and increases memory usage.
+13. Microbenchmark result is generalized to real-site throughput despite caching/request mix being absent from the benchmark.
+14. Mobile API optimization reduces payload CPU cost while leaving several 100ms RTT protocol turns unchanged.
+15. TCP Fast Open-like optimization is enabled for non-idempotent operations without replay analysis.
+16. Very short DNS TTL is recommended for failover without pricing the mobile-latency cost.

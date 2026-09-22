@@ -92,7 +92,17 @@ Current domain modules:
 
 Load them only when the task crosses the corresponding boundary.
 
-Future lens modules should be loaded only when relevant.
+Current research-grounded principle lenses:
+
+- `principles/sustainable-engineering.md`
+- `principles/empirical-architecture.md`
+- `principles/complexity-placement.md`
+- `principles/evolution-and-compatibility.md`
+- `principles/evidence-driven-abstraction.md`
+
+Load only the lenses whose questions materially affect the decision.
+
+Source-specific Clean Code, Ousterhout, Fowler, DDD, DDIA, Release It!, Code Complete, Legacy Code, and related lenses remain blocked until their mandatory full-book research is complete.
 
 ## Context first
 

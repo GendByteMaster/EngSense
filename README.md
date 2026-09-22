@@ -126,6 +126,8 @@ See [docs/USAGE.md](docs/USAGE.md) and [docs/EXAMPLE_REVIEWS.md](docs/EXAMPLE_RE
 ~~~text
 EngSense/
 ├── SKILL.md
+├── agents/
+│   └── openai.yaml
 ├── decision-framework.md
 ├── review-workflow.md
 ├── principles/
@@ -138,6 +140,8 @@ EngSense/
 ├── CONTRIBUTING.md
 └── RELEASE_CHECKLIST.md
 ~~~
+
+The optional `agents/openai.yaml` file provides OpenAI Skill UI metadata and explicitly allows implicit invocation. EngSense declares no tool dependencies because its core workflow is instruction/reference based.
 
 The deterministic fixtures under `evals/cases/` are development evidence for the Skill. They are intentionally lightweight and are not a model-execution platform.
 
@@ -160,13 +164,29 @@ Several planned source-specific lenses remain blocked until their required full-
 
 EngSense follows the Agent Skills shape: a skill directory with a required `SKILL.md` and optional supporting resources.
 
-For Codex, install the EngSense directory at repository scope under:
+### Recommended: install directly from GitHub with npx
+
+Project scope for Codex:
+
+~~~bash
+npx skills add https://github.com/GendByteMaster/EngSense -a codex
+~~~
+
+Global/user scope for Codex:
+
+~~~bash
+npx skills add https://github.com/GendByteMaster/EngSense -a codex -g
+~~~
+
+The EngSense Skill source is GitHub; there is no separate EngSense npm package required.
+
+Manual installation is also supported at:
 
 ~~~text
 .agents/skills/engsense/
 ~~~
 
-or at user scope under:
+or user scope:
 
 ~~~text
 ~/.codex/skills/engsense/
@@ -198,4 +218,4 @@ EngSense is still **pre-v1.0** while the mandatory source corpus and blocked sou
 
 ## License
 
-No license has been declared in this repository yet. Add one before a public v1.0 release if redistribution terms are intended.
+EngSense is licensed under the [MIT License](LICENSE).

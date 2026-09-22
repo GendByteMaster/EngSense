@@ -114,7 +114,7 @@ The eval folder remains lightweight development evidence. A model-execution plat
 - [x] Codex user-scope installation is documented.
 - [x] ChatGPT installation flow is documented with current official references.
 - [x] Supporting files are documented as required parts of the Skill.
-- [ ] Optional `agents/openai.yaml` metadata decision made before v1.0.
+- [x] Optional `agents/openai.yaml` metadata added; implicit invocation enabled; no tool dependencies declared.
 - [ ] Final install smoke test in a clean Codex repository.
 - [ ] Final install smoke test in a supported ChatGPT Skills surface, when available to the release tester.
 
@@ -123,10 +123,10 @@ The eval folder remains lightweight development evidence. A model-execution plat
 - [x] Project purpose and non-goals are documented.
 - [x] Contribution boundaries are documented.
 - [x] Research status is visible.
-- [ ] License selected and added if public redistribution is intended.
-- [ ] Repository topics/description reviewed.
-- [ ] Broken internal documentation links checked.
-- [ ] Stale roadmap claims removed.
+- [x] MIT license is present in `LICENSE`.
+- [x] Repository description reviewed; topic tuning remains optional.
+- [x] Internal Markdown links in README/release/contribution/usage/installation/example docs checked against the repository tree.
+- [x] Stale research/integration and license claims removed.
 - [ ] Final spelling/terminology pass completed.
 
 ## 10. Final Skill behavior review

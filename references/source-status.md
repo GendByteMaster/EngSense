@@ -9,7 +9,7 @@ This file prevents the Phase 1 implementation from being mistaken for a complete
 - *The Architecture of Open Source Applications, Volume 2* — official AOSA edition.
 - *The Performance of Open Source Applications* — official AOSA edition.
 
-Completed research notes are tracked in the repository. AOSA Volume 2 and POSA are currently on research branches pending integration into `main`.
+Completed research notes are tracked in the repository. The completed AOSA Volume 1, AOSA Volume 2, POSA, and Software Engineering at Google notes are integrated into `main`.
 
 ## Mandatory corpus still open
 
@@ -35,6 +35,6 @@ That authorization permits:
 - provisional language/domain guidance;
 - principle lenses derived only from completed full-text sources;
 - provisional conflict modeling;
-- evaluation infrastructure.
+- deterministic evaluation fixtures and structural validation.
 
 It does **not** permit pretending the unread mandatory sources were completed or attributing rules to them.

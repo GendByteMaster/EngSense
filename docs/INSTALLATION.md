@@ -4,12 +4,40 @@ EngSense is a standalone Agent Skill: the directory contains a required `SKILL.m
 
 The Skill depends on its supporting files, so install the **whole EngSense directory**, not only `SKILL.md`.
 
+EngSense also includes optional OpenAI metadata at `agents/openai.yaml`. It provides user-facing metadata and keeps implicit invocation enabled. No MCP/tool dependencies are declared.
+
 Official OpenAI references:
 
 - Build skills: https://developers.openai.com/docs/build-skills
 - Skills in ChatGPT: https://help.openai.com/en/articles/20001066
 
 Product availability and installation UI can change. The instructions below follow the current OpenAI documentation as of September 2026.
+
+## Recommended — npx from GitHub
+
+The recommended one-command install uses the open `skills` CLI with EngSense sourced directly from GitHub.
+
+Project scope for Codex:
+
+~~~bash
+npx skills add https://github.com/GendByteMaster/EngSense -a codex
+~~~
+
+Global/user scope:
+
+~~~bash
+npx skills add https://github.com/GendByteMaster/EngSense -a codex -g
+~~~
+
+Non-interactive global install:
+
+~~~bash
+npx skills add https://github.com/GendByteMaster/EngSense -a codex -g -y
+~~~
+
+The EngSense source is the GitHub repository URL above. EngSense does not need its own npm package.
+
+The `skills` CLI is a third-party open Agent Skills installer rather than an OpenAI product. Its upstream repository is `vercel-labs/skills`: https://github.com/vercel-labs/skills. Review its current repository/package documentation before using it in locked-down or security-sensitive environments.
 
 ## Codex — repository scope
 
@@ -29,6 +57,8 @@ The resulting layout should contain:
     └── skills/
         └── engsense/
             ├── SKILL.md
+            ├── agents/
+            │   └── openai.yaml
             ├── decision-framework.md
             ├── review-workflow.md
             ├── principles/
@@ -56,6 +86,8 @@ Expected layout:
 ~~~text
 ~/.codex/skills/engsense/
 ├── SKILL.md
+├── agents/
+│   └── openai.yaml
 ├── decision-framework.md
 ├── review-workflow.md
 ├── principles/
@@ -100,6 +132,8 @@ Typical flow:
 In supported ChatGPT experiences, an installed Skill can be selected explicitly and may also be invoked automatically when its name/description match the task.
 
 Availability and sharing controls depend on the current product and workspace settings. Refer to the current Help Center page rather than assuming the same UI exists on every plan or surface.
+
+OpenAI's current Skill format also supports optional `agents/openai.yaml` metadata for user-facing interface settings, invocation policy, and tool dependency declarations. EngSense uses only the interface/invocation metadata and intentionally declares no external tool dependency.
 
 ## Development checkout
 

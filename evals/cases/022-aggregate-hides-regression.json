@@ -1,0 +1,45 @@
+{
+  "id": "aggregate-hides-regression",
+  "title": "Aggregate benchmark score hides one critical workload regression",
+  "mode": "focused",
+  "task": "Review a performance dashboard change that stores only one average score for twenty scenarios.",
+  "context": [
+    "The aggregate score improves by 3%.",
+    "One checkout scenario regresses by 28%, while several synthetic scenarios improve.",
+    "Raw per-scenario samples are discarded after aggregation.",
+    "Checkout latency is a user-facing SLO input."
+  ],
+  "evidence": [
+    "The current aggregate cannot reconstruct which scenario changed after raw samples are discarded.",
+    "The checkout scenario has materially different product importance from the synthetic scenarios."
+  ],
+  "tempting_wrong_recommendation": [
+    "Accept the release because the aggregate performance score improved.",
+    "Keep only the average because one number is easier to track."
+  ],
+  "expected_decision_properties": [
+    "Reject the aggregate score as sufficient evidence for this release decision.",
+    "Preserve diagnostic per-scenario data or raw samples needed to attribute regressions.",
+    "Treat the checkout regression separately because the aggregate erases product-relevant structure.",
+    "Avoid replacing all aggregation with raw-data-only reporting; retain useful summaries alongside diagnostic evidence."
+  ],
+  "unacceptable_reasoning": [
+    "A better average means every important workload improved.",
+    "Performance should always be represented by one scalar.",
+    "Raw evidence has no value after a summary is computed."
+  ],
+  "expected_quality_dimensions": [
+    "measurement_actionability",
+    "performance_observability",
+    "user_impact"
+  ],
+  "expected_tradeoffs": [
+    "compact reporting vs diagnostic evidence"
+  ],
+  "expected_authority": "strong_recommendation",
+  "verification_expectations": [
+    "Retain and inspect per-scenario measurements.",
+    "Confirm the checkout regression under the same workload.",
+    "Verify the dashboard still provides useful aggregate summaries without discarding diagnostic structure."
+  ]
+}

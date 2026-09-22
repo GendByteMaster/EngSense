@@ -365,19 +365,42 @@ Escalate specialist-sensitive conclusions such as lock-free memory ordering, for
 
 ---
 
+## Rewrite/refactoring strategy
+
+Load `principles/change-strategy.md` when the question is whether to leave, refactor, stage, coordinate, or replace a subsystem.
+
+Before recommending a rewrite or broad migration, identify:
+
+- current material cost;
+- target benefit;
+- behavioral oracle/verification strength;
+- public/persisted/content compatibility surfaces;
+- mixed old/new coexistence cost;
+- cutover path;
+- rollback/reversal;
+- removal condition.
+
+Do not treat "never rewrite" or "rewrite it cleanly" as useful review rules.
+
+Raise the evidence threshold for high-consequence systems.
+
 ## Migration/deprecation review
 
 Evaluate the full transition:
 
-- discover consumers;
-- support old/new coexistence if required;
+- discover consumers/state;
+- add compatible target capability where needed;
+- support old/new coexistence only as long as required;
+- migrate/backfill;
 - prevent backsliding;
-- provide actionable migration path;
-- test conversion;
-- account for overlap/support cost;
-- define removal condition.
+- test conversion and mixed-version behavior;
+- move consumers/traffic;
+- define rollback;
+- remove old dependency and temporary bridge.
 
-A new implementation is not automatically better if migration cost dominates its benefit.
+A new implementation is not automatically better if migration/coexistence cost dominates its benefit.
+
+A coordinated cross-cutting transition can be preferable to a long mixed architecture when the transition state itself is the greater risk and verification/rollback are strong.
 
 ---
 

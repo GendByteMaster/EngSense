@@ -44,6 +44,10 @@ For each pair, ask which side dominates under the current context.
 | Aggressive cache reuse | Freshness/failover | repeated expensive work; stable validity; bounded resource use | invalidation, stale routing/data, memory pressure, or availability semantics dominate |
 | Simplicity now | Future scalability | expected growth near ceiling; migration expensive/slow | current scale far below ceiling; simpler design is cheap to replace |
 | Security/control | Product/incentive redesign | adversarial incentives unavoidable; harm high | product design can credibly eliminate/reduce incentive/attack surface |
+| Incremental refactor | Coordinated change | independently verifiable steps; cheap coexistence; rollback per step | mixed-mode state is more dangerous/expensive; invariant spans coupled components; strong coordinated verification exists |
+| Evolve in place | Rewrite/replace | behavior poorly specified; migration risk high; current architecture still adaptable | old behavior is understood/tested; replacement advantage material; cutover/coexistence plan credible |
+| Compatibility bridge | Clean cutover | consumers cannot move atomically; rollback/version skew matters | consumer set controlled; transition state costly; coordinated cutover is safer |
+| Stable ugly mechanism | Architectural replacement | current mechanism reliable; replacement benefit speculative | recurring defects/cost; old variation model no longer fits; replacement has evidence and migration path |
 
 ---
 

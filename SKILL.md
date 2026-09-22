@@ -91,6 +91,7 @@ Do not load every module for every task.
 - `principles/evolution-and-compatibility.md`
 - `principles/evidence-driven-abstraction.md`
 - `principles/performance-engineering.md`
+- `principles/change-strategy.md`
 
 ### References
 
@@ -175,7 +176,8 @@ Use or consult:
 - concurrency semantics → `domains/concurrency.md`;
 - API/protocol compatibility → `domains/api-design.md`;
 - test fidelity/strategy → `domains/testing.md`;
-- performance trade-off/evidence quality → `principles/performance-engineering.md`.
+- performance trade-off/evidence quality → `principles/performance-engineering.md`;
+- rewrite/refactor/migration strategy → `principles/change-strategy.md`.
 
 Require deeper specialist review when correctness depends on:
 

@@ -432,7 +432,33 @@ Normally do not emit.
 
 ---
 
-## 17. Implement minimally
+## 17. Select change strategy
+
+When the decision requires restructuring, choose the transition strategy explicitly:
+
+```text
+leave in place
+incremental refactor
+staged migration
+coordinated cross-cutting change
+replacement / rewrite
+```
+
+Use `principles/change-strategy.md` when this choice is material.
+
+For broad change, account for:
+
+- behavioral oracle;
+- coexistence cost;
+- cutover;
+- rollback;
+- removal of temporary compatibility code.
+
+Do not assume smaller steps are always safer when mixed old/new states create the larger risk.
+
+---
+
+## 18. Implement minimally
 
 When changing code:
 
@@ -446,7 +472,7 @@ If a larger redesign is genuinely required, explain why a local change cannot pr
 
 ---
 
-## 18. Verify
+## 19. Verify
 
 Choose checks that match the risk:
 
@@ -469,7 +495,7 @@ Do not treat code coverage alone as proof of quality.
 
 ---
 
-## 19. Re-evaluate after the change
+## 20. Re-evaluate after the change
 
 Ask:
 

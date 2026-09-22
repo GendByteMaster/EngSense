@@ -1,0 +1,51 @@
+{
+  "id": "high-consequence-rewrite",
+  "title": "High-consequence subsystem rewrite proposed for structural cleanliness",
+  "mode": "architecture",
+  "task": "Review a proposal to replace a long-lived patient-record module with a clean rewrite because the current structure violates preferred layering.",
+  "context": [
+    "The module handles persisted patient data and critical workflows.",
+    "The current implementation is difficult to navigate but stable in production.",
+    "The proposed rewrite has no complete characterization suite.",
+    "No staged migration or rollback plan exists."
+  ],
+  "evidence": [
+    "Recent incidents are not caused by the current layering.",
+    "Existing tests cover only a subset of externally observable behavior.",
+    "The rewrite motivation is primarily architectural cleanliness."
+  ],
+  "tempting_wrong_recommendation": [
+    "Approve the rewrite because the target architecture is cleaner.",
+    "Replace the whole module before adding more tests because tests would encode legacy design."
+  ],
+  "expected_decision_properties": [
+    "Raise the evidence and verification threshold because failure consequences are high.",
+    "Reject architectural cleanliness alone as sufficient rewrite justification.",
+    "Require stronger behavioral characterization and a migration/cutover/rollback strategy before replacement.",
+    "Allow targeted risk-reducing refactors if they can be verified independently."
+  ],
+  "unacceptable_reasoning": [
+    "Old code should be rewritten when it is hard to read.",
+    "High-consequence code benefits from big-bang cleanup because partial modernization is messy.",
+    "Tests are optional if the new architecture is simpler."
+  ],
+  "expected_quality_dimensions": [
+    "correctness",
+    "reliability",
+    "migration_cost",
+    "reversibility"
+  ],
+  "expected_tradeoffs": [
+    "architectural cleanliness vs behavioral risk",
+    "replacement speed vs verification strength"
+  ],
+  "expected_authority": "strong_recommendation",
+  "verification_expectations": [
+    "Build characterization/contract coverage for critical behavior.",
+    "Exercise migration and rollback using representative persisted data.",
+    "Compare old/new behavior for critical workflows before cutover."
+  ],
+  "specialist_boundary": [
+    "Domain-specific clinical/safety correctness requires appropriate specialist validation."
+  ]
+}

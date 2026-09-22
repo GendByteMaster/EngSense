@@ -1,0 +1,52 @@
+{
+  "id": "security-sensitive-refactor",
+  "title": "Security-sensitive refactor must not erase authentication invariants",
+  "mode": "refactoring",
+  "task": "Review a proposal to simplify authentication code by merging token parsing, signature verification, and claim validation into a generic helper.",
+  "context": [
+    "The code verifies externally supplied authentication tokens.",
+    "Signature verification and claim validation are distinct security steps.",
+    "The proposal removes algorithm/audience/issuer checks to make the helper generic.",
+    "No security proof or migration requirement justifies removing those checks."
+  ],
+  "evidence": [
+    "Current code explicitly verifies signature algorithm, issuer, audience, and expiry.",
+    "The proposed helper accepts decoded claims before verification is complete.",
+    "The refactor is motivated only by readability and reducing duplication."
+  ],
+  "snippet": "claims = decode(token)\nreturn validate_common(claims)",
+  "tempting_wrong_recommendation": [
+    "Approve the refactor because it reduces duplication.",
+    "Treat authentication validation as ordinary cleanup.",
+    "Remove explicit checks because a generic JWT library already parses the token."
+  ],
+  "expected_decision_properties": [
+    "Preserve authentication/security invariants before considering structural simplification.",
+    "Reject any refactor that removes signature or claim-validation guarantees without specialist justification.",
+    "Allow readability improvements only when security behavior remains explicit and verified.",
+    "Escalate detailed cryptographic/auth semantics to security review."
+  ],
+  "unacceptable_reasoning": [
+    "Less code is automatically safer.",
+    "A library parsing a token implies the token is trusted.",
+    "DRY/readability is sufficient justification to remove security checks."
+  ],
+  "expected_quality_dimensions": [
+    "correctness",
+    "security_boundary",
+    "maintainability",
+    "auditability"
+  ],
+  "expected_tradeoffs": [
+    "readability/duplication reduction vs security invariant preservation"
+  ],
+  "expected_authority": "invariant",
+  "verification_expectations": [
+    "Run authentication regression tests.",
+    "Add negative tests for invalid signature, issuer, audience, and expiry.",
+    "Require security-specific review for any changed verification semantics."
+  ],
+  "specialist_boundary": [
+    "Cryptographic and authentication semantics require security review."
+  ]
+}

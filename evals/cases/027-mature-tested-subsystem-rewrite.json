@@ -1,0 +1,53 @@
+{
+  "id": "mature-tested-subsystem-rewrite",
+  "title": "Mature tested subsystem has a credible rewrite path",
+  "mode": "refactoring",
+  "task": "Review a proposal to replace an ad hoc internal scheduler with a new dependency-graph implementation.",
+  "context": [
+    "The current scheduler is behaviorally stable but accumulated years of special cases.",
+    "A comprehensive regression suite exists.",
+    "Recorded production fixtures can be replayed through both implementations.",
+    "The new design materially simplifies dependency ordering and cycle handling.",
+    "A feature flag allows old/new side-by-side comparison and rollback."
+  ],
+  "evidence": [
+    "Prototype results match the old implementation across the regression corpus except for documented existing bugs.",
+    "The new representation directly models dependencies that are currently encoded through sequencing conventions.",
+    "Cutover can be staged and reversed."
+  ],
+  "tempting_wrong_recommendation": [
+    "Reject the rewrite because rewrites are always dangerous.",
+    "Require endless incremental patching because behavior preservation means implementation replacement is forbidden."
+  ],
+  "expected_decision_properties": [
+    "Recognize that a rewrite can be credible when behavior is understood and independently testable.",
+    "Use the old implementation and replay corpus as behavioral oracles while classifying known bugs explicitly.",
+    "Require staged comparison/cutover and rollback rather than trusting structural elegance.",
+    "Acknowledge the replacement advantage of directly modeling the dependency graph."
+  ],
+  "unacceptable_reasoning": [
+    "Never rewrite working code.",
+    "A clean data model alone is enough to approve a rewrite.",
+    "Old/new differences should all be treated as regressions even when the old behavior is a documented defect."
+  ],
+  "expected_quality_dimensions": [
+    "maintainability",
+    "correctness",
+    "reversibility",
+    "testability"
+  ],
+  "expected_tradeoffs": [
+    "replacement risk vs accumulated patch complexity",
+    "behavioral compatibility vs intentionally fixing known defects"
+  ],
+  "expected_authority": "guidance",
+  "verification_expectations": [
+    "Run old/new implementations against the same replay corpus.",
+    "Classify every behavioral difference.",
+    "Exercise feature-flag rollback and staged cutover."
+  ],
+  "revisit_when": [
+    "Side-by-side results reveal unexplained behavioral divergence.",
+    "Migration or rollback no longer remains practical."
+  ]
+}

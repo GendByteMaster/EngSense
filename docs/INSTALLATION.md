@@ -13,6 +13,32 @@ Official OpenAI references:
 
 Product availability and installation UI can change. The instructions below follow the current OpenAI documentation as of September 2026.
 
+## Recommended — npx from GitHub
+
+The recommended one-command install uses the open `skills` CLI with EngSense sourced directly from GitHub.
+
+Project scope for Codex:
+
+~~~bash
+npx skills add https://github.com/GendByteMaster/EngSense -a codex
+~~~
+
+Global/user scope:
+
+~~~bash
+npx skills add https://github.com/GendByteMaster/EngSense -a codex -g
+~~~
+
+Non-interactive global install:
+
+~~~bash
+npx skills add https://github.com/GendByteMaster/EngSense -a codex -g -y
+~~~
+
+The EngSense source is the GitHub repository URL above. EngSense does not need its own npm package.
+
+The `skills` CLI is a third-party open Agent Skills installer rather than an OpenAI product. Review its current repository/package documentation before using it in locked-down or security-sensitive environments.
+
 ## Codex — repository scope
 
 Use repository scope when EngSense should apply only to one codebase.

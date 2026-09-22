@@ -27,10 +27,10 @@ No source is treated as absolute authority.
 - [x] Chapter 4 — Engineering for Equity
 - [x] Chapter 5 — How to Lead a Team
 - [x] Chapter 6 — Leading at Scale
-- [ ] Chapter 7 — Measuring Engineering Productivity
-- [ ] Chapter 8 — Style Guides and Rules
-- [ ] Chapter 9 — Code Review
-- [ ] Chapter 10 — Documentation
+- [x] Chapter 7 — Measuring Engineering Productivity
+- [x] Chapter 8 — Style Guides and Rules
+- [x] Chapter 9 — Code Review
+- [x] Chapter 10 — Documentation
 - [ ] Chapter 11 — Testing Overview
 - [ ] Chapter 12 — Unit Testing
 - [ ] Chapter 13 — Test Doubles
@@ -1012,3 +1012,508 @@ Chapters 2–6 show that **human and organizational failure modes can create tec
 
 EngSense should therefore recognize these factors when the task scope is repository-, platform-, API-, or organization-level, while avoiding irrelevant social-process analysis for small local code edits.
 
+
+
+---
+
+# Chapter 7 — Measuring Engineering Productivity
+
+## Source scope
+
+This chapter is about measuring engineering productivity without reducing it to simplistic output counts.
+
+Its most important warning is that measurement is useful only when it supports a real decision.
+
+## Source-derived principles
+
+### 1. Do not measure without an actionable decision
+
+Before collecting data, determine:
+
+- what decision the measurement will affect;
+- what positive result would change;
+- what negative result would change;
+- who has authority to act.
+
+If neither outcome changes behavior, measurement is mostly waste or vanity.
+
+### 2. Metrics are proxies, not truth
+
+The chapter introduces the Goals / Signals / Metrics (GSM) model:
+
+```text
+Goal
+  ↓
+Signal
+  ↓
+Metric
+```
+
+A metric is only a measurable proxy for a signal, and a signal is evidence about a goal.
+
+This distinction prevents easy-to-measure quantities from silently replacing the property we actually care about.
+
+### 3. Productivity is multidimensional
+
+Google uses QUANTS:
+
+- Quality of code;
+- Attention from engineers;
+- Intellectual complexity;
+- Tempo and velocity;
+- Satisfaction.
+
+Optimizing one dimension can harm another.
+
+### 4. Qualitative evidence matters
+
+Logs and quantitative metrics provide scale, but they often fail to explain why behavior occurs.
+
+Interviews, surveys, and case studies can reveal causes that raw telemetry misses.
+
+### 5. Measurement has cost and can distort behavior
+
+Measurement itself consumes resources and can alter the behavior being measured.
+
+This means metrics should be treated as interventions, not neutral observers.
+
+## EngSense interpretation
+
+This chapter provides a direct foundation for EngSense's own evaluation model.
+
+Strong candidate invariant:
+
+```text
+Never collapse software quality into one score unless the loss of information is explicitly justified.
+```
+
+Candidate evidence model:
+
+```text
+claim
+├── goal
+├── signal
+├── metric/proxy
+├── evidence type
+│   ├── measured
+│   ├── estimated
+│   ├── qualitative
+│   └── unknown
+└── confidence
+```
+
+Candidate rules:
+
+- reject LOC, file count, function count, class count, or test count as direct quality measures;
+- ask what property a proposed metric is actually standing in for;
+- retain conflicting evidence instead of forcing false agreement;
+- do not recommend measurement that cannot affect a decision;
+- evaluate quality across multiple dimensions.
+
+## Important correction to EngSense
+
+The Skill should **not** expose a universal numeric "quality score" in v1.
+
+A numeric score would encourage exactly the proxy collapse this chapter warns against.
+
+Prefer a structured trade-off profile.
+
+---
+
+# Chapter 8 — Style Guides and Rules
+
+## Source scope
+
+This chapter distinguishes mandatory **rules** from non-mandatory **guidance** and explains why engineering rules must be tied to organizational goals rather than presented as universal truths.
+
+## Source-derived principles
+
+### 1. Rules and guidance are different categories
+
+A rule is enforceable and requires compliance.
+
+Guidance recommends a preferred direction but allows judgment.
+
+Conflating the two creates unnecessary rigidity.
+
+### 2. "Good" engineering behavior is context-dependent
+
+The chapter explicitly states that what counts as good or bad depends on what the organization values.
+
+Different codebases can rationally choose different policies.
+
+### 3. Language-specific guidance matters
+
+Google maintains different style guides because languages have different:
+
+- strengths;
+- features;
+- idioms;
+- histories;
+- risks.
+
+This strongly rejects a single language-neutral style doctrine.
+
+### 4. Consistency has real scaling value
+
+Consistency can improve:
+
+- comprehension;
+- tooling;
+- automation;
+- engineer mobility;
+- large-scale maintenance;
+- resilience across ownership changes.
+
+For some low-impact choices, the benefit is simply that a decision has been made and debate can stop.
+
+### 5. Consistency is not absolute
+
+At sufficient scale and age, perfect historical consistency becomes too expensive.
+
+The chapter accepts that newer guidance can be better even if old code cannot all be migrated immediately.
+
+### 6. Rules should evolve with evidence
+
+Rules can decay when:
+
+- context changes;
+- language capabilities change;
+- people routinely work around them;
+- enforcement becomes disproportionately expensive;
+- better evidence appears.
+
+### 7. Automate mechanical enforcement
+
+If a rule is objective and machine-checkable, enforcement should generally be moved into tooling.
+
+Human review should focus on areas that require judgment.
+
+### 8. "Small change" is semantic, not merely numeric
+
+A hundreds-of-files mechanical edit can be easier to review than a 20-line behavioral change.
+
+Line-count thresholds are therefore poor substitutes for change complexity.
+
+## EngSense interpretation
+
+This chapter should become foundational to EngSense.
+
+Candidate taxonomy:
+
+```text
+invariant
+rule
+guidance
+heuristic
+preference
+observation
+```
+
+EngSense must not output all recommendations with equal authority.
+
+Candidate rules:
+
+- language-specific guidance overrides generic style advice when the two conflict and repository constraints support the language convention;
+- do not promote a heuristic into a mandatory rule without explicit justification;
+- use automation for deterministic enforcement;
+- preserve human judgment for semantic complexity;
+- treat consistency as a benefit with a cost, not an absolute virtue;
+- recommend revisiting rules when their original rationale no longer holds.
+
+## Strong conflict candidate
+
+```text
+Consistency
+vs
+Local/modern improvement
+```
+
+Decision factors:
+
+- migration cost;
+- tooling support;
+- codebase size;
+- frequency of interaction across modules;
+- expected lifetime;
+- safety of mixed conventions.
+
+---
+
+# Chapter 9 — Code Review
+
+## Source scope
+
+This chapter treats code review as a long-term engineering mechanism, not merely a bug detector.
+
+The chapter emphasizes correctness, comprehensibility, consistency, ownership, knowledge transfer, and historical record.
+
+## Source-derived principles
+
+### 1. Code is a liability as well as an asset
+
+New code creates future maintenance obligations.
+
+The existence of a possible implementation is not enough reason to introduce it.
+
+### 2. Review should improve the codebase, not seek perfection
+
+A reviewer should not block a change merely because they personally prefer another acceptable approach.
+
+Alternatives should be justified by concrete improvements such as:
+
+- comprehension;
+- correctness;
+- efficiency;
+- maintainability.
+
+### 3. Comprehensibility is a primary review target
+
+Another engineer's ability to understand the change is an important test independent of whether the code executes correctly.
+
+### 4. Code review is defense in depth
+
+Review can catch defects early, but it is not expected to replace:
+
+- static analysis;
+- tests;
+- linters;
+- formatters;
+- design review.
+
+### 5. Review has scaling cost
+
+Heavyweight review processes can become unsustainable.
+
+Additional reviewers have diminishing returns unless they bring genuinely different expertise.
+
+### 6. Preserve rationale
+
+Change descriptions and implementation comments can become important historical records.
+
+If review discovers a new design rationale, preserve it where future maintainers can find it.
+
+### 7. Different changes require different review strategies
+
+Greenfield design, bug fixes, behavior changes, refactors, and large-scale mechanical edits should not receive identical review treatment.
+
+## EngSense interpretation
+
+Candidate review rule:
+
+```text
+Do not report:
+"I would have written this differently."
+
+Report only when:
+the alternative materially improves a relevant quality dimension
+or preserves an important invariant.
+```
+
+This is highly relevant to AI review, where models otherwise tend to generate preference-shaped false positives.
+
+Candidate finding requirement:
+
+Every non-trivial finding should identify the quality dimension or invariant being improved.
+
+Examples:
+
+```text
+comprehension
+correctness
+coupling
+compatibility
+performance
+testability
+operability
+security boundary
+```
+
+Candidate anti-rule:
+
+Do not maximize issue count.
+
+A review with fewer high-confidence findings is preferable to a long list of personal-style suggestions.
+
+## Eval candidate
+
+Two implementations are both correct and idiomatic; one reviewer merely prefers a different control-flow style.
+
+Expected EngSense behavior:
+
+- no defect finding unless a concrete quality improvement can be demonstrated.
+
+---
+
+# Chapter 10 — Documentation
+
+## Source scope
+
+This chapter treats documentation as part of the engineering system rather than an optional artifact outside code.
+
+Its key themes are audience, maintenance, ownership, review, discoverability, and keeping rationale near the system it describes.
+
+## Source-derived principles
+
+### 1. Documentation has delayed but scalable return
+
+The author pays the cost once, while many future readers receive the benefit.
+
+Documentation therefore becomes increasingly valuable as:
+
+- audience grows;
+- lifetime grows;
+- ownership changes;
+- onboarding repeats.
+
+### 2. Write for a defined audience
+
+Documentation should identify who it is for and what that audience already knows.
+
+A document intended for maintainers and one intended for API consumers often should not be the same document.
+
+### 3. Shortness has value, but not at the expense of required context
+
+Concise documentation reduces reading cost, especially across large audiences.
+
+The goal is not minimal word count; it is efficient transfer of required understanding.
+
+### 4. Explain intent and rationale
+
+Documentation should help future engineers answer questions such as:
+
+- why was this decision made?
+- what goal was being pursued?
+- what trade-offs were accepted?
+
+### 5. Design documents are pre-code review surfaces
+
+For substantial work, design docs allow:
+
+- alternatives;
+- trade-offs;
+- goals;
+- security/privacy/storage concerns;
+- expert input
+
+to be examined before implementation cost is sunk.
+
+### 6. Documentation should be reviewable
+
+The chapter distinguishes:
+
+- technical accuracy review;
+- audience clarity review;
+- writing/consistency review.
+
+### 7. Canonical ownership matters
+
+Unowned documentation tends to become stale or fragmented.
+
+Documentation stored near code or placed in a clearly owned canonical collection is easier to maintain.
+
+## EngSense interpretation
+
+Candidate rule:
+
+Documentation requirements should scale with:
+
+```text
+decision_scope
+expected_lifetime
+consumer_count
+novelty
+risk
+reversibility
+maintenance_handoff
+```
+
+Do not demand heavyweight design documents for trivial local changes.
+
+Do require durable rationale when a decision is:
+
+- non-obvious;
+- expensive to reverse;
+- externally visible;
+- cross-team;
+- likely to be questioned later.
+
+## Important conflict candidate
+
+```text
+Self-documenting code
+vs
+Explicit rationale documentation
+```
+
+These are not true substitutes.
+
+Readable code can explain **what** happens while still failing to preserve **why this design was chosen**.
+
+## Direct implication for EngSense
+
+EngSense's own decisions should be capable of producing a compact rationale record:
+
+```text
+Context
+Decision
+Alternatives
+Trade-off
+Assumptions
+Revisit when
+```
+
+This format is now supported independently by Chapters 1, 6, 9, and 10.
+
+---
+
+# Chapters 7–10 — Cross-chapter extraction
+
+## Strongly supported EngSense architecture changes
+
+### 1. Do not build a universal quality score
+
+Quality is multidimensional and proxies are imperfect.
+
+Use a structured profile rather than one scalar.
+
+### 2. Separate authority levels
+
+Every piece of EngSense guidance should be typed:
+
+```text
+invariant
+rule
+guidance
+heuristic
+preference
+```
+
+### 3. Every finding needs a reason beyond preference
+
+A recommendation should identify:
+
+- the affected quality dimension;
+- the evidence;
+- the trade-off;
+- the expected improvement.
+
+### 4. Automate objective checks, preserve model attention for judgment
+
+Formatting, lint, deterministic policy checks, and similar mechanical concerns should not consume reasoning budget if tooling already handles them.
+
+### 5. Preserve decision provenance
+
+For non-trivial decisions, record:
+
+- context;
+- alternatives;
+- assumptions;
+- rationale;
+- revisit conditions.
+
+### 6. Treat repository conventions as scoped policy, not universal engineering truth
+
+A local rule can be mandatory inside a repository while remaining non-universal outside it.
+
+This distinction is essential for a context-aware Skill.

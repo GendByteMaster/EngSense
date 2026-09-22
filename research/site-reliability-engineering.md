@@ -105,19 +105,19 @@ Therefore:
 
 ### Part V — Conclusions
 
-- [ ] Part V introduction
-- [ ] Chapter 33 — Lessons Learned from Other Industries
-- [ ] Chapter 34 — Conclusion
+- [x] Part V introduction
+- [x] Chapter 33 — Lessons Learned from Other Industries
+- [x] Chapter 34 — Conclusion
 
 ### Appendices / bibliography
 
-- [ ] Appendix A — Availability Table
-- [ ] Appendix B — A Collection of Best Practices for Production Services
-- [ ] Appendix C — Example Incident State Document
-- [ ] Appendix D — Example Postmortem
-- [ ] Appendix E — Launch Coordination Checklist
-- [ ] Appendix F — Example Production Meeting Minutes
-- [ ] Bibliography
+- [x] Appendix A — Availability Table
+- [x] Appendix B — A Collection of Best Practices for Production Services
+- [x] Appendix C — Example Incident State Document
+- [x] Appendix D — Example Postmortem
+- [x] Appendix E — Launch Coordination Checklist
+- [x] Appendix F — Example Production Meeting Minutes
+- [x] Bibliography
 
 ---
 

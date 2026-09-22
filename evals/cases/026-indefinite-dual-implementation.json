@@ -1,0 +1,47 @@
+{
+  "id": "indefinite-dual-implementation",
+  "title": "Old and new implementations coexist without a cutover plan",
+  "mode": "architecture",
+  "task": "Review a rewrite program where a new implementation has been added beside the old one, but users can choose either indefinitely.",
+  "context": [
+    "Both implementations are production-supported.",
+    "Bug fixes must often be applied twice.",
+    "Documentation does not state which implementation new users should adopt.",
+    "No removal criteria or migration deadline exists."
+  ],
+  "evidence": [
+    "Support issues show user confusion about which implementation is preferred.",
+    "The compatibility matrix and CI time have grown because both paths remain active.",
+    "Several fixes have already diverged between the two implementations."
+  ],
+  "tempting_wrong_recommendation": [
+    "Keep both forever because choice is always good.",
+    "Continue the rewrite without defining migration or deprecation."
+  ],
+  "expected_decision_properties": [
+    "Identify coexistence itself as an engineering cost.",
+    "Require a clear supported choice, migration direction, deprecation/removal condition, and ownership plan.",
+    "Avoid deleting the old path immediately unless consumer migration evidence makes that safe.",
+    "Treat duplicate fixes/test matrix/support burden as part of rewrite economics."
+  ],
+  "unacceptable_reasoning": [
+    "Two implementations automatically increase resilience.",
+    "Users can decide the architecture strategy for themselves indefinitely.",
+    "Rewrite completion is only a code-completeness question."
+  ],
+  "expected_quality_dimensions": [
+    "maintainability",
+    "compatibility",
+    "migration_cost",
+    "discoverability"
+  ],
+  "expected_tradeoffs": [
+    "choice/backward compatibility vs coexistence complexity"
+  ],
+  "expected_authority": "strong_recommendation",
+  "verification_expectations": [
+    "Inventory remaining consumers of the old implementation.",
+    "Define and test the migration/cutover path.",
+    "Track removal criteria and ensure temporary compatibility code has an owner."
+  ]
+}

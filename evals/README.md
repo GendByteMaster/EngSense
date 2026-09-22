@@ -107,6 +107,10 @@ It does not judge model quality. Behavioral scoring will be added separately.
 22. Aggregate performance score hides a critical workload regression
 23. Network round-trip dominated latency vs local CPU rewrite
 24. Zero-copy backing-buffer retention
+25. High-consequence rewrite proposed for structural cleanliness
+26. Indefinite old/new implementation coexistence
+27. Mature tested subsystem with a credible rewrite path
+28. Coordinated cross-cutting representation migration
 
 The suite intentionally includes:
 

@@ -101,6 +101,8 @@ It does not judge model quality. Behavioral scoring will be added separately.
 16. Known future scale ceiling without current pressure
 17. Bounded measured performance escape hatch
 18. Complexity displacement from a shared invariant into callers
+19. Large multi-responsibility function
+20. Stable duplicated invariant abstraction opportunity
 
 The suite intentionally includes:
 

@@ -12,6 +12,7 @@ The following modules are based only on sources that have been read in full:
 - `evolution-and-compatibility.md`
 - `evidence-driven-abstraction.md`
 - `performance-engineering.md`
+- `change-strategy.md`
 
 Primary completed sources:
 

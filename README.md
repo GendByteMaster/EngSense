@@ -88,7 +88,8 @@ Current research-grounded principle lenses include:
 - evidence-driven abstraction;
 - performance engineering;
 - change strategy;
-- representation design.
+- representation design;
+- reliability and operability.
 
 Language modules currently cover Rust, TypeScript, Python, and general language-neutral guidance.
 
@@ -156,7 +157,8 @@ Completed full-text research currently includes:
 - *Software Engineering at Google*;
 - *The Architecture of Open Source Applications, Volume 1*;
 - *The Architecture of Open Source Applications, Volume 2*;
-- *The Performance of Open Source Applications*.
+- *The Performance of Open Source Applications*;
+- *Site Reliability Engineering: How Google Runs Production Systems*.
 
 Several planned source-specific lenses remain blocked until their required full-book research is complete. See [references/source-status.md](references/source-status.md).
 

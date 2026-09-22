@@ -14,6 +14,7 @@ The following modules are based only on sources that have been read in full:
 - `performance-engineering.md`
 - `change-strategy.md`
 - `representation-design.md`
+- `reliability-operability.md`
 
 Primary completed sources:
 
@@ -21,6 +22,7 @@ Primary completed sources:
 - *The Architecture of Open Source Applications, Volume 1*
 - *The Architecture of Open Source Applications, Volume 2*
 - *The Performance of Open Source Applications*
+- *Site Reliability Engineering: How Google Runs Production Systems*
 
 ## Planned source-specific lenses still blocked
 

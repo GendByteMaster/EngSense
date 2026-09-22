@@ -96,12 +96,12 @@ Therefore:
 
 ### Part IV — Management
 
-- [ ] Part IV introduction
-- [ ] Chapter 28 — Accelerating SREs to On-Call and Beyond
-- [ ] Chapter 29 — Dealing with Interrupts
-- [ ] Chapter 30 — Embedding an SRE to Recover from Operational Overload
-- [ ] Chapter 31 — Communication and Collaboration in SRE
-- [ ] Chapter 32 — The Evolving SRE Engagement Model
+- [x] Part IV introduction
+- [x] Chapter 28 — Accelerating SREs to On-Call and Beyond
+- [x] Chapter 29 — Dealing with Interrupts
+- [x] Chapter 30 — Embedding an SRE to Recover from Operational Overload
+- [x] Chapter 31 — Communication and Collaboration in SRE
+- [x] Chapter 32 — The Evolving SRE Engagement Model
 
 ### Part V — Conclusions
 

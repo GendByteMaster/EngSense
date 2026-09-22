@@ -126,6 +126,8 @@ See [docs/USAGE.md](docs/USAGE.md) and [docs/EXAMPLE_REVIEWS.md](docs/EXAMPLE_RE
 ~~~text
 EngSense/
 ├── SKILL.md
+├── agents/
+│   └── openai.yaml
 ├── decision-framework.md
 ├── review-workflow.md
 ├── principles/
@@ -138,6 +140,8 @@ EngSense/
 ├── CONTRIBUTING.md
 └── RELEASE_CHECKLIST.md
 ~~~
+
+The optional `agents/openai.yaml` file provides OpenAI Skill UI metadata and explicitly allows implicit invocation. EngSense declares no tool dependencies because its core workflow is instruction/reference based.
 
 The deterministic fixtures under `evals/cases/` are development evidence for the Skill. They are intentionally lightweight and are not a model-execution platform.
 

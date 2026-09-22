@@ -22,11 +22,11 @@ No source is treated as absolute authority.
 - [x] Foreword
 - [x] Preface
 - [x] Chapter 1 — What Is Software Engineering?
-- [ ] Chapter 2 — How to Work Well on Teams
-- [ ] Chapter 3 — Knowledge Sharing
-- [ ] Chapter 4 — Engineering for Equity
-- [ ] Chapter 5 — How to Lead a Team
-- [ ] Chapter 6 — Leading at Scale
+- [x] Chapter 2 — How to Work Well on Teams
+- [x] Chapter 3 — Knowledge Sharing
+- [x] Chapter 4 — Engineering for Equity
+- [x] Chapter 5 — How to Lead a Team
+- [x] Chapter 6 — Leading at Scale
 - [ ] Chapter 7 — Measuring Engineering Productivity
 - [ ] Chapter 8 — Style Guides and Rules
 - [ ] Chapter 9 — Code Review
@@ -525,3 +525,490 @@ total engineering cost
 ```
 
 Whether these should be combined under a single higher-level concept or remain separate must be decided only after the remaining source corpus is compared.
+
+
+---
+
+# Chapter 2 — How to Work Well on Teams
+
+## Source scope
+
+This chapter treats software development as a team activity and focuses on the social conditions that make technical work effective.
+
+Its central model is built around three principles:
+
+- humility;
+- respect;
+- trust.
+
+The chapter also argues against the "genius" model of software development, in which an individual hides work until it is supposedly perfect.
+
+## Source-derived principles
+
+### 1. Early exposure reduces design risk
+
+Keeping unfinished work hidden delays feedback and increases the chance of spending substantial time on the wrong design.
+
+The source connects early sharing with:
+
+- earlier detection of bad assumptions;
+- faster correction;
+- reduced duplicated effort;
+- stronger collaboration;
+- lower bus-factor risk.
+
+### 2. Tight feedback loops matter above the code level
+
+The same logic that makes frequent compile/test cycles useful also applies to project direction.
+
+A project can be technically well executed and still fail if feedback about requirements, design, or relevance arrives too late.
+
+### 3. Bus factor is a software-quality concern
+
+Critical knowledge concentrated in one person makes a project structurally fragile.
+
+Documentation, shared ownership, review, and collaboration are not merely management concerns; they directly affect maintainability and continuity.
+
+### 4. Criticism should target artifacts, not identity
+
+Constructive review is most useful when the discussion stays attached to the code, design, or behavior rather than the competence or character of the author.
+
+### 5. Failure is valuable only when converted into learning
+
+The chapter's postmortem model emphasizes:
+
+- what happened;
+- why it happened;
+- impact;
+- corrective actions;
+- preventive actions;
+- lessons learned.
+
+The point is not to normalize careless failure. It is to make failures produce durable organizational learning.
+
+### 6. Good engineering judgment is revisable
+
+The chapter explicitly encourages changing one's mind when new evidence appears.
+
+Stubborn consistency is not the same thing as sound engineering judgment.
+
+## EngSense interpretation
+
+EngSense should treat reviewability and feedback latency as quality dimensions for non-trivial changes.
+
+Candidate context signals:
+
+```text
+review_scope
+feedback_latency
+knowledge_concentration
+bus_factor
+decision_confidence
+evidence_freshness
+```
+
+Candidate rules:
+
+- prefer changes that can be reviewed incrementally when that does not create artificial fragmentation;
+- flag critical code that has only one knowledgeable maintainer;
+- distinguish criticism of implementation from claims about the author;
+- record material design failures as reusable evidence when the task context supports it;
+- explicitly allow a prior recommendation to be revised when new evidence invalidates its assumptions.
+
+## Tensions to compare later
+
+- early feedback vs uninterrupted deep work;
+- incremental review vs preserving coherent large changes;
+- distributed ownership vs clear ownership;
+- experimentation/failure tolerance vs risk containment.
+
+---
+
+# Chapter 3 — Knowledge Sharing
+
+## Source scope
+
+This chapter treats knowledge as organizational capital and studies mechanisms for making expertise discoverable, transferable, and resilient.
+
+The main failure modes are:
+
+- psychological unsafety;
+- information islands;
+- duplication;
+- information skew;
+- single points of failure;
+- all-or-nothing expertise;
+- uncritical repetition of received wisdom.
+
+## Source-derived principles
+
+### 1. Knowledge quality depends on the environment
+
+People must be able to admit ignorance, ask basic questions, and make mistakes without being punished socially.
+
+Without that, organizations hide uncertainty instead of resolving it.
+
+### 2. Knowledge silos create engineering divergence
+
+When teams solve similar problems independently, the result can be:
+
+- duplicated work;
+- incompatible local conventions;
+- inconsistent answers;
+- hidden dependencies on individual experts.
+
+### 3. Expertise is multidimensional, not binary
+
+A person can be advanced in one area and novice in another.
+
+This is relevant to EngSense because "expert authority" should not be treated as a universal confidence signal.
+
+### 4. Communication mechanisms have trade-offs
+
+The chapter does not claim that one medium is always best.
+
+Synchronous chat is fast but ephemeral. Mailing-list archives are durable and searchable but can become noisy or stale. Q&A systems can preserve answers but require active maintenance.
+
+### 5. Teaching must scale
+
+A healthy knowledge system does not rely only on experts directly answering every question.
+
+Documentation, reusable references, mentoring, code review, training, and communities distribute expertise more effectively.
+
+### 6. Standardization can be mentorship, not merely enforcement
+
+Google's "readability" process is presented as a way to spread language and codebase knowledge through review, not only as a gatekeeping mechanism.
+
+## EngSense interpretation
+
+This chapter strengthens the case for progressive disclosure and explicit provenance in EngSense.
+
+Candidate rules:
+
+- distinguish repository knowledge from generic software advice;
+- prefer durable documentation for recurring decisions;
+- do not rely on a single maintainer's undocumented reasoning for critical architecture;
+- distinguish "this is our convention" from "this is universally better";
+- treat stale knowledge as a risk, not as authority;
+- when a rule is project-specific, label it as such.
+
+Candidate context signals:
+
+```text
+knowledge_scope
+knowledge_freshness
+knowledge_owner_count
+documentation_quality
+convention_scope
+expertise_domain
+```
+
+## EngSense-specific implication
+
+A Skill should not load every reference for every task.
+
+Knowledge systems themselves have signal-to-noise costs.
+
+This supports:
+
+```text
+task
+  ↓
+context classification
+  ↓
+load only relevant guidance
+```
+
+rather than context stuffing.
+
+## Tensions to compare later
+
+- standardization vs local autonomy;
+- central documentation vs conversational knowledge;
+- explicit rules vs tacit expertise;
+- broad knowledge sharing vs information overload.
+
+---
+
+# Chapter 4 — Engineering for Equity
+
+## Source scope
+
+This chapter argues that engineers have responsibility for outcomes affecting users beyond the immediately visible or "core" user group.
+
+It focuses on bias, representation, the distribution of power in technical decisions, and the difference between good intentions and equitable outcomes.
+
+## Source-derived principles
+
+### 1. Default user assumptions are often incomplete
+
+If designers only consider the users most visible to them, important edge cases can actually represent entire populations rather than rare anomalies.
+
+### 2. Intent is not enough
+
+A process can be built with good intentions and still produce harmful or invalid outcomes.
+
+The chapter's examples emphasize validating assumptions rather than treating existing metrics or historical processes as neutral truth.
+
+### 3. Proxy metrics can be misleading
+
+A measured value can appear useful while failing to predict the future decision for which it is being used.
+
+This is a general engineering lesson beyond the chapter's organizational context:
+
+```text
+available metric
+!=
+valid decision signal
+```
+
+### 4. Values must be verified at implementation level
+
+High-level principles do not guarantee outcomes if they are not reflected in product behavior, data, review, and feedback.
+
+## EngSense interpretation
+
+EngSense should not attempt to become a social-policy evaluator, but it should include a general rule:
+
+> when a system makes consequential decisions about heterogeneous users, validate whether its assumptions, data, and proxy metrics actually support the decision being made.
+
+Candidate quality dimensions:
+
+```text
+user_coverage
+assumption_validity
+proxy_validity
+harm_surface
+```
+
+Candidate rule:
+
+Do not treat "works for the common case" as sufficient evidence when the excluded cases represent predictable classes of users or materially different environments.
+
+## Boundary
+
+This chapter should primarily influence product/system review where behavior differs across populations or accessibility contexts.
+
+It should not be injected into unrelated local refactoring decisions.
+
+---
+
+# Chapter 5 — How to Lead a Team
+
+## Source scope
+
+This chapter distinguishes technical leadership from people management and develops a servant-leadership model.
+
+For EngSense, the most relevant ideas concern delegation, consensus, team focus, decision ownership, and avoiding single points of failure.
+
+## Source-derived principles
+
+### 1. Technical output is not the only system health signal
+
+A team can look productive while suffering from poor social health, unclear direction, or unsustainable leadership behavior.
+
+### 2. Leaders should enable rather than centralize
+
+The source warns against leaders becoming the person who solves everything.
+
+This creates a scaling bottleneck and suppresses the growth of others.
+
+### 3. Consensus is generally more durable than command
+
+Authority can force a decision, but building shared understanding is often more effective for long-lived technical direction.
+
+### 4. Remove bottlenecks, not ownership
+
+A leader can unblock work without taking over the work.
+
+### 5. Delegation is capability building
+
+Delegation can be slower in the short term but improve long-term system capacity.
+
+### 6. Goals should be explicit
+
+Implicit expectations are difficult to reason about and difficult to improve.
+
+The chapter applies this to people and careers, but the principle generalizes to engineering systems:
+
+```text
+implicit goal
+→ ambiguous optimization
+
+explicit goal
+→ inspectable trade-off
+```
+
+## EngSense interpretation
+
+Candidate context signals:
+
+```text
+decision_owner
+ownership_concentration
+delegation_cost
+consensus_need
+team_dependency
+goal_explicitness
+```
+
+Candidate rules:
+
+- detect designs or processes that create a human SPOF;
+- distinguish "fastest person does it" from "sustainable ownership";
+- for cross-team architecture, prefer explicit shared goals and decision boundaries;
+- do not optimize only for immediate throughput when the decision reduces future team capability.
+
+## Tensions to compare later
+
+- consensus vs decision speed;
+- delegation vs immediate efficiency;
+- centralized expertise vs distributed capability;
+- technical excellence vs team sustainability.
+
+---
+
+# Chapter 6 — Leading at Scale
+
+## Source scope
+
+This chapter examines decision-making when responsibility grows beyond one team.
+
+Its three framing principles are:
+
+- Always Be Deciding;
+- Always Be Leaving;
+- Always Be Scaling.
+
+For EngSense, the most relevant material is the treatment of ambiguous problems as evolving trade-offs rather than one-time optimization problems.
+
+## Source-derived principles
+
+### 1. Ambiguous problems do not have permanent optimal answers
+
+For important engineering problems, the best answer is often conditional on the present constraints.
+
+A decision can be correct now and require rebalancing later.
+
+### 2. Name the key trade-offs explicitly
+
+The chapter argues that leaders should expose the dimensions being traded rather than hiding them behind a single recommendation.
+
+### 3. Decide, then iterate
+
+Searching indefinitely for a perfect solution creates analysis paralysis.
+
+A reversible decision can often be made with current evidence, observed, and adjusted later.
+
+### 4. Build systems that do not depend on you
+
+The "Always Be Leaving" principle is fundamentally about removing human SPOFs.
+
+At scale, success means creating an organization that can continue solving the problem without the original leader being continuously present.
+
+### 5. Organize around enduring problems, not temporary solutions
+
+A particularly important engineering idea in this chapter is the distinction between:
+
+```text
+problem
+vs
+current solution
+```
+
+A product, tool, or implementation can be temporary. Anchoring ownership or identity too tightly to the current solution can make replacement harder.
+
+### 6. Prefer small high-leverage adjustments over constant intervention
+
+The chapter's management framing maps to architecture governance as well: excessive local intervention can itself become a bottleneck.
+
+## EngSense interpretation
+
+This chapter strongly reinforces a dynamic decision model.
+
+Candidate rule:
+
+```text
+decision = best current trade-off under explicit assumptions
+not
+decision = timeless truth
+```
+
+Every non-trivial EngSense decision should be able to express:
+
+- current assumptions;
+- chosen trade-off;
+- why the decision is acceptable now;
+- what evidence would trigger reconsideration.
+
+Candidate context signals:
+
+```text
+decision_reversibility
+assumption_stability
+tradeoff_volatility
+owner_singularity
+problem_longevity
+solution_longevity
+```
+
+## New eval candidate
+
+A team owns "the Redis cache service" and resists replacing Redis even though the actual organizational problem is low-latency shared caching.
+
+Expected EngSense behavior:
+
+- distinguish the enduring problem from the current implementation;
+- avoid treating the existing technology as the architectural identity;
+- compare replacement cost, compatibility, operational risk, and real benefit before recommending change.
+
+## Tensions to compare later
+
+- decisiveness vs additional analysis;
+- reversible experimentation vs stability;
+- technology ownership vs problem ownership;
+- central guidance vs local autonomy;
+- minimal intervention vs active governance.
+
+---
+
+# Chapters 2–6 — Cross-chapter extraction
+
+## Newly strengthened quality dimensions
+
+```text
+reviewability
+feedback_latency
+knowledge_resilience
+knowledge_freshness
+ownership_resilience
+goal_clarity
+user_coverage
+assumption_validity
+human_scalability
+decision_reversibility
+```
+
+## Candidate meta-rule
+
+A software system is not maintainable only because its code is readable.
+
+Maintainability also depends on whether:
+
+- knowledge is distributed;
+- assumptions are visible;
+- decisions can be revisited;
+- ownership survives personnel changes;
+- feedback arrives early enough;
+- the system's users and operating contexts are adequately represented.
+
+This is a source-informed EngSense synthesis, not a direct statement from a single chapter.
+
+## Important correction to the original roadmap
+
+The initial EngSense model leaned heavily toward code structure and architecture.
+
+Chapters 2–6 show that **human and organizational failure modes can create technical fragility even when local code quality is high**.
+
+EngSense should therefore recognize these factors when the task scope is repository-, platform-, API-, or organization-level, while avoiding irrelevant social-process analysis for small local code edits.
+

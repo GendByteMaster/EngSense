@@ -7,8 +7,10 @@ import json
 import os
 from pathlib import Path
 import shlex
+import shutil
 import subprocess
 import sys
+import tempfile
 import urllib.error
 import urllib.request
 from typing import Any, Iterable
@@ -329,6 +331,77 @@ class CommandProvider:
         return output
 
 
+class CodexProvider:
+    def __init__(self, model: str, effort: str, timeout: int):
+        if not shutil.which("codex"):
+            raise EvalError("Codex CLI is not installed or not available on PATH")
+        if not model:
+            raise EvalError("Codex provider requires a model")
+        if effort not in {"low", "medium", "high", "xhigh", "max", "ultra"}:
+            raise EvalError(f"unsupported Codex reasoning effort: {effort!r}")
+        self.model = model
+        self.effort = effort
+        self.timeout = timeout
+
+    def generate(self, prompt: str, case_id: str, schema: dict[str, Any] | None = None) -> str:
+        with tempfile.TemporaryDirectory(prefix=f"engsense-{case_id}-") as temp_dir:
+            temp = Path(temp_dir)
+            argv = [
+                "codex",
+                "exec",
+                "--ephemeral",
+                "--ignore-user-config",
+                "--skip-git-repo-check",
+                "--sandbox",
+                "read-only",
+                "--model",
+                self.model,
+                "--config",
+                f'model_reasoning_effort="{self.effort}"',
+                "--config",
+                'approval_policy="never"',
+                "--config",
+                'web_search="disabled"',
+            ]
+
+            if schema is not None:
+                schema_path = temp / "judge-schema.json"
+                schema_path.write_text(
+                    json.dumps(schema, ensure_ascii=False, indent=2),
+                    encoding="utf-8",
+                )
+                argv.extend(["--output-schema", str(schema_path)])
+
+            argv.append("-")
+
+            env = os.environ.copy()
+            env.pop("OPENAI_API_KEY", None)
+            env.pop("CODEX_API_KEY", None)
+
+            proc = subprocess.run(
+                argv,
+                input=prompt,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                cwd=temp,
+                env=env,
+                timeout=self.timeout,
+                check=False,
+            )
+
+            if proc.returncode != 0:
+                raise EvalError(
+                    f"Codex CLI failed for {case_id} with exit {proc.returncode}: "
+                    f"{proc.stderr.strip()[:1200]}"
+                )
+
+            output = proc.stdout.strip()
+            if not output:
+                raise EvalError(f"Codex CLI returned empty output for {case_id}")
+            return output
+
+
 class OpenAIProvider:
     def __init__(self, model: str, timeout: int, max_output_tokens: int):
         api_key = os.environ.get("OPENAI_API_KEY")
@@ -402,9 +475,18 @@ class OpenAIProvider:
         return output
 
 
-def make_provider(kind: str, command: str | None, model: str | None, timeout: int, max_output_tokens: int):
+def make_provider(
+    kind: str,
+    command: str | None,
+    model: str | None,
+    effort: str,
+    timeout: int,
+    max_output_tokens: int,
+):
     if kind == "command":
         return CommandProvider(command or "", timeout)
+    if kind == "codex":
+        return CodexProvider(model or "", effort, timeout)
     if kind == "openai":
         return OpenAIProvider(model or "", timeout, max_output_tokens)
     raise EvalError(f"unsupported provider: {kind}")
@@ -443,12 +525,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--case", action="append", dest="cases", help="Case id to run; repeatable.")
     parser.add_argument("--limit", type=int, help="Run only the first N selected cases.")
     parser.add_argument("--context-mode", choices=("auto", "core", "all", "none"), default="auto")
-    parser.add_argument("--target-provider", choices=("command", "openai"), default=os.environ.get("ENGSENSE_EVAL_TARGET_PROVIDER", "command"))
+    parser.add_argument("--target-provider", choices=("command", "codex", "openai"), default=os.environ.get("ENGSENSE_EVAL_TARGET_PROVIDER", "codex"))
     parser.add_argument("--target-command", default=os.environ.get("ENGSENSE_EVAL_TARGET_CMD"))
-    parser.add_argument("--target-model", default=os.environ.get("ENGSENSE_EVAL_TARGET_MODEL"))
-    parser.add_argument("--judge-provider", choices=("command", "openai"), default=os.environ.get("ENGSENSE_EVAL_JUDGE_PROVIDER", "command"))
+    parser.add_argument("--target-model", default=os.environ.get("ENGSENSE_EVAL_TARGET_MODEL", "gpt-5.6-luna"))
+    parser.add_argument("--target-effort", choices=("low", "medium", "high", "xhigh", "max", "ultra"), default=os.environ.get("ENGSENSE_EVAL_TARGET_EFFORT", "xhigh"))
+    parser.add_argument("--judge-provider", choices=("command", "codex", "openai"), default=os.environ.get("ENGSENSE_EVAL_JUDGE_PROVIDER", "codex"))
     parser.add_argument("--judge-command", default=os.environ.get("ENGSENSE_EVAL_JUDGE_CMD"))
-    parser.add_argument("--judge-model", default=os.environ.get("ENGSENSE_EVAL_JUDGE_MODEL"))
+    parser.add_argument("--judge-model", default=os.environ.get("ENGSENSE_EVAL_JUDGE_MODEL", "gpt-5.6-sol"))
+    parser.add_argument("--judge-effort", choices=("low", "medium", "high", "xhigh", "max", "ultra"), default=os.environ.get("ENGSENSE_EVAL_JUDGE_EFFORT", "high"))
     parser.add_argument("--timeout", type=int, default=180)
     parser.add_argument("--target-max-output-tokens", type=int, default=2500)
     parser.add_argument("--judge-max-output-tokens", type=int, default=3500)
@@ -465,8 +549,22 @@ def main() -> int:
         if not cases:
             raise EvalError("no eval cases selected")
 
-        target = make_provider(args.target_provider, args.target_command, args.target_model, args.timeout, args.target_max_output_tokens)
-        judge = make_provider(args.judge_provider, args.judge_command, args.judge_model, args.timeout, args.judge_max_output_tokens)
+        target = make_provider(
+            args.target_provider,
+            args.target_command,
+            args.target_model,
+            args.target_effort,
+            args.timeout,
+            args.target_max_output_tokens,
+        )
+        judge = make_provider(
+            args.judge_provider,
+            args.judge_command,
+            args.judge_model,
+            args.judge_effort,
+            args.timeout,
+            args.judge_max_output_tokens,
+        )
 
         results: list[dict[str, Any]] = []
         for index, case in enumerate(cases, start=1):
@@ -503,12 +601,14 @@ def main() -> int:
             "context_mode": args.context_mode,
             "target": {
                 "provider": args.target_provider,
-                "model": args.target_model if args.target_provider == "openai" else None,
+                "model": args.target_model if args.target_provider in {"codex", "openai"} else None,
+                "effort": args.target_effort if args.target_provider == "codex" else None,
                 "command": args.target_command if args.target_provider == "command" else None,
             },
             "judge": {
                 "provider": args.judge_provider,
-                "model": args.judge_model if args.judge_provider == "openai" else None,
+                "model": args.judge_model if args.judge_provider in {"codex", "openai"} else None,
+                "effort": args.judge_effort if args.judge_provider == "codex" else None,
                 "command": args.judge_command if args.judge_provider == "command" else None,
             },
             "summary": {

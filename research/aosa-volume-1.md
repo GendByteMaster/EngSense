@@ -25,11 +25,11 @@ This note keeps separate:
 - [x] Chapter 3 — The Bourne-Again Shell
 - [x] Chapter 4 — Berkeley DB
 - [x] Chapter 5 — CMake
-- [ ] Chapter 6 — Eclipse
-- [ ] Chapter 7 — Graphite
-- [ ] Chapter 8 — The Hadoop Distributed File System
-- [ ] Chapter 9 — Continuous Integration
-- [ ] Chapter 10 — Jitsi
+- [x] Chapter 6 — Eclipse
+- [x] Chapter 7 — Graphite
+- [x] Chapter 8 — The Hadoop Distributed File System
+- [x] Chapter 9 — Continuous Integration
+- [x] Chapter 10 — Jitsi
 - [ ] Chapter 11 — LLVM
 - [ ] Chapter 12 — Mercurial
 - [ ] Chapter 13 — The NoSQL Ecosystem
@@ -572,3 +572,797 @@ The meaningful question remains whether the structure satisfies actual constrain
 8. A general subsystem looks overengineered initially but demonstrably enables multiple real use cases.
 9. An abstraction boundary is violated for performance without measurement or containment.
 10. A large rewrite is proposed because architecture has degraded, but migration and compatibility costs are ignored.
+
+
+---
+
+# Chapter 6 — Eclipse
+
+## Source scope
+
+The chapter follows Eclipse from its early component platform through major architectural changes in 3.0, 3.4, and 4.0.
+
+Its central themes are:
+
+- modularity;
+- extension points;
+- public API stability;
+- runtime/platform evolution;
+- provisioning;
+- dependency management;
+- compatibility;
+- community/ecosystem effects.
+
+## Source-derived observations
+
+### 1. Modularity was a product strategy, not only a code-organization technique
+
+Eclipse was intentionally built as a platform that third parties could extend.
+
+Plugins are first-class components. Manifests describe:
+
+- identity;
+- dependencies;
+- exports;
+- extension points;
+- runtime requirements.
+
+The architecture encouraged an ecosystem in which external parties could build both open-source and commercial products on top of the platform.
+
+### 2. Public API is treated as a long-term contract
+
+Eclipse explicitly distinguishes exported API from private implementation.
+
+The chapter's "API is forever" attitude reflects the cost of ecosystem-wide compatibility.
+
+Stable APIs allowed third parties to invest in Eclipse-based products with confidence, but they also constrained future evolution.
+
+### 3. Lazy activation reduces extensibility cost
+
+Plugins are discovered but not necessarily activated until needed.
+
+This lets the platform support a large extension surface without paying all runtime costs up front.
+
+### 4. Native vs emulated UI was a deliberate trade-off
+
+SWT chose native widgets despite the implementation complexity because the project valued:
+
+- native look and feel;
+- platform integration;
+- perceived performance.
+
+The architecture accepted portability complexity to obtain a better user experience.
+
+### 5. Replacing a home-grown subsystem can be rational when a stronger ecosystem exists
+
+Eclipse replaced its custom runtime component model with OSGi.
+
+The decision considered not only technical capabilities, but also:
+
+- standardization;
+- community vitality;
+- existing adoption;
+- long-term maintenance;
+- ability to influence the upstream ecosystem.
+
+### 6. Migration must preserve ecosystem momentum
+
+A compatibility layer allowed older plugins to continue working during the OSGi migration.
+
+The architecture did not require ecosystem consumers to migrate atomically.
+
+### 7. Real user behavior can redefine the platform
+
+Users began composing subsets of Eclipse into Rich Client Platform applications.
+
+The project responded by refactoring bundles so the newly discovered use case became easier.
+
+This is a strong example of architecture evolving from observed use rather than only original intent.
+
+### 8. Provisioning became its own architecture problem
+
+Eclipse's original update mechanism operated at coarse-grained feature level and could not cleanly install or update every artifact needed by real products.
+
+p2 introduced explicit metadata, artifacts, profiles, planning, and execution.
+
+The key lesson is that deployment/update semantics eventually become architecture, not packaging trivia.
+
+### 9. Componentization alone did not guarantee loose coupling
+
+By Eclipse 4.0, the system was highly componentized but consumers still knew too much about implementation location and framework inheritance.
+
+Dependency injection was introduced to reduce that coupling and simplify consumption.
+
+The important distinction is:
+
+```text
+many components
+!=
+loose coupling
+```
+
+## EngSense interpretation
+
+Candidate context signals:
+
+```text
+extension_surface
+public_api_lifetime
+ecosystem_consumer_count
+activation_cost
+component_coupling
+platform_native_requirement
+standard_ecosystem_maturity
+migration_compatibility_need
+provisioning_complexity
+```
+
+Candidate rules:
+
+- distinguish component count from actual decoupling;
+- treat exported APIs as long-term liabilities as well as capabilities;
+- when replacing infrastructure, evaluate community/ecosystem maturity in addition to technical features;
+- use compatibility layers when ecosystem migration cannot be atomic;
+- allow observed user behavior to challenge original architecture assumptions;
+- consider lazy activation for large extension ecosystems when startup/resource cost matters;
+- do not assume dependency injection is justified merely because components exist; use it when it actually removes concrete knowledge of implementation/location.
+
+## Conflict candidates
+
+- stable API vs architectural freedom;
+- native UX vs portability simplicity;
+- custom framework control vs standard ecosystem leverage;
+- componentization vs real decoupling;
+- compatibility preservation vs simplification;
+- extension richness vs startup/resource cost.
+
+---
+
+# Chapter 7 — Graphite
+
+## Source scope
+
+Graphite is an intentionally simple network service for storing and graphing time-series data.
+
+The chapter is especially valuable because it describes the system's evolution from a naive implementation through actual bottlenecks and production failures.
+
+The author repeatedly contrasts speculative design with empirical problem solving.
+
+## Source-derived observations
+
+### 1. Simple external protocols can create integration leverage
+
+Graphite deliberately makes both ingestion and rendering easy to invoke.
+
+The simplicity of the interface helped other systems build dashboards and integrations around it.
+
+### 2. Optimize the bottleneck you actually have
+
+The author originally assumed Python performance would force a C rewrite.
+
+In practice, I/O became the limiting factor much earlier than CPU.
+
+This is a direct empirical example of why architecture should not be optimized around unmeasured assumptions.
+
+### 3. Caching should target repeated expensive work
+
+Graph rendering became CPU-bound because dashboards repeatedly requested identical graphs.
+
+Caching was effective because request duplication was observable and common.
+
+### 4. Buffering converts I/O patterns but moves pressure into memory
+
+Carbon queues incoming points so writes can be coalesced into fewer, larger operations.
+
+This improves throughput but creates a new system dynamic:
+
+```text
+storage slows
+→ queue grows
+→ memory pressure grows
+→ kernel cache shrinks
+→ writes slow further
+→ queue grows faster
+```
+
+The eventual safeguards include queue limits and rate limits.
+
+### 5. Real-time requirements can conflict with write optimization
+
+Buffering improved storage throughput but delayed visibility.
+
+Graphite added a query interface to the in-memory buffered data so the web layer could merge:
+
+- persisted data;
+- queued not-yet-persisted data.
+
+The architecture preserved both throughput and recent-data visibility.
+
+### 6. Scale-out works best when interfaces already isolate operations
+
+Graphite's find/fetch abstraction made remote execution and clustering comparatively straightforward.
+
+The chapter shows how existing boundaries can enable later distribution.
+
+### 7. Evolutionary development is powerful but dangerous at API boundaries
+
+The author's strongest retrospective criticism is the external API.
+
+Internal implementation could evolve hurdle by hurdle, but an API accumulated inconsistent conventions and became difficult to repair because compatibility made old behavior persistent.
+
+### 8. Early simplicity can become later expressiveness debt
+
+The hierarchical metric naming model is simple and convenient for common cases, but it makes richer querying difficult.
+
+A constraint that improves initial usability can later limit advanced use cases.
+
+## EngSense interpretation
+
+Candidate rule:
+
+```text
+Optimize from measured bottlenecks,
+not imagined bottlenecks.
+```
+
+Candidate quality dimensions:
+
+```text
+empirical_performance_evidence
+backpressure_behavior
+buffer_visibility_gap
+interface_evolution_cost
+operational_safety_limit
+expressiveness
+```
+
+Candidate rules:
+
+- before performance-oriented rewrites, identify the actual limiting resource;
+- when adding buffering/queues, analyze overload and memory-pressure feedback loops;
+- design bounded degradation before catastrophic resource exhaustion;
+- distinguish internal evolutionary freedom from external API evolution cost;
+- consider whether a simple public representation will later need richer query semantics;
+- value abstractions that create later distribution options without pre-building unnecessary distributed infrastructure.
+
+## Strong conflict candidates
+
+- speculative optimization vs empirical optimization;
+- buffering throughput vs freshness;
+- API simplicity vs expressive power;
+- evolutionary design vs coherent public interface;
+- unbounded throughput buffering vs controlled degradation.
+
+---
+
+# Chapter 8 — The Hadoop Distributed File System
+
+## Source scope
+
+HDFS is designed for very large datasets, high-throughput streaming access, commodity hardware, and frequent component failure.
+
+The chapter is a particularly strong example of architecture driven by **workload assumptions** rather than standards purity.
+
+## Source-derived observations
+
+### 1. Workload-specific design can legitimately reject general semantics
+
+HDFS resembles a conventional filesystem interface but intentionally sacrifices full POSIX behavior to improve the performance and simplicity of its target workload.
+
+The design is optimized for:
+
+- large files;
+- sequential streaming;
+- batch processing;
+- data locality;
+- commodity-cluster failure.
+
+### 2. Simple central metadata enabled early robustness
+
+A single NameNode kept namespace metadata in memory while DataNodes stored replicated data blocks.
+
+This simplified metadata logic and avoided some distributed-locking complexity.
+
+But the same decision later became a namespace scalability bottleneck.
+
+This is a clear case of a design choice being locally excellent and later limiting.
+
+### 3. Replication serves multiple quality dimensions
+
+Replicas provide:
+
+- durability;
+- availability;
+- read alternatives;
+- higher aggregate read bandwidth;
+- data-local computation opportunities.
+
+The architecture pays storage/network cost to gain multiple system properties.
+
+### 4. Failure is normal at scale
+
+At thousands of nodes, disk/node failures are routine events.
+
+HDFS therefore continuously uses:
+
+- heartbeats;
+- block reports;
+- checksums;
+- replication;
+- failed-replica replacement;
+- decommissioning workflows.
+
+Reliability comes from expected failure management, not from assuming components remain healthy.
+
+### 5. Durability, visibility, and performance are separate semantics
+
+The write pipeline and `hflush` behavior show that data being accepted or buffered is not identical to data being visible to new readers.
+
+EngSense should avoid collapsing "write succeeded" into one universal durability/visibility notion.
+
+### 6. Placement policy encodes multiple competing goals
+
+Replica placement balances:
+
+- write cost;
+- fault tolerance;
+- network bandwidth;
+- rack-level resilience;
+- read locality.
+
+There is no single globally optimal placement.
+
+### 7. Maintenance operations must preserve invariants
+
+Rebalancing and decommissioning are designed so background maintenance does not reduce required availability or replica safety.
+
+### 8. Production use generated architecture knowledge
+
+The chapter explicitly credits rapid production use and incremental improvement as major reasons the system became robust.
+
+### 9. Simplicity carries explicit limits
+
+Keeping namespace metadata in RAM simplified the NameNode but bounded namespace size.
+
+Later federation/multiple namespaces were introduced to address the scaling limit while preserving a unified client view.
+
+## EngSense interpretation
+
+Candidate distributed-system dimensions:
+
+```text
+workload_fit
+failure_frequency
+metadata_centralization
+data_durability
+read_availability
+visibility_semantics
+placement_cost
+background_maintenance_safety
+namespace_scalability
+data_locality
+```
+
+Candidate rules:
+
+- do not judge deviation from standards without checking workload goals;
+- distinguish durability, visibility, consistency, and availability explicitly;
+- treat expected component failure rate as an architectural input;
+- assess whether a simplifying centralization point also defines a future scale ceiling;
+- background maintenance must preserve critical invariants during transition;
+- evaluate replication by the combined properties it provides, not storage cost alone;
+- preserve workload-specific assumptions in architecture documentation.
+
+## Strong conflict candidates
+
+- standards compatibility vs workload optimization;
+- centralization simplicity vs scale/availability;
+- storage/network cost vs replication benefits;
+- immediate write performance vs visibility guarantees;
+- simple architecture vs future scalability.
+
+---
+
+# Chapter 9 — Continuous Integration
+
+## Source scope
+
+This chapter compares multiple CI architectures rather than prescribing one ideal implementation.
+
+It examines:
+
+- centralized master/worker systems;
+- reporting-server systems;
+- hybrid systems;
+- decentralized/client-driven systems.
+
+The architectural choice determines which coordination features are easy or difficult.
+
+## Source-derived observations
+
+### 1. CI's minimal core is small
+
+At the simplest level:
+
+```text
+checkout
+→ build
+→ test
+→ report
+```
+
+But real CI systems accumulate requirements such as:
+
+- scheduling;
+- multiple architectures;
+- historical result storage;
+- artifacts;
+- resource coordination;
+- external resources;
+- progress reporting;
+- notifications;
+- RPC/API integration.
+
+### 2. Architecture should follow coordination requirements
+
+A central master makes it easier to:
+
+- schedule builds;
+- control workers;
+- observe progress;
+- cancel work;
+- coordinate shared resources.
+
+A reporting architecture makes clients easier to add/remove and can support volunteer or loosely coupled workers, but sacrifices reliable central control.
+
+### 3. Control and decoupling trade directly
+
+CDash's reporting model gains loose coupling but cannot guarantee that an unreliable client will execute a requested build.
+
+Buildbot gains stronger coordination through persistent control relationships.
+
+### 4. Hybrid architectures emerge when neither extreme is sufficient
+
+Jenkins combines centralized coordination with multiple remote execution models.
+
+This reinforces that architecture can occupy a continuum rather than one named pattern.
+
+### 5. CI should integrate without absorbing every external system
+
+The chapter notes that bug trackers, patch systems, VCSs, and workflow tools vary widely.
+
+It may be better to expose RPC/integration points than to embed all workflow logic into the CI product.
+
+### 6. Build recipes create a portability/customization tension
+
+Recipes should ideally be:
+
+- platform-independent;
+- reusable.
+
+Real projects also need exceptions and customization.
+
+The recipe layer must balance standardization with escape hatches.
+
+### 7. Executable configuration is a trust boundary
+
+Build recipes execute code.
+
+A system with third-party workers or recipes must therefore model:
+
+- software trust;
+- recipe trust;
+- worker trust.
+
+This is more than a configuration-format concern.
+
+### 8. Architecture should be selected by required coupling
+
+The authors conclude that loosely coupled webhook/reporting models are easy when tight coordination is not required.
+
+Features like real-time control, global scheduling, and shared-resource coordination require stronger coupling.
+
+## EngSense interpretation
+
+Candidate CI architecture signals:
+
+```text
+coordination_strength
+worker_trust
+worker_reliability
+central_control_need
+progress_visibility
+shared_resource_coordination
+platform_diversity
+recipe_customization_need
+external_system_variability
+```
+
+Candidate rule:
+
+> Do not choose a distributed architecture by label; identify which coordination guarantees the workflow actually requires.
+
+Candidate rules:
+
+- prefer loose coupling when unreliable/ephemeral workers are acceptable;
+- introduce central control only when scheduling, cancellation, shared resources, or guaranteed execution need it;
+- treat build recipes/configuration as executable trust boundaries;
+- integrate heterogeneous external workflows through narrow interfaces rather than embedding every system;
+- allow standardized recipes to have bounded customization paths where real builds require exceptions.
+
+## Conflict candidates
+
+- centralized control vs client autonomy;
+- coordination guarantees vs loose coupling;
+- standard recipes vs project-specific customization;
+- extensibility vs execution trust;
+- rich integration vs focused system boundaries.
+
+---
+
+# Chapter 10 — Jitsi
+
+## Source scope
+
+Jitsi is designed around three explicit architectural constraints:
+
+- multi-protocol support;
+- cross-platform operation;
+- developer friendliness/extensibility.
+
+The chapter explains how OSGi, services, protocol abstractions, media abstractions, plugins, and selective native code support those goals.
+
+## Source-derived observations
+
+### 1. Start from architectural drivers
+
+Jitsi's structure follows real product constraints rather than abstract purity.
+
+The architecture aims to let:
+
+- protocol implementations coexist;
+- platform-specific components vary;
+- features be independently replaced;
+- plugins be added;
+- contributors understand only the part they change.
+
+### 2. Do not build infrastructure that already exists
+
+The project briefly considered building its own plugin framework and rejected the idea in favor of OSGi.
+
+The value was not merely code reduction; OSGi already provided modularity, lifecycle, service discovery, and implementation hiding.
+
+### 3. Separate service contracts from implementations
+
+Jitsi places public service interfaces and implementations in separate packages, and OSGi exports only service packages.
+
+This makes implementation hiding mechanically enforceable.
+
+### 4. Uniform interfaces hide protocol diversity
+
+ProtocolProviderService gives higher-level code a common access model across different communication protocols.
+
+Protocol-specific optional capabilities are represented through operation sets rather than pretending every protocol supports the same features.
+
+This is a useful example of avoiding a lowest-common-denominator abstraction.
+
+### 5. Media has its own stable concepts
+
+MediaDevice, MediaStream, MediaFormat and related concepts isolate:
+
+- device capture/playback;
+- network transport;
+- codec negotiation;
+- platform-specific implementation.
+
+The higher-level protocol code uses those abstractions consistently.
+
+### 6. Trade-offs remain explicit inside abstractions
+
+Codec selection still exposes fundamental trade-offs among:
+
+- bandwidth;
+- quality;
+- CPU cost.
+
+An abstraction can hide implementation detail without eliminating real domain trade-offs.
+
+### 7. Extensibility uses service registration rather than hardcoded UI knowledge
+
+Plugins can contribute UI components by registering services and metadata.
+
+The host discovers them rather than linking to every plugin explicitly.
+
+### 8. Cross-platform abstraction needs escape hatches
+
+Java handles most portability needs, but Jitsi uses native libraries for cases where the platform abstraction is insufficient or performance-sensitive:
+
+- media capture;
+- codecs;
+- notifications;
+- OS integration;
+- video encoding.
+
+### 9. Language choice includes ecosystem effects
+
+Java's popularity lowered contributor barriers.
+
+The architectural value of a language therefore includes community and maintainability effects, not only runtime characteristics.
+
+### 10. Some decisions should be made before perfect knowledge exists
+
+The chapter's closing lesson is explicitly pragmatic: many parts were changed or rewritten later, but waiting for certainty would have prevented the project from existing.
+
+This is not an argument for careless design. It is evidence that reversible implementation choices can be made under uncertainty.
+
+## EngSense interpretation
+
+Candidate context signals:
+
+```text
+architectural_driver
+protocol_variation
+platform_variation
+optional_capability
+implementation_visibility
+plugin_need
+native_escape_hatch
+contributor_ecosystem
+decision_reversibility
+```
+
+Candidate rules:
+
+- derive architecture from explicit variation axes;
+- separate stable service contracts from replaceable implementations when there is real substitution pressure;
+- do not force all implementations into a lowest-common-denominator capability set;
+- hide platform variation where possible while retaining bounded native escape hatches;
+- include contributor ecosystem and available libraries when evaluating language/platform choices;
+- choose existing mature infrastructure over building a custom framework unless requirements materially diverge;
+- distinguish decisions that need deep up-front certainty from decisions that are cheap to revise.
+
+## Conflict candidates
+
+- portability vs native capability;
+- common interface vs protocol-specific capability;
+- plugin extensibility vs framework complexity;
+- pure managed-language implementation vs selective native optimization;
+- analysis certainty vs shipping/learning;
+- custom framework control vs reuse of mature infrastructure.
+
+---
+
+# Chapters 6–10 — Cross-case synthesis
+
+## 1. Architecture should expose the real variation axes
+
+Across Eclipse and Jitsi, good modularity emerges around real axes of change:
+
+- plugins;
+- protocols;
+- platforms;
+- services;
+- provisioning artifacts.
+
+This supports a stronger EngSense rule:
+
+> Create abstraction boundaries around independently varying concerns, not around arbitrary code categories.
+
+## 2. Modularity and decoupling are not synonyms
+
+Eclipse demonstrates that a system can contain many components and still have consumers tightly coupled to framework structure or implementation location.
+
+EngSense should ask:
+
+```text
+Can this component change independently?
+Does the consumer know implementation details?
+Are dependencies explicit?
+Can implementations be substituted where substitution is actually required?
+```
+
+rather than counting modules/interfaces.
+
+## 3. Performance decisions need systems-level evidence
+
+Graphite and HDFS both show that local intuition can be wrong:
+
+- Python CPU was not Graphite's first bottleneck;
+- buffering improved write throughput but created memory-pressure dynamics;
+- HDFS deliberately chooses topology-aware replication and data locality.
+
+Performance review must identify the actual limiting resource and feedback loops.
+
+## 4. Simplicity can be both strength and future constraint
+
+HDFS's central metadata model enabled a small team to build a robust system, then created a scale ceiling.
+
+Graphite's simple metric naming enabled easy adoption, then constrained rich querying.
+
+EngSense should preserve this dual view:
+
+```text
+simple now
+may be
+correct now + limiting later
+```
+
+The existence of a future limit does not prove the original decision was wrong.
+
+## 5. External interfaces deserve more up-front care than internals
+
+Eclipse and Graphite independently reinforce this.
+
+Internal architecture can often evolve incrementally.
+
+Public APIs, plugin contracts, metric schemas, compatibility promises, and ecosystem-visible behavior accumulate users and therefore resist change.
+
+This should receive a higher EngSense design threshold.
+
+## 6. Failure and overload behavior are first-class architecture
+
+Graphite's queue spiral and HDFS's routine node failures show that the steady-state happy path is insufficient.
+
+EngSense should inspect:
+
+- overload;
+- backpressure;
+- partial failure;
+- retry/failover;
+- resource exhaustion;
+- maintenance transitions.
+
+## 7. Architecture is constrained by trust topology
+
+The CI chapter makes a strong point that worker/client architecture depends on which components are trusted and controllable.
+
+Trust belongs in the context model for distributed workflow systems.
+
+## 8. Reuse vs custom infrastructure is empirical
+
+Eclipse and Jitsi both replace or avoid custom framework work by adopting mature external infrastructure.
+
+But the decision includes:
+
+- technical fit;
+- community health;
+- compatibility;
+- lifecycle;
+- ecosystem influence.
+
+"Never build your own" is not the rule.
+
+## 9. Bounded escape hatches recur across successful systems
+
+Examples:
+
+- native UI/platform integration;
+- native media libraries;
+- specialized performance paths;
+- project-specific CI recipes.
+
+The emerging principle is:
+
+> A strong default abstraction may coexist with explicit, bounded, observable escape hatches.
+
+Escape hatches become dangerous when they are:
+
+- invisible;
+- unbounded;
+- unmeasured;
+- impossible to reason about.
+
+## New eval candidates
+
+1. A codebase has 40 modules but consumers still navigate concrete implementation internals.
+2. A plugin ecosystem requires a breaking runtime migration and an atomic upgrade would strand existing users.
+3. A Python service is proposed for rewrite in Rust because CPU is assumed to be the bottleneck, but measurements show disk I/O dominates.
+4. A queue improves throughput but has no upper bound or overload policy.
+5. A distributed filesystem is criticized for not implementing full POSIX semantics despite a batch-streaming workload.
+6. A simple centralized design has a known future scale ceiling but current requirements are far below it.
+7. A CI service uses ephemeral untrusted workers but assumes the central scheduler can guarantee execution.
+8. Build recipes received from third parties execute arbitrary code without a trust model.
+9. One interface forces every protocol implementation to pretend it supports optional features.
+10. A cross-platform application rejects a narrow native implementation even though the managed runtime cannot provide the required capability.
+11. A project begins building its own plugin framework despite a mature standard that fits its requirements.
+12. An external API is allowed to evolve incrementally without versioning even though users already depend on it.

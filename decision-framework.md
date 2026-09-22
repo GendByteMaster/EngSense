@@ -370,6 +370,8 @@ When relevant, test reasoning beyond the happy path:
 - restart/recovery;
 - rollback failure.
 
+For reliability/operability-heavy cases, load `principles/reliability-operability.md` to evaluate user-visible reliability, overload, recovery, observability, operational toil, and control-loop risk.
+
 For distributed/security/concurrency semantics, engage specialized guidance.
 
 ---

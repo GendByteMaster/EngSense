@@ -118,7 +118,7 @@ Review the installed files and ensure the Skill root contains `SKILL.md` plus th
 
 ## ChatGPT
 
-Current ChatGPT documentation exposes Skills through the Skills experience for eligible products/workspaces.
+Current ChatGPT documentation exposes Skills to eligible Business, Enterprise, Healthcare, and Edu users, subject to workspace settings and product availability.
 
 Typical flow:
 

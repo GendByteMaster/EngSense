@@ -5,7 +5,7 @@ Curated by Titus Winters, Tom Manshreck, and Hyrum Wright
 Official digital edition: https://abseil.io/resources/swe-book  
 License: CC BY-NC-ND 4.0
 
-Research status: **IN PROGRESS**
+Research status: **COMPLETE — full official digital edition reviewed**
 
 This note intentionally separates:
 - what the source argues;
@@ -41,12 +41,12 @@ No source is treated as absolute authority.
 - [x] Chapter 18 — Build Systems and Build Philosophy
 - [x] Chapter 19 — Critique: Google's Code Review Tool
 - [x] Chapter 20 — Static Analysis
-- [ ] Chapter 21 — Dependency Management
-- [ ] Chapter 22 — Large-Scale Changes
-- [ ] Chapter 23 — Continuous Integration
-- [ ] Chapter 24 — Continuous Delivery
-- [ ] Chapter 25 — Compute as a Service
-- [ ] Afterword
+- [x] Chapter 21 — Dependency Management
+- [x] Chapter 22 — Large-Scale Changes
+- [x] Chapter 23 — Continuous Integration
+- [x] Chapter 24 — Continuous Delivery
+- [x] Chapter 25 — Compute as a Service
+- [x] Afterword
 
 ---
 
@@ -2808,4 +2808,951 @@ preference
 10. A historical codebase has thousands of low-impact warnings and a new change is flooded with unrelated debt.
 11. A review UI embeds every neighboring tool and loses focus.
 12. A deep abstraction hierarchy makes symbol discovery materially expensive in a large codebase.
+
+
+
+---
+
+# Chapter 21 — Dependency Management
+
+## Source scope
+
+This chapter treats dependency management as a network-and-time problem rather than a simple package-import problem.
+
+Its central concern is how independently changing providers and consumers remain compatible when:
+
+- dependency graphs grow;
+- transitive dependencies accumulate;
+- organizations do not coordinate;
+- security/platform changes force upgrades;
+- version constraints conflict.
+
+The chapter is unusually explicit that Google does **not** claim to have a complete general solution.
+
+## Source-derived principles
+
+### 1. Dependency management is about networks, not individual packages
+
+The difficult case appears when the dependency graph contains incompatible requirements, especially through diamond dependencies.
+
+A dependency that looks harmless in isolation can become expensive once it enters a large graph.
+
+### 2. Prefer source-control problems when coordination is possible
+
+When provider and consumer belong to the same organization and can share:
+
+- source visibility;
+- tests;
+- CI;
+- coordinated changes;
+
+many dependency-management problems become easier source-control problems.
+
+This is not a universal argument for monorepos; it is an argument for reducing unnecessary coordination boundaries.
+
+### 3. Importing a dependency creates an ongoing relationship
+
+The initial implementation savings are only one part of the cost.
+
+Relevant long-term questions include:
+
+- compatibility promises;
+- maintenance ownership;
+- update cadence;
+- security response;
+- upgrade difficulty;
+- project longevity;
+- transitive adoption.
+
+### 4. Compatibility is contextual
+
+A change is not intrinsically "breaking" or "non-breaking" independent of how consumers use the API.
+
+This is another direct consequence of Hyrum's Law.
+
+### 5. SemVer is an estimate, not empirical compatibility proof
+
+Version numbers encode maintainers' expectations about risk.
+
+They do not contain downstream usage knowledge and can therefore both overconstrain and underconstrain dependency selection.
+
+Testing actual downstream users can provide higher-fidelity evidence.
+
+### 6. Stability promises define product goals
+
+Different libraries can rationally choose very different compatibility policies.
+
+A long-lived infrastructure library and an experimental proving ground do not have the same goals.
+
+Compatibility policy must therefore be treated as part of the dependency's contract.
+
+### 7. Providers also carry dependency cost
+
+Publishing software creates:
+
+- compatibility pressure;
+- maintenance obligations;
+- reputation risk;
+- external Hyrum's-Law inertia;
+- possible divergence between internal and external versions.
+
+Open sourcing or exporting a library is not free.
+
+## EngSense interpretation
+
+Candidate dependency context:
+
+```text
+dependency_scope
+dependency_graph_depth
+transitive_fanout
+provider_control
+provider_stability_policy
+upgrade_owner
+upgrade_frequency
+compatibility_promise
+security_criticality
+downstream_visibility
+fork_divergence_risk
+```
+
+Candidate rules:
+
+- evaluate dependency adoption over expected lifetime, not only initial implementation cost;
+- explicitly inspect compatibility policy before adopting foundational dependencies;
+- do not treat SemVer as proof that an upgrade is safe;
+- prefer empirical compatibility evidence when tests/CI make it available;
+- include transitive adoption and ownership drift in dependency risk;
+- do not export a library without considering long-term support obligations;
+- prefer coordination/source-control solutions when organizational boundaries are artificial and removable.
+
+## Strong conflict candidates
+
+- reuse vs dependency ownership cost;
+- compatibility stability vs evolution;
+- local fork control vs long-term divergence;
+- SemVer convenience vs empirical compatibility evidence;
+- external reuse vs internal implementation.
+
+---
+
+# Chapter 22 — Large-Scale Changes
+
+## Source scope
+
+This chapter explains how a very large codebase remains **malleable** when changes cannot realistically be made in one atomic commit.
+
+The key insight is that large-scale change requires dedicated infrastructure, automation, sharding, testing, ownership information, and migration discipline.
+
+## Source-derived principles
+
+### 1. Atomic-change capacity shrinks with scale
+
+As repository size and contributor count grow, a single globally atomic change becomes harder to:
+
+- keep current;
+- test;
+- review;
+- submit;
+- roll back.
+
+Traditional small-codebase refactoring assumptions eventually stop scaling.
+
+### 2. Change infrastructure alters architecture freedom
+
+If an organization can safely perform large-scale changes, more design decisions become reversible.
+
+This has architectural value: infrastructure can reduce the future cost of correcting today's decisions.
+
+### 3. Large migrations should be decomposed into safe shards
+
+Google separates a conceptual migration into independently:
+
+- generated;
+- reviewed;
+- tested;
+- submitted
+
+changes.
+
+This preserves local reviewability while achieving global change.
+
+### 4. Automation must preserve human-readable output
+
+Machine-generated transformations should still produce code that fits style and repository conventions.
+
+Automation is not a license to reduce maintainability.
+
+### 5. Tests are migration infrastructure
+
+Large-scale automated edits depend on trustworthy tests.
+
+Flaky tests impose costs far outside the team that created them when changes span the codebase.
+
+### 6. Static type information can make migrations cheaper
+
+The chapter reports that statically typed languages and compiler/static-analysis tooling make automated large-scale changes easier.
+
+This is an observed tooling advantage, not a universal claim that statically typed languages are always superior.
+
+### 7. Prevent backsliding
+
+A migration is incomplete if new use of the deprecated API/system can continue appearing.
+
+Post-migration enforcement is part of migration correctness.
+
+### 8. Large-scale change capability must be practiced
+
+The chapter argues that organizations become effective at LSCs by doing them regularly, not by improvising only during emergencies.
+
+## EngSense interpretation
+
+Candidate quality dimension:
+
+```text
+change_malleability
+```
+
+Candidate context signals:
+
+```text
+migration_scope
+atomic_change_limit
+automated_refactorability
+ownership_map_quality
+test_reliability
+backsliding_controls
+language_static_information
+change_shardability
+```
+
+Candidate rule:
+
+When evaluating an architecture, consider not only how easy it is to add features, but how feasible it would be to migrate the system away from a foundational choice later.
+
+## Strong conflict candidate
+
+```text
+Local optimal design now
+vs
+Future migration/change cost
+```
+
+This is distinct from speculative abstraction: the relevant question is whether concrete infrastructure exists to make future correction cheap.
+
+---
+
+# Chapter 23 — Continuous Integration
+
+## Source scope
+
+This chapter broadens CI from "build the latest code" to continuously assembling and testing an evolving ecosystem that can include:
+
+- source;
+- services;
+- data;
+- models;
+- runtimes;
+- devices;
+- infrastructure;
+- upstream dependencies.
+
+## Source-derived principles
+
+### 1. CI is fundamentally about feedback latency
+
+The earlier a harmful change is detected, the cheaper it generally is to diagnose and repair.
+
+Feedback loops span from local edit/build/test cycles through presubmit, post-submit, staging, canary, and production.
+
+### 2. CI should decide what to test and when
+
+Running every possible test before every submission is usually too expensive.
+
+A mature CI system allocates tests across lifecycle stages according to:
+
+- speed;
+- reliability;
+- scope;
+- cost;
+- expected failure-detection value.
+
+### 3. Presubmit optimization is a trade-off
+
+Fast reliable tests belong early.
+
+Slower or less deterministic tests may belong later, provided failures remain visible and actionable.
+
+### 4. Accessibility and actionability are part of CI quality
+
+Build/test output must support:
+
+- failure history;
+- provenance;
+- logs;
+- flake classification;
+- culprit finding.
+
+A red signal without enough context to act is operationally weak.
+
+### 5. Version skew is a systems risk
+
+Canaries and independently deployed services can temporarily produce combinations of versions that do not occur in a simple single-version model.
+
+CI/testing must consider compatibility between evolving components, not only correctness of each component alone.
+
+### 6. Hermeticity helps isolate failure, at a cost
+
+Hermetic test environments improve stability and attribution but cost resources and setup time.
+
+Real/live backends offer fidelity but introduce additional sources of nondeterminism.
+
+### 7. CI itself must evolve
+
+CI is software and should be revised as:
+
+- architecture changes;
+- team scale changes;
+- test portfolios change;
+- operational risks change.
+
+## EngSense interpretation
+
+Candidate CI decision model:
+
+```text
+change
+  ↓
+affected dependency graph
+  ↓
+failure risks
+  ↓
+test selection
+  ↓
+earliest economical feedback stage
+  ↓
+provenance + culprit isolation
+```
+
+Candidate rules:
+
+- do not require exhaustive presubmit when it destroys developer throughput;
+- place the cheapest reliable checks as early as possible;
+- preserve slower/fidelity-heavy checks later rather than deleting them;
+- treat CI feedback quality and diagnosability as part of the system;
+- account for version skew in distributed systems;
+- evaluate CI as evolving infrastructure rather than a fixed pipeline.
+
+---
+
+# Chapter 24 — Continuous Delivery
+
+## Source scope
+
+This chapter treats deployment capability as a quality property.
+
+Its core argument is counterintuitive but important: under the right supporting practices, **smaller and more frequent releases can be safer than large infrequent releases**.
+
+The chapter does not claim that every user must receive every build immediately.
+
+## Source-derived principles
+
+### 1. Value exists when users receive working behavior
+
+Submitted code that remains unreleased has not yet produced user value.
+
+Long-lived work-in-progress increases uncertainty and integration risk.
+
+### 2. Small release batches improve attribution
+
+When releases contain fewer changes, failures are easier to isolate and roll back.
+
+### 3. Deployment capability and deployment frequency are distinct
+
+An organization can maintain the capability to deploy frequently while intentionally exposing releases to users less frequently.
+
+The release cadence should reflect user and product constraints.
+
+### 4. Feature isolation reduces release coupling
+
+Feature flags and modular boundaries can let incomplete or risky functionality remain disabled while the rest of the product continues through the release train.
+
+### 5. Staged rollout makes reality part of verification
+
+Production populations, devices, networks, and usage patterns are often more diverse than synthetic test environments.
+
+Gradual rollout can convert real-world behavior into early risk feedback.
+
+### 6. Perfection is not the objective
+
+Release decisions require explicit acceptable-risk thresholds.
+
+The source connects this to measurable product-health criteria and error-budget-style reasoning.
+
+### 7. Shipping unused features creates cost
+
+Unused functionality still consumes:
+
+- binary/storage size;
+- build time;
+- operational complexity;
+- testing effort;
+- maintenance attention.
+
+### 8. Release process should protect the product from local urgency
+
+A developer's desire to ship a feature should not override existing-product/user health.
+
+Frequent release trains reduce pressure to force one feature into a particular release.
+
+## EngSense interpretation
+
+Candidate quality dimensions:
+
+```text
+deployment_reversibility
+release_batch_size
+rollout_observability
+feature_isolation
+rollback_cost
+release_latency
+user_exposure_risk
+unused_feature_cost
+```
+
+Candidate rules:
+
+- distinguish deployability from actual user rollout cadence;
+- favor small reversible releases when the surrounding testing/observability infrastructure supports them;
+- avoid recommending "continuous deployment" as a universal cadence;
+- use staged rollout when production diversity materially affects confidence;
+- treat feature flags as temporary isolation tools with lifecycle cost, not free permanent architecture;
+- include unused feature cost when assessing system complexity.
+
+## Strong conflict candidates
+
+- release velocity vs rollout/user disruption;
+- feature completeness vs release-train continuity;
+- production fidelity vs exposure risk;
+- feature isolation vs long-lived flag complexity.
+
+---
+
+# Chapter 25 — Compute as a Service
+
+## Source scope
+
+This chapter explains how managed compute infrastructure changes application architecture as an organization grows.
+
+It spans:
+
+- automated scheduling;
+- resource management;
+- containers;
+- failure handling;
+- stateless/replaceable services;
+- standardized configuration;
+- abstraction levels;
+- public/private compute;
+- centralization vs customization.
+
+## Source-derived principles
+
+### 1. Manual machine management does not scale
+
+Processes that are reasonable for one or a few hosts become human-scaling failures at hundreds or thousands.
+
+Automation must absorb repeated operational work.
+
+### 2. Shared compute requires explicit resource contracts
+
+CPU, memory, storage, and specialized resources must be declared and isolated sufficiently to prevent one workload from unpredictably harming neighbors.
+
+### 3. "Cattle" architecture is about replaceability
+
+The important property is not containers themselves.
+
+It is that a failed instance can be recreated automatically without manual recovery or hidden machine-specific state.
+
+### 4. State placement determines replaceability
+
+Local persistent state and hardcoded host identity make instances difficult to replace.
+
+Managed compute pushes systems toward:
+
+- external/distributed state;
+- service discovery;
+- load balancing;
+- idempotent/restartable behavior.
+
+### 5. Containers create an abstraction boundary
+
+Filesystem, network, dependencies, and process environment can be packaged away from individual host configuration.
+
+This supports resource efficiency and long-term portability.
+
+### 6. Standardized configuration enables automation
+
+Configuration kept as reproducible submitted artifacts is more scalable than:
+
+- operator memory;
+- wiki instructions;
+- ad hoc local scripts.
+
+Standardization also makes fleet-wide migrations possible.
+
+### 7. Infrastructure choices accumulate ecosystems
+
+A compute platform eventually gains tooling for:
+
+- logs;
+- monitoring;
+- debugging;
+- deployment;
+- alerting;
+- visualization;
+- configuration.
+
+Changing the underlying platform therefore includes ecosystem migration cost, not only compute migration cost.
+
+### 8. Centralization and customization are in tension
+
+One platform improves:
+
+- resource efficiency;
+- operational expertise;
+- shared tooling;
+- maintenance leverage.
+
+But different workloads can legitimately require specialized behavior.
+
+### 9. Higher abstraction levels trade control for management leverage
+
+The chapter frames choices from hand-managed machines through managed containers to serverless as contextual trade-offs.
+
+A young organization may rationally outsource more infrastructure management, while future scale or unusual requirements can change the optimal point.
+
+### 10. Lock-in must be evaluated against real switching cost
+
+The source discusses public/private, multicloud, and hybrid approaches but does not treat portability as free.
+
+Portability architecture itself carries cost and complexity.
+
+## EngSense interpretation
+
+Candidate infrastructure context:
+
+```text
+fleet_scale
+workload_type
+state_locality
+instance_replaceability
+resource_predictability
+platform_customization_need
+platform_ecosystem_cost
+operational_expertise
+lock_in_cost
+portability_cost
+abstraction_level
+```
+
+Candidate rules:
+
+- do not apply "cattle not pets" mechanically to workloads whose semantics require durable identity;
+- distinguish instance replaceability from data durability;
+- prefer declarative/submitted configuration for repeated shared operations;
+- include surrounding tooling/ecosystem in platform migration cost;
+- evaluate abstraction level against organizational expertise and workload constraints;
+- do not recommend multicloud solely to avoid hypothetical lock-in without pricing the complexity it adds.
+
+## Strong conflict candidates
+
+- centralization vs customization;
+- portability vs platform leverage;
+- abstraction vs control;
+- local state convenience vs replaceability;
+- infrastructure ownership vs managed-service dependency.
+
+---
+
+# Afterword
+
+## Source scope
+
+The Afterword restates the book's highest-level themes:
+
+- software engineering continues to evolve;
+- sustainability depends on adapting over time;
+- practices must survive changes in technology and product direction;
+- Google presents its experience as evidence, not universal proof;
+- responsibility includes user and societal impact, not only technical efficiency.
+
+## EngSense interpretation
+
+The most important final constraint for EngSense is epistemic:
+
+> Google-specific success is evidence that a practice can work under Google's constraints, not proof that the practice is universally optimal.
+
+This should apply to every source in the EngSense corpus.
+
+No book should become doctrine merely because its author is influential or its practices succeeded in one environment.
+
+---
+
+# Full-book synthesis — Software Engineering at Google
+
+## Status
+
+The official Abseil digital edition has now been reviewed through:
+
+- Foreword;
+- Preface;
+- Chapters 1–25;
+- Afterword.
+
+This source's research pass is **COMPLETE**.
+
+The conclusions below are EngSense synthesis derived from the book as a whole, not direct quotations.
+
+## 1. The book's primary unit of analysis is change over time
+
+The strongest recurring idea is not "Google uses X."
+
+It is:
+
+```text
+A software practice should be evaluated by
+how it behaves across time and scale.
+```
+
+A locally elegant design can be globally expensive if it is:
+
+- difficult to migrate;
+- hard to discover;
+- impossible to test;
+- dependent on one person;
+- incompatible with automation;
+- difficult to remove.
+
+## 2. Sustainability is capability, not stasis
+
+The book repeatedly distinguishes:
+
+```text
+stable
+from
+unable to change
+```
+
+A sustainable system may choose not to change today while retaining the ability to change safely tomorrow.
+
+This becomes a major EngSense lens.
+
+## 3. Quality is multidimensional
+
+The book provides repeated evidence against one-dimensional quality judgments.
+
+Important dimensions include:
+
+```text
+correctness
+comprehension
+maintainability
+evolvability
+compatibility
+testability
+deployability
+operability
+discoverability
+reproducibility
+human scalability
+knowledge resilience
+migration cost
+removal cost
+reversibility
+provenance
+user impact
+```
+
+EngSense should therefore avoid a universal scalar quality score.
+
+## 4. Evidence should outrank doctrine
+
+Across metrics, code review, testing, dependency management, CI, and delivery, the source repeatedly favors empirical signals over abstract claims.
+
+Examples include:
+
+- actual downstream tests over version-number confidence;
+- behavior verification over implementation mirroring;
+- production rollout evidence over synthetic assumptions;
+- effective false-positive feedback over analyzer author confidence.
+
+EngSense should label the evidence behind a recommendation.
+
+## 5. Rules require scope and authority
+
+The book repeatedly distinguishes organization-specific rules from general engineering reasoning.
+
+EngSense should type guidance as:
+
+```text
+invariant
+rule
+guidance
+heuristic
+preference
+observation
+```
+
+and also record its scope:
+
+```text
+local
+module
+repository
+organization
+public ecosystem
+```
+
+## 6. Automation should consume repeatable mechanical work
+
+Repeated themes:
+
+- formatting;
+- refactoring;
+- testing;
+- builds;
+- dependency analysis;
+- static analysis;
+- deployment;
+- large-scale migrations.
+
+But automation should not merely produce volume.
+
+It must preserve:
+
+- actionability;
+- readability;
+- trust;
+- provenance;
+- safe failure handling.
+
+## 7. Human attention is a scarce resource
+
+Code review, static analysis, CI, documentation, and knowledge sharing all converge on one principle:
+
+> do not spend human judgment on mechanical or low-signal work when tooling can handle it reliably.
+
+This strongly supports high-precision EngSense findings and progressive disclosure.
+
+## 8. Reversibility depends on infrastructure
+
+"Prefer reversible decisions" is incomplete advice.
+
+Reversibility is created by capabilities such as:
+
+- version control;
+- tests;
+- automated refactoring;
+- migration tooling;
+- compatibility layers;
+- feature flags;
+- rollback;
+- staged rollout;
+- declarative infrastructure.
+
+EngSense should not call a decision "reversible" unless a plausible reversal path exists.
+
+## 9. Explicit structure enables scalable tooling
+
+A recurring pattern across the book is that systems become more automatable when important relationships are explicit:
+
+```text
+dependencies
+ownership
+versions
+build inputs
+configuration
+API boundaries
+tests
+review state
+source of truth
+```
+
+Implicitness is not always wrong, but it reduces what tools can reason about.
+
+## 10. Standardization has a scale-dependent payoff
+
+Consistency can reduce:
+
+- learning cost;
+- tooling complexity;
+- migration cost;
+- review debate;
+- operational variance.
+
+But the book also recognizes exceptions and changing context.
+
+EngSense should model standardization as a trade-off, not a universal virtue.
+
+## 11. Lifecycle thinking is essential
+
+The book progressively extends the engineering lifecycle:
+
+```text
+design
+→ implement
+→ verify
+→ deploy
+→ operate
+→ evolve
+→ migrate
+→ deprecate
+→ remove
+```
+
+A design should not be evaluated only at creation time.
+
+## 12. Failure handling is architecture
+
+Tests, CI, CD, managed compute, and review systems all assume failures will occur.
+
+Quality depends on:
+
+- detecting them;
+- containing them;
+- attributing them;
+- rolling back/recovering;
+- learning from them.
+
+EngSense should therefore treat failure-recovery properties as design concerns when relevant.
+
+## 13. Google practices must remain contextual
+
+The book itself repeatedly acknowledges context.
+
+EngSense must not blindly turn the following into universal mandates:
+
+- monorepo;
+- trunk-based development;
+- One-Version;
+- Live at Head;
+- containerized cattle architecture;
+- frequent deployment;
+- Google's exact test mix;
+- Google-scale search/build infrastructure.
+
+The reusable principle is the reasoning that led to them, plus the constraints under which they work.
+
+---
+
+# EngSense candidate model after this source
+
+## Context
+
+```text
+lifetime
+scale
+language/runtime
+ownership
+consumer scope
+dependency graph
+change frequency
+compatibility requirements
+risk/failure consequences
+deployment model
+operational model
+test infrastructure
+team/repository conventions
+migration/removal expectations
+```
+
+## Evidence
+
+```text
+measured
+empirical test evidence
+repository evidence
+historical evidence
+qualitative evidence
+estimated
+unknown
+```
+
+## Quality dimensions
+
+```text
+correctness
+comprehension
+cognitive complexity
+coupling/cohesion
+maintainability
+evolvability
+compatibility
+testability
+reliability
+operability
+discoverability
+reproducibility
+deployability
+human scalability
+knowledge resilience
+provenance
+migration cost
+removal cost
+reversibility
+user impact
+```
+
+## Decision
+
+```text
+Context
+Goal
+Relevant invariants
+Evidence
+Alternatives
+Trade-offs
+Decision
+Assumptions
+Verification
+Revisit when
+```
+
+## Finding acceptance gate
+
+Before EngSense emits a review finding, ask:
+
+```text
+Is it materially relevant?
+Is it understandable?
+Is it actionable?
+Is it supported by evidence?
+Does it improve a named quality dimension or protect an invariant?
+Is its confidence appropriate to its severity?
+Is another deterministic tool better suited to report/fix it?
+```
+
+If the answer is no, suppress or downgrade the finding.
+
+---
+
+# Unresolved questions for cross-book comparison
+
+This book alone cannot settle the following:
+
+1. How much decomposition is too much?
+2. When are deep modules better than small functions?
+3. When should duplication remain instead of being abstracted?
+4. When should an interface/trait exist with only one implementation?
+5. How should domain-model richness be selected?
+6. How should object-oriented guidance translate into Rust/data-oriented designs?
+7. When does readability justify additional abstraction?
+8. How should local code clarity trade against global architectural consistency?
+9. What is the right balance between comments and self-documenting structure?
+10. How much up-front design is justified before implementation?
+11. When should a legacy design be refactored versus replaced?
+12. Which code-level heuristics survive language and paradigm changes?
+
+Those questions must remain open until EngSense compares this source with Ousterhout, Fowler, Martin, Feathers, McConnell, Evans, Farley, Kleppmann, Nygard, and the remaining corpus.
 

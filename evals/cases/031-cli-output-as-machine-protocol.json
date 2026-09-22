@@ -1,0 +1,46 @@
+{
+  "id": "cli-output-as-machine-protocol",
+  "title": "Automation parses human-oriented CLI presentation as a protocol",
+  "mode": "architecture",
+  "task": "Review an integration that scrapes a command's human-readable table output to drive automation.",
+  "context": [
+    "The CLI output changes wording and column spacing for readability.",
+    "Several automation clients parse columns by position.",
+    "The CLI already has structured internal result objects.",
+    "External automation is expected to grow."
+  ],
+  "evidence": [
+    "Minor presentation changes have broken integrations twice.",
+    "Human output intentionally omits repeated context that the parser reconstructs heuristically."
+  ],
+  "tempting_wrong_recommendation": [
+    "Freeze the human output forever as the machine contract.",
+    "Keep improving the scraper because adding another interface is unnecessary."
+  ],
+  "expected_decision_properties": [
+    "Distinguish human presentation requirements from machine-contract requirements.",
+    "Recommend a structured machine-readable output/API with explicit fields and compatibility policy.",
+    "Preserve the human CLI's freedom to optimize readability.",
+    "Avoid exposing internal objects directly without defining the machine-facing contract."
+  ],
+  "unacceptable_reasoning": [
+    "Human-readable means machine-stable.",
+    "Whitespace parsing is acceptable because the output currently looks consistent.",
+    "The only alternatives are scraping or exposing raw internal objects."
+  ],
+  "expected_quality_dimensions": [
+    "compatibility",
+    "discoverability",
+    "maintainability",
+    "evolvability"
+  ],
+  "expected_tradeoffs": [
+    "human presentation freedom vs machine compatibility surface"
+  ],
+  "expected_authority": "strong_recommendation",
+  "verification_expectations": [
+    "Add contract tests for the structured machine representation.",
+    "Verify existing human CLI behavior remains usable.",
+    "Provide a migration path for current automation clients."
+  ]
+}

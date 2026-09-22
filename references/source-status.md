@@ -1,6 +1,6 @@
 # EngSense Research Status
 
-This file prevents the Phase 1 implementation from being mistaken for a completed evidence base.
+This file prevents the implemented EngSense core from being mistaken for a completed source-specific evidence base.
 
 ## Completed full-text sources
 
@@ -17,7 +17,7 @@ The roadmap research issue still lists commercial sources that have not been rea
 
 Therefore:
 
-- Phase 1 foundation rules are provisional.
+- General cross-source guidance may still be revised as the mandatory source-specific corpus is completed.
 - Source-specific lens modules for unread books must not claim that those books were studied.
 - Unresolved code-level conflicts remain unresolved.
 - Future corpus research may revise the framework.

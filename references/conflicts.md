@@ -48,6 +48,11 @@ For each pair, ask which side dominates under the current context.
 | Evolve in place | Rewrite/replace | behavior poorly specified; migration risk high; current architecture still adaptable | old behavior is understood/tested; replacement advantage material; cutover/coexistence plan credible |
 | Compatibility bridge | Clean cutover | consumers cannot move atomically; rollback/version skew matters | consumer set controlled; transition state costly; coordinated cutover is safer |
 | Stable ugly mechanism | Architectural replacement | current mechanism reliable; replacement benefit speculative | recurring defects/cost; old variation model no longer fits; replacement has evidence and migration path |
+| Normalized representation | Preserve source-specific detail | variance is incidental; consumers need one stable semantic model | source distinction affects correctness/capability/policy |
+| Explicit dependency/state graph | Implicit convention/order | scheduling, validation, replay, or partial ordering is material | flow is tiny, local, and convention is cheaper than a graph model |
+| Durable explicit schema | Serialize internal object graph | long-lived/versioned/interoperable persistence required | only short-lived/private cache state with controlled identical runtime version |
+| Shared semantic core/IR | Direct per-consumer translation | many transformations/backends share stable semantics | one narrow path; IR adds translation concepts without leverage |
+| Machine contract | Human-readable presentation | automation, versioning, unambiguous fields matter | only human consumption; machine contract adds unnecessary surface |
 
 ---
 

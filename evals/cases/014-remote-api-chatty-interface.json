@@ -1,0 +1,50 @@
+{
+  "id": "remote-api-chatty-interface",
+  "title": "Local-style fine-grained API becomes expensive across RPC",
+  "mode": "architecture",
+  "task": "Review a remote object API where rendering one screen requires many sequential RPC calls for immutable metadata.",
+  "context": [
+    "The API crosses a network/process boundary.",
+    "Clients call getName, getType, getOwner, getCapabilities, and getVersion sequentially for each object.",
+    "Most metadata is immutable for the object's lifetime.",
+    "Clients need these fields immediately after object discovery."
+  ],
+  "evidence": [
+    "A single screen loads 100 objects.",
+    "The current sequence produces hundreds of round trips.",
+    "The same metadata is requested by nearly every client."
+  ],
+  "snippet": "obj = await getObject(id)\nname = await obj.getName()\ntype = await obj.getType()\nowner = await obj.getOwner()\n...",
+  "tempting_wrong_recommendation": [
+    "Keep the API because small methods are cleaner.",
+    "Treat network calls like local getters.",
+    "Add client-side concurrency without reconsidering the contract."
+  ],
+  "expected_decision_properties": [
+    "Identify round-trip multiplicity as an API-design problem.",
+    "Recommend batching or including stable metadata in object discovery/creation responses.",
+    "Preserve separate calls for truly dynamic or expensive fields when appropriate.",
+    "Frame method granularity as a transport and latency trade-off."
+  ],
+  "unacceptable_reasoning": [
+    "Getter granularity is always more maintainable.",
+    "Network latency is an implementation detail of the client.",
+    "The only solution is increasing concurrency."
+  ],
+  "expected_quality_dimensions": [
+    "performance",
+    "operability",
+    "api_clarity",
+    "interaction_round_trip_cost"
+  ],
+  "expected_tradeoffs": [
+    "fine-grained API purity vs RPC round-trip cost",
+    "eager metadata transfer vs on-demand fetching"
+  ],
+  "expected_authority": "strong_recommendation",
+  "verification_expectations": [
+    "Measure request count and end-to-end latency before and after the API change.",
+    "Verify immutable and dynamic metadata semantics remain correct.",
+    "Test older clients if the API is externally versioned."
+  ]
+}

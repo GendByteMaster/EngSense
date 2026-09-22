@@ -6,6 +6,7 @@ This file prevents the Phase 1 implementation from being mistaken for a complete
 
 - *Software Engineering at Google* — official Abseil digital edition.
 - *The Architecture of Open Source Applications, Volume 1* — official AOSA edition.
+- *The Architecture of Open Source Applications, Volume 2* — official AOSA edition.
 
 Research notes and the initial cross-source comparison are included in the current implementation branch.
 

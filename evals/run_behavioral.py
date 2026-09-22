@@ -230,8 +230,16 @@ def judge_prompt(case: dict[str, Any], response: str) -> str:
 
 
 def parse_json_text(text: str) -> dict[str, Any]:
+    stripped = text.strip()
+    fence = chr(96) * 3
+    if stripped.startswith(fence):
+        lines = stripped.splitlines()[1:]
+        if lines and lines[-1].strip() == fence:
+            lines = lines[:-1]
+        stripped = "\n".join(lines).strip()
+
     try:
-        value = json.loads(text.strip())
+        value = json.loads(stripped)
     except json.JSONDecodeError as exc:
         raise EvalError(f"judge did not return valid JSON: {exc}") from exc
     if not isinstance(value, dict):

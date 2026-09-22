@@ -140,7 +140,7 @@ The target never receives:
 - `expected_authority`;
 - `verification_expectations`.
 
-The judge scores properties rather than wording. The runner computes the final pass/fail result from:
+The judge scores properties rather than wording. The runner computes final pass/fail from:
 
 - all expected decision properties being met;
 - no unacceptable reasoning materially driving the answer;
@@ -148,7 +148,68 @@ The judge scores properties rather than wording. The runner computes the final p
 - authority/certainty matching the evidence;
 - specialist boundaries being respected.
 
-Expected quality dimensions are recorded for diagnostics but are not an independent hard pass gate.
+Expected quality dimensions are diagnostic and are not an independent hard pass gate.
+
+### Default: Codex CLI with ChatGPT sign-in
+
+The default provider is now **Codex CLI**, not the OpenAI API.
+
+This path does not require `OPENAI_API_KEY` or `CODEX_API_KEY`. It reuses the login already stored by Codex CLI on your trusted local machine.
+
+Before the first run:
+
+```bash
+codex login
+```
+
+Complete the ChatGPT sign-in flow, then verify that non-interactive mode works:
+
+```bash
+codex exec --ephemeral "reply with OK"
+```
+
+Run one EngSense case first:
+
+```bash
+python evals/run_behavioral.py \
+  --case premature-interface \
+  --fail-on-eval-failure
+```
+
+Run the complete 32-case baseline:
+
+```bash
+python evals/run_behavioral.py --fail-on-eval-failure
+```
+
+Default model configuration:
+
+```text
+target: gpt-5.6-luna / xhigh
+judge:  gpt-5.6-sol  / high
+```
+
+Override them explicitly when needed:
+
+```bash
+python evals/run_behavioral.py \
+  --target-model gpt-5.6-luna \
+  --target-effort xhigh \
+  --judge-model gpt-5.6-sol \
+  --judge-effort high
+```
+
+Codex runs are:
+
+- `--ephemeral`;
+- read-only;
+- non-interactive;
+- isolated from the checked-out repository in a temporary directory;
+- run with user/project config ignored;
+- run with web search disabled;
+- run without API-key environment variables.
+
+Judge calls use Codex CLI `--output-schema` so the rubric result remains machine-readable.
 
 ### Context modes
 
@@ -164,46 +225,39 @@ Other modes:
 
 The report records the exact context files loaded for every case.
 
-### Command providers
+### Generic command providers
 
-Both target and judge can be arbitrary commands that read the prompt from standard input and write their response to standard output.
+Both target and judge can still be arbitrary commands that read the prompt from standard input and write their final response to standard output.
 
-Example environment:
+Example:
 
 ```bash
-export ENGSENSE_EVAL_TARGET_PROVIDER=command
-export ENGSENSE_EVAL_TARGET_CMD='your-agent-command'
-export ENGSENSE_EVAL_JUDGE_PROVIDER=command
-export ENGSENSE_EVAL_JUDGE_CMD='your-judge-command'
-
-python evals/run_behavioral.py --case premature-interface --fail-on-eval-failure
+python evals/run_behavioral.py \
+  --target-provider command \
+  --target-command 'your-agent-command' \
+  --judge-provider command \
+  --judge-command 'your-judge-command'
 ```
 
-The judge command also receives the required JSON Schema through the `ENGSENSE_EVAL_JSON_SCHEMA` environment variable.
+The judge command receives the required JSON Schema through the `ENGSENSE_EVAL_JSON_SCHEMA` environment variable.
 
 `{case_id}` inside a command argument is replaced with the current fixture id.
 
-### OpenAI Responses API provider
+### Optional OpenAI API provider
 
-The runner also has a dependency-free OpenAI Responses API adapter.
+The direct Responses API adapter remains available for environments that intentionally use API billing.
 
-Set `OPENAI_API_KEY` and pass model ids explicitly:
+It is **not** required for the default EngSense workflow.
+
+If selected explicitly, it requires `OPENAI_API_KEY`:
 
 ```bash
 python evals/run_behavioral.py \
   --target-provider openai \
   --target-model <target-model> \
   --judge-provider openai \
-  --judge-model <judge-model> \
-  --case premature-interface \
-  --fail-on-eval-failure
+  --judge-model <judge-model>
 ```
-
-The runner does not hardcode model ids.
-
-For judge calls it requests structured JSON output using the per-case judgment schema.
-
-Responses are sent with storage disabled.
 
 ### Reports
 
@@ -222,20 +276,18 @@ The JSON report preserves:
 - judge result;
 - component-level pass/fail;
 - loaded context files;
-- provider/model or command metadata;
+- provider/model/effort metadata;
 - aggregate counts.
 
 ### CI policy
 
-Normal pull-request CI runs:
+Normal pull-request CI runs only deterministic local checks:
 
 ```bash
 python evals/validate.py
 python -m unittest discover -s evals/tests -p 'test_*.py'
 ```
 
-It deliberately does **not** call paid/external models.
+It deliberately does **not** call external models.
 
-Full behavioral runs are explicit/manual so that cost, model choice, secrets, and nondeterminism remain visible.
-
-A manual GitHub Actions workflow is available at `.github/workflows/behavioral-evals.yml`. It requires an `OPENAI_API_KEY` repository secret and explicit target/judge model ids; its default case is a single fixture so that a dispatch does not accidentally spend a full-suite budget.
+The no-API-key behavioral baseline is intended to run locally on a trusted machine where Codex CLI is already signed in with ChatGPT. GitHub-hosted runners do not inherit that local authenticated session, so EngSense does not copy or upload Codex authentication state into repository CI.

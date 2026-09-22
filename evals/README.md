@@ -92,6 +92,10 @@ It does not judge model quality. Behavioral scoring will be added separately.
 9. Distributed retry/idempotency specialist boundary
 10. Security-sensitive authentication refactor
 11. Vertical-slice locality vs strict horizontal layering
+12. Unbounded queue and missing backpressure
+13. Rolling persistence migration compatibility
+14. Chatty remote API / RPC granularity
+15. Test-double overuse against a cheap deterministic dependency
 
 The suite intentionally includes:
 

@@ -30,11 +30,11 @@ This note keeps separate:
 - [x] Chapter 8 — The Hadoop Distributed File System
 - [x] Chapter 9 — Continuous Integration
 - [x] Chapter 10 — Jitsi
-- [ ] Chapter 11 — LLVM
-- [ ] Chapter 12 — Mercurial
-- [ ] Chapter 13 — The NoSQL Ecosystem
-- [ ] Chapter 14 — Python Packaging
-- [ ] Chapter 15 — Riak and Erlang/OTP
+- [x] Chapter 11 — LLVM
+- [x] Chapter 12 — Mercurial
+- [x] Chapter 13 — The NoSQL Ecosystem
+- [x] Chapter 14 — Python Packaging
+- [x] Chapter 15 — Riak and Erlang/OTP
 - [ ] Chapter 16 — Selenium WebDriver
 - [ ] Chapter 17 — Sendmail
 - [ ] Chapter 18 — SnowFlock
@@ -1366,3 +1366,783 @@ Escape hatches become dangerous when they are:
 10. A cross-platform application rejects a narrow native implementation even though the managed runtime cannot provide the required capability.
 11. A project begins building its own plugin framework despite a mature standard that fits its requirements.
 12. An external API is allowed to evolve incrementally without versioning even though users already depend on it.
+
+
+---
+
+# Chapter 11 — LLVM
+
+## Source scope
+
+This chapter explains LLVM's architecture as a reusable compiler infrastructure rather than a monolithic compiler.
+
+Its most important architectural ideas are:
+
+- a first-class intermediate representation (LLVM IR);
+- reusable libraries instead of one opaque executable;
+- explicit optimization passes;
+- declarative target descriptions;
+- subset-ability;
+- focused regression testing;
+- modularity as protection against future design mistakes.
+
+## Source-derived observations
+
+### 1. A stable intermediate representation can become the architectural center
+
+LLVM IR is:
+
+- well specified;
+- the only interface to the optimizer;
+- serializable in textual and binary forms;
+- sufficiently complete that front ends and back ends do not need hidden side channels.
+
+This lets independently built front ends, optimizers, tools, and code generators interact through one common representation.
+
+The contrast drawn with older compiler architectures is important: an intermediate format is not a true boundary if downstream code still reaches back into front-end internals.
+
+### 2. Libraries preserve capability without forcing every client to pay for everything
+
+LLVM organizes compiler functionality into reusable libraries and passes rather than one monolithic tool.
+
+Clients can choose:
+
+- which passes to use;
+- pass ordering;
+- domain-specific passes;
+- static vs JIT use;
+- which targets/features to link.
+
+The architecture therefore separates **capability** from **policy**.
+
+### 3. Explicit dependencies enable orchestration
+
+Optimization passes can declare dependencies on analyses or other passes.
+
+The pass manager can then satisfy those dependencies and schedule execution.
+
+This is a recurring pattern for EngSense:
+
+```text
+explicit dependency graph
+→ tooling can reason about composition
+```
+
+### 4. Declarative descriptions can create a single source of truth
+
+LLVM target descriptions encode instruction/register facts in a declarative form.
+
+Multiple capabilities can then be generated from the same description, reducing the chance that:
+
+- assembler;
+- disassembler;
+- encoder;
+- decoder;
+- selector
+
+silently disagree.
+
+### 5. Focused tests are enabled by architectural boundaries
+
+Because LLVM IR is self-contained, optimizer regression tests can target one pass directly.
+
+The chapter contrasts this with whole-compiler tests where unrelated front-end or earlier-pass changes can accidentally stop exercising the intended bug.
+
+This is strong evidence that **testability can emerge from good boundaries**.
+
+### 6. Modularity was intentionally used as self-defense
+
+The retrospective is explicit that LLVM's modularity was partly motivated by the expectation that some implementations would later need replacement.
+
+The pass pipeline makes it possible to remove or replace subsystems rather than treating the first implementation as permanent.
+
+### 7. Compatibility can be tiered
+
+LLVM is willing to make disruptive C++ API/IR changes to preserve architectural progress, while providing more stable C wrappers and continued ability to read older serialized representations.
+
+The chapter therefore presents compatibility as something that can differ by surface.
+
+## EngSense interpretation
+
+Candidate context signals:
+
+```text
+intermediate_representation_quality
+boundary_self_containment
+hidden_cross_layer_dependency
+capability_policy_separation
+subsetability
+replacement_cost
+api_stability_tier
+declarative_single_source_of_truth
+focused_testability
+```
+
+Candidate rules:
+
+- a boundary is not real if consumers must still reach through it for hidden context;
+- prefer a stable shared representation when many independently varying producers/consumers need to compose;
+- separate reusable capability from client policy when different clients genuinely need different compositions;
+- use declarative sources of truth when multiple generated views must remain consistent;
+- consider whether architecture enables focused regression tests;
+- treat replaceability of implementation as a legitimate reason for modularity when change is expected;
+- allow different compatibility guarantees for different API surfaces when those guarantees are explicit.
+
+## Strong conflict candidates
+
+- stable API vs architectural evolution;
+- monolithic simplicity vs reusable subsettable libraries;
+- declarative configuration vs custom implementation freedom;
+- generic shared passes vs target/domain-specific specialization;
+- common representation vs representation constraints.
+
+---
+
+# Chapter 12 — Mercurial
+
+## Source scope
+
+This chapter explains Mercurial through:
+
+- revision DAGs;
+- revlogs;
+- changelog/manifest/filelog layering;
+- working-directory caches;
+- branching/merging;
+- network synchronization;
+- extensions;
+- hooks;
+- user-interface design.
+
+## Source-derived observations
+
+### 1. The data model should reflect the problem's real topology
+
+Distributed version histories are not naturally linear.
+
+Mercurial therefore represents history as a DAG in which ancestry and merges are explicit.
+
+This is a strong example of choosing a data structure that matches the domain rather than forcing the domain into a simpler but misleading model.
+
+### 2. Storage design is workload-driven
+
+Revlogs balance:
+
+- disk seeks;
+- reconstruction cost;
+- storage size;
+- revision access.
+
+Delta chains are bounded so space savings do not cause unbounded reconstruction work.
+
+This is a concrete example of balancing two dimensions rather than maximizing compression alone.
+
+### 3. Layering can work well while still having awkward edge cases
+
+The changelog/manifest/filelog structure is described as successful overall, but operations such as renames expose inefficiencies.
+
+The retrospective even anticipates a somewhat ugly layering violation to improve one case.
+
+This reinforces that successful architecture can contain local exceptions.
+
+### 4. Immutable identity creates both integrity and UX cost
+
+Changeset identity is content-derived, so editing a committed revision changes its identity.
+
+This provides strong history semantics, but makes rewriting published history intentionally difficult and even unpublished-history editing less intuitive.
+
+A strong invariant can therefore impose workflow cost.
+
+### 5. Extensibility exists at multiple power levels
+
+Mercurial supports:
+
+- commands;
+- repository wrappers;
+- repository types;
+- hooks;
+- aliases;
+- monkeypatching.
+
+These mechanisms have very different safety and coupling characteristics.
+
+The fact that something is extensible does not mean all extension mechanisms are equally healthy.
+
+### 6. Dynamic-language power creates escape hatches
+
+Monkeypatching lets extensions modify almost any behavior.
+
+The chapter acknowledges that this can be ugly but powerful.
+
+For EngSense this is another clear example of:
+
+```text
+flexibility gain
+vs
+reasoning/compatibility cost
+```
+
+### 7. UX consistency is an architectural/product concern
+
+Mercurial intentionally keeps:
+
+- a small core command set;
+- consistent options;
+- familiar concepts;
+- useful error messages;
+- progressive learnability.
+
+The chapter treats user-model consistency as a core design quality, not decoration.
+
+## EngSense interpretation
+
+Candidate context signals:
+
+```text
+domain_topology_fit
+history_integrity_requirement
+storage_reconstruction_cost
+extension_power
+extension_safety
+published_state_mutability
+user_model_consistency
+progressive_learnability
+```
+
+Candidate rules:
+
+- choose data structures that represent the domain's actual relationships;
+- do not optimize storage density while ignoring reconstruction/runtime cost;
+- distinguish strong extension APIs from unconstrained monkeypatch-style escape hatches;
+- treat immutable identity as a trade-off when it improves integrity but constrains editing workflows;
+- evaluate CLI/API consistency as a maintainability and usability concern;
+- do not reject a localized layering violation without comparing its cost to the problem it solves.
+
+## Conflict candidates
+
+- immutable history vs editability;
+- extension power vs compatibility/reasoning safety;
+- storage compactness vs reconstruction speed;
+- strict layering vs efficient handling of exceptional operations;
+- flexibility vs progressive learnability.
+
+---
+
+# Chapter 13 — The NoSQL Ecosystem
+
+## Source scope
+
+This chapter is a 2011-era survey of NoSQL design choices.
+
+It covers:
+
+- data models;
+- storage structures;
+- durability;
+- replication;
+- partitioning;
+- consistency;
+- distributed coordination.
+
+The exact products and some terminology reflect the period in which the chapter was written. EngSense should extract architectural trade-offs rather than treating the chapter as current operational guidance.
+
+## Source-derived observations
+
+### 1. "NoSQL" is not one architecture
+
+The chapter repeatedly shows systems mixing and matching ideas from:
+
+- BigTable;
+- Dynamo;
+- document stores;
+- key/value stores;
+- column-family stores;
+- graph databases.
+
+The relevant architectural choice is the combination of guarantees and workload assumptions, not the category label.
+
+### 2. Simplifying the database moves responsibility somewhere else
+
+NoSQL systems often remove or reduce features such as:
+
+- general declarative querying;
+- relational joins;
+- transactions;
+- strong consistency.
+
+That can make storage behavior more predictable, but pushes more logic into application design.
+
+This is a key EngSense principle:
+
+```text
+removed subsystem complexity
+may become
+caller/application complexity
+```
+
+### 3. Data-model freedom can become query complexity
+
+Document stores allow flexible schemas and rich object-shaped records.
+
+The chapter explicitly notes that application-driven query logic can become very complex.
+
+Flexibility is therefore not free.
+
+### 4. Storage layout creates throughput/latency/maintenance trade-offs
+
+Log-structured approaches can increase write throughput, but create compaction requirements.
+
+Group commit improves throughput while increasing per-operation latency.
+
+### 5. Partitioning should follow access patterns
+
+The chapter contrasts:
+
+- hash partitioning;
+- range partitioning.
+
+Range partitioning helps range scans and flexible rebalancing but needs more routing/configuration machinery.
+
+Hash partitioning gives simpler distribution/routing but destroys key locality.
+
+There is no universal winner.
+
+### 6. Replication creates a consistency problem that applications may inherit
+
+Replication improves availability/durability, but replicas diverge under failures and network partitions.
+
+Different systems choose different conflict models and reconciliation strategies.
+
+Some push resolution into the application.
+
+### 7. Conflict policy should reflect domain semantics
+
+The chapter's examples show that automatic last-write-wins and application-level merge are not equivalent.
+
+Some data can be safely merged; other conflicts require stronger semantics or human involvement.
+
+### 8. Decentralization removes one failure mode while adding coordination mechanisms
+
+Consistent hashing, hinted handoff, anti-entropy, vector clocks, and gossip trade centralized coordination for distributed protocols.
+
+Decentralization is not the absence of complexity; it relocates complexity.
+
+## EngSense interpretation
+
+Candidate context signals:
+
+```text
+query_pattern
+range_scan_need
+write_throughput_priority
+latency_budget
+transaction_requirement
+consistency_requirement
+conflict_semantics
+partition_tolerance_requirement
+replication_factor
+application_reconciliation_capability
+routing_complexity
+compaction_cost
+```
+
+Candidate rules:
+
+- choose data architecture from workload and required guarantees, not "SQL vs NoSQL" identity;
+- whenever infrastructure removes a guarantee, identify who now owns that responsibility;
+- distinguish write throughput from write latency;
+- choose partitioning according to access patterns and rebalancing/failure behavior;
+- make conflict-resolution semantics explicit;
+- do not equate decentralization with simplicity;
+- evaluate operational/background costs such as compaction and anti-entropy.
+
+## Historical-source boundary
+
+The chapter's exact database versions, ecosystem maturity, and some distributed-systems framing are historical.
+
+Before EngSense turns any of these into current distributed-systems guidance, the findings must be compared with the modern mandatory source *Designing Data-Intensive Applications, 2nd Edition*.
+
+## Conflict candidates
+
+- relational guarantees vs predictable specialized storage;
+- datastore simplicity vs application complexity;
+- hash distribution vs range locality;
+- strong consistency vs availability/latency goals;
+- automatic conflict resolution vs domain-aware resolution;
+- write throughput vs latency;
+- centralized coordination vs decentralized protocol complexity.
+
+---
+
+# Chapter 14 — Python Packaging
+
+## Source scope
+
+This is a historical snapshot of Python packaging around Distutils/Setuptools/Pip/Distutils2 and the PEP process.
+
+Many concrete tools, cryptographic mechanisms, metadata versions, and implementation plans described in the chapter are obsolete today.
+
+EngSense should therefore use the chapter for **architecture and ecosystem-evolution lessons**, not as current Python packaging guidance.
+
+## Source-derived observations
+
+### 1. Packaging spans multiple stakeholders with different needs
+
+The chapter highlights competing concerns of:
+
+- application developers;
+- Python tooling;
+- OS packagers;
+- administrators;
+- end users.
+
+A packaging design that works for one layer can create problems for another.
+
+### 2. Executable configuration obscures metadata
+
+Using `setup.py` as executable code for:
+
+- metadata;
+- build;
+- install;
+- publication
+
+makes even simple inspection capable of executing arbitrary project logic.
+
+This prevents external tools from reliably understanding a package without running project code.
+
+### 3. Declarative metadata increases interoperability
+
+The proposed redesign moves toward static metadata and configuration so:
+
+- dependency information;
+- versions;
+- installed files;
+- resources
+
+can be understood by tools without executing project-specific logic.
+
+### 4. Indirection can separate developer intent from platform placement
+
+The resource/data-file design uses logical project-relative names plus platform-specific mapping.
+
+This lets application code ask for a resource without hardcoding where an OS packager must install it.
+
+This is a legitimate positive use of indirection.
+
+### 5. Standards and tools can diverge
+
+The chapter explains how third-party tooling solved real problems faster than the official standards process, but created incompatible de facto behavior.
+
+Later standards work had to reconcile experimentation with ecosystem interoperability.
+
+### 6. Innovation can precede standardization
+
+The retrospective does not say "standards first always."
+
+It explicitly credits experimental third-party tools with generating valuable real-world evidence that later informed PEPs.
+
+### 7. Standard-library/public inclusion increases inertia
+
+Once an API becomes part of a widely deployed standard library, even internal-looking changes can disturb a huge ecosystem.
+
+The chapter describes creating a new package rather than continuing invasive modification of the original subsystem.
+
+### 8. Backward compatibility turns replacement into a migration problem
+
+A new packaging system cannot simply assume all dependencies use the new format.
+
+Compatibility adapters and on-the-fly conversion become necessary during transition.
+
+## EngSense interpretation
+
+Candidate context signals:
+
+```text
+ecosystem_stakeholders
+metadata_introspectability
+configuration_executability
+standardization_scope
+legacy_format_count
+migration_duration
+adapter_cost
+public_standard_inertia
+resource_location_variability
+```
+
+Candidate rules:
+
+- prefer declarative metadata when external tooling must inspect configuration safely and deterministically;
+- do not combine metadata discovery with arbitrary execution unless the flexibility is actually required;
+- use indirection when one party should name a resource/capability but another party owns physical placement;
+- distinguish experimental innovation from stable ecosystem standard;
+- promote successful experimental conventions into shared standards only after evidence exists;
+- include compatibility adapters in migration cost;
+- recognize that widely standardized/public APIs have unusually high change inertia.
+
+## Strong conflict candidates
+
+- executable flexibility vs safe introspection;
+- fast experimentation vs ecosystem standardization;
+- clean replacement vs backward-compatible migration;
+- developer-controlled layout vs administrator/platform-controlled layout;
+- standard-library stability vs architectural evolution.
+
+---
+
+# Chapter 15 — Riak and Erlang/OTP
+
+## Source scope
+
+This chapter uses Riak to explain how Erlang/OTP structures concurrent, distributed, fault-tolerant systems.
+
+Major architectural elements include:
+
+- processes/message passing;
+- OTP behaviors;
+- gen_server/gen_fsm/gen_event;
+- supervision trees;
+- reusable OTP applications;
+- virtual nodes;
+- consistent hashing;
+- gossip;
+- failure isolation and restart.
+
+## Source-derived observations
+
+### 1. Reusable concurrency patterns reduce application-specific machinery
+
+OTP behaviors provide generic implementations of common patterns such as:
+
+- servers;
+- state machines;
+- event handlers;
+- supervisors.
+
+Application code supplies callbacks for domain-specific behavior.
+
+This is a strong example of reuse at the level of **behavioral framework + explicit callback contract**.
+
+### 2. Event distribution can keep central state management simpler
+
+Riak uses event handlers so many interested subsystems can respond to ring changes without embedding every downstream reaction in the central ring-management code.
+
+This reduces direct coupling around a critical shared structure.
+
+### 3. Domain-specific patterns may justify new framework abstractions
+
+Riak defines its own behavior for virtual nodes once that pattern becomes important and repeated enough.
+
+This is a useful evidence-driven abstraction case:
+
+```text
+repeated stable domain pattern
+→ framework abstraction becomes justified
+```
+
+### 4. Supervision trees make failure boundaries explicit
+
+Processes are arranged under supervisors.
+
+If a component crashes, the failure can be contained to a subtree and restarted according to policy rather than taking down the entire node.
+
+The architecture treats recovery policy as structure.
+
+### 5. "Let it crash" depends on isolation and restart semantics
+
+The resilience described is not "ignore errors."
+
+It depends on:
+
+- isolated processes;
+- supervisors;
+- known restart boundaries;
+- state/recovery design;
+- higher-level redundancy.
+
+Without those properties, crashing is not a resilience strategy.
+
+### 6. Starting with high-level primitives can accelerate delivery
+
+Riak initially used Erlang's native distribution broadly.
+
+As real production requirements emerged, some communication paths moved toward direct TCP while other paths stayed on the built-in mechanism.
+
+The initial abstraction made early progress fast and was replaceable where it later became insufficient.
+
+### 7. Cheap local simulation improves distributed-system development
+
+Erlang's lightweight processes and nodes let developers run multi-node Riak clusters on one machine.
+
+This reduces the behavioral gap between development and production compared with systems that are too heavyweight to exercise locally.
+
+### 8. Decentralization replaces centralized configuration with coordination protocols
+
+Riak uses:
+
+- consistent hashing;
+- gossip
+
+to distribute membership and partition ownership without a central configuration server.
+
+This removes a single point of failure but introduces eventual propagation and distributed coordination.
+
+## EngSense interpretation
+
+Candidate context signals:
+
+```text
+failure_isolation_boundary
+restart_policy
+state_recovery_model
+concurrency_pattern_repetition
+distributed_dev_fidelity
+central_coordination_risk
+event_fanout
+framework_replacement_cost
+message_transport_fit
+```
+
+Candidate rules:
+
+- do not recommend "let it crash" without explicit isolation and recovery semantics;
+- model restart/failure policy as architecture when resilience is required;
+- introduce framework-level abstractions after repeated stable patterns emerge;
+- use event-distribution mechanisms when many independent consumers need to react to shared state changes;
+- prefer high-level primitives for speed of development when they are replaceable and fit current constraints;
+- preserve the ability to substitute lower-level implementations for measured production needs;
+- value development environments that reproduce important distributed topology cheaply.
+
+## Strong conflict candidates
+
+- fail-fast/restart vs in-process defensive recovery;
+- central coordinator vs gossip/decentralized state;
+- generic runtime primitives vs custom transport optimization;
+- framework abstraction vs direct process logic;
+- high-fidelity distributed development vs environment cost.
+
+---
+
+# Chapters 11–15 — Cross-case synthesis
+
+## 1. A representation can be an architecture boundary
+
+LLVM IR and Mercurial's revision DAG both show that a well-defined representation can:
+
+- preserve invariants;
+- decouple producers from consumers;
+- enable tooling;
+- make history/state inspectable;
+- support focused tests.
+
+EngSense should consider whether a system's core representation is explicit and self-contained.
+
+## 2. Removed complexity does not disappear
+
+The NoSQL chapter is the clearest case:
+
+- fewer datastore semantics can mean more application logic;
+- decentralization removes central coordination but requires gossip/conflict protocols;
+- flexible schemas can increase query complexity.
+
+This should become a major EngSense anti-rule:
+
+> Never claim a design "simplifies" a system without identifying where the displaced complexity goes.
+
+## 3. Ecosystem surface determines change freedom
+
+LLVM, Mercurial, and Python Packaging all show tiered compatibility pressure.
+
+A private optimizer pass, an extension hook, a stable C API, a package standard, and standard-library API do not have the same change cost.
+
+Candidate dimension:
+
+```text
+surface_inertia
+```
+
+## 4. Declarative structure repeatedly enables tooling
+
+Examples:
+
+- LLVM target descriptions;
+- Python packaging metadata;
+- version/dependency metadata;
+- explicit revision graphs.
+
+The recurring benefit is that tools can inspect and transform system state without executing opaque domain-specific code.
+
+## 5. Extensibility must be graded by power and risk
+
+Mercurial extensions range from aliases to arbitrary monkeypatching.
+LLVM lets clients compose passes through defined interfaces.
+Python packaging demonstrates the cost of executable setup logic.
+
+EngSense should distinguish:
+
+```text
+declarative extension
+bounded callback/plugin API
+process boundary
+arbitrary in-process patching/execution
+```
+
+rather than treating all extensibility equally.
+
+## 6. Failure recovery requires architecture, not slogans
+
+Riak provides a concrete counterexample to superficial "let it crash" advice.
+
+Resilience depends on:
+
+- fault containment;
+- supervisors;
+- restart strategy;
+- distributed redundancy;
+- recoverable state.
+
+## 7. Stable patterns justify abstraction better than hypothetical reuse
+
+LLVM passes and Riak OTP/vnode behaviors show strong abstractions created around repeated real needs.
+
+This reinforces EngSense's evidence-driven abstraction principle.
+
+## 8. Compatibility can be intentionally asymmetric
+
+LLVM keeps some surfaces highly stable while allowing others to evolve aggressively.
+Python packaging carries broad backward-compatibility obligations.
+Mercurial protects published history more strongly than local unpublished state.
+
+Candidate EngSense rule:
+
+> Define compatibility guarantees per surface and lifecycle stage instead of applying one global compatibility policy.
+
+## 9. Historical sources require temporal scope
+
+The NoSQL and Python Packaging chapters describe ecosystems from roughly 2011.
+
+EngSense research notes must not silently convert historical implementation details into present-day recommendations.
+
+Use them for:
+
+- architecture patterns;
+- trade-offs;
+- migration lessons;
+- ecosystem dynamics;
+
+and verify current technology-specific claims separately.
+
+## New eval candidates
+
+1. A compiler/interpreter boundary claims to use an IR, but backend code still reaches into front-end AST state.
+2. A framework exposes every subsystem through one monolithic library even though clients use small subsets.
+3. A distributed store is selected because it "has no joins", while the application must now implement complex cross-entity queries itself.
+4. A hash-partitioned store is used for a workload dominated by ordered range scans.
+5. A high-throughput write path ignores the latency cost of group commit.
+6. A package format requires executing project code merely to discover name/version/dependencies.
+7. A new packaging standard is deployed without adapters for the existing ecosystem.
+8. An extension system allows arbitrary monkeypatching even though a bounded extension API would satisfy the requirement.
+9. A service team adopts "let it crash" but has no supervisor, restart policy, state recovery, or replica redundancy.
+10. A repeated domain-specific process pattern is copied across many modules instead of becoming a shared behavior abstraction.
+11. A public stable API and an internal experimental API are forced to use the same compatibility policy.
+12. An architecture is described as simpler because a subsystem was removed, but its responsibilities were merely pushed into every caller.

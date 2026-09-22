@@ -127,7 +127,7 @@ The eval folder remains lightweight development evidence. A model-execution plat
 - [x] Repository description reviewed; topic tuning remains optional.
 - [x] Internal Markdown links in README/release/contribution/usage/installation/example docs checked against the repository tree.
 - [x] Stale research/integration and license claims removed.
-- [ ] Final spelling/terminology pass completed.
+- [x] Final terminology/status pass completed for current pre-v1 documentation; stale Phase 1 wording removed and current ChatGPT Skills availability clarified.
 
 ## 10. Final Skill behavior review
 

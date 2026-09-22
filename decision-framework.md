@@ -282,7 +282,23 @@ Negative signals:
 
 ---
 
-## 11. Evaluate public-surface inertia
+## 11. Evaluate representation leverage
+
+When the decision changes how state, relationships, commands, history, or dependencies are represented, ask:
+
+- What invariant/relationship does the representation make explicit?
+- Does it remove duplicated or convention-based state?
+- Can producers/consumers operate without hidden context?
+- Is it transient, internal, persisted, or public?
+- Does it improve replay, scheduling, validation, provenance, or migration?
+- Does normalization remove incidental variance without erasing required domain semantics?
+- Does physical optimization remain separable from the logical model?
+
+Load `principles/representation-design.md` when representation is a primary architecture lever.
+
+---
+
+## 12. Evaluate public-surface inertia
 
 Classify the surface:
 
@@ -312,7 +328,7 @@ Do not assume undocumented behavior is unused.
 
 ---
 
-## 12. Evaluate scale honestly
+## 13. Evaluate scale honestly
 
 Capture:
 
@@ -338,7 +354,7 @@ Watch for nonlinear knees.
 
 ---
 
-## 13. Evaluate failure and overload
+## 14. Evaluate failure and overload
 
 When relevant, test reasoning beyond the happy path:
 
@@ -358,7 +374,7 @@ For distributed/security/concurrency semantics, engage specialized guidance.
 
 ---
 
-## 14. Evaluate reversibility
+## 15. Evaluate reversibility
 
 Classify actual reversal support:
 
@@ -385,7 +401,7 @@ Do not count "we can rewrite it later" as meaningful reversibility.
 
 ---
 
-## 15. Select the decision
+## 16. Select the decision
 
 Prefer the option that best satisfies the relevant goals under the current constraints.
 
@@ -405,7 +421,7 @@ State that trade-off.
 
 ---
 
-## 16. Assign authority
+## 17. Assign authority
 
 Classify the conclusion:
 
@@ -432,7 +448,7 @@ Normally do not emit.
 
 ---
 
-## 17. Select change strategy
+## 18. Select change strategy
 
 When the decision requires restructuring, choose the transition strategy explicitly:
 
@@ -458,7 +474,7 @@ Do not assume smaller steps are always safer when mixed old/new states create th
 
 ---
 
-## 18. Implement minimally
+## 19. Implement minimally
 
 When changing code:
 
@@ -472,7 +488,7 @@ If a larger redesign is genuinely required, explain why a local change cannot pr
 
 ---
 
-## 19. Verify
+## 20. Verify
 
 Choose checks that match the risk:
 
@@ -495,7 +511,7 @@ Do not treat code coverage alone as proof of quality.
 
 ---
 
-## 20. Re-evaluate after the change
+## 21. Re-evaluate after the change
 
 Ask:
 

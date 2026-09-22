@@ -67,10 +67,10 @@ Therefore:
 - [x] Chapter 3 — Embracing Risk
 - [x] Chapter 4 — Service Level Objectives
 - [x] Chapter 5 — Eliminating Toil
-- [ ] Chapter 6 — Monitoring Distributed Systems
-- [ ] Chapter 7 — The Evolution of Automation at Google
-- [ ] Chapter 8 — Release Engineering
-- [ ] Chapter 9 — Simplicity
+- [x] Chapter 6 — Monitoring Distributed Systems
+- [x] Chapter 7 — The Evolution of Automation at Google
+- [x] Chapter 8 — Release Engineering
+- [x] Chapter 9 — Simplicity
 
 ### Part III — Practices
 
@@ -813,13 +813,498 @@ Potential eval scenarios:
 
 ---
 
+# Chapter 6 — Monitoring Distributed Systems
+
+## Scope
+
+The chapter focuses on monitoring and alerting as an engineering system: deciding what to measure, what should interrupt a human, and how to keep the critical path from symptom detection to diagnosis comprehensible.
+
+## Core principles
+
+### Monitoring has several distinct purposes
+
+Monitoring supports:
+
+- long-term trend analysis;
+- before/after comparison;
+- alerting;
+- dashboards;
+- retrospective debugging.
+
+EngSense should not collapse all observability into paging.
+
+A metric useful for post-hoc analysis may be inappropriate for an urgent alert.
+
+### Human interruption is expensive
+
+A page is not a free notification.
+
+The chapter treats pages as scarce human-attention interrupts that should be:
+
+- urgent;
+- actionable;
+- tied to real or imminent impact;
+- uncommon enough that humans still trust them.
+
+Candidate quality dimension:
+
+- **alert_actionability**
+
+Candidate cost:
+
+- **human_interrupt_cost**
+
+### Symptoms and causes are different monitoring concerns
+
+For paging, user-visible symptoms are generally stronger triggers than speculative causes.
+
+Cause-oriented telemetry remains essential for diagnosis.
+
+EngSense extraction:
+
+> Separate "should a human act now?" from "what evidence will help explain why?"
+
+### Black-box and white-box monitoring are complementary
+
+Black-box checks observe behavior as a user sees it.
+
+White-box telemetry exposes internal state and can reveal imminent problems or masked failures.
+
+Neither is universally superior.
+
+The right balance depends on whether the current decision is:
+
+- paging;
+- diagnosis;
+- capacity planning;
+- performance analysis;
+- failure prediction.
+
+### The four golden signals are a compact default, not a universal score
+
+The chapter highlights:
+
+- latency;
+- traffic;
+- errors;
+- saturation.
+
+EngSense should preserve the source's context: these are a practical default for user-facing systems, not the only valid service metrics.
+
+Correctness can still fail even when those signals look healthy.
+
+### Tail behavior matters
+
+Means can hide serious user-visible tail latency.
+
+This strongly reinforces POSA's measurement-validity guidance.
+
+Candidate signal:
+
+- **distribution_tail_risk**
+
+### Monitoring resolution has cost
+
+Sampling/retention granularity should match the decision.
+
+High-resolution telemetry that cannot influence action can become operational cost without decision value.
+
+### Monitoring itself can become fragile complexity
+
+Complex dependency-aware alert logic may decay as systems evolve.
+
+The critical alerting path should remain simple enough for the team to understand under incident pressure.
+
+### Rote page response is a design smell
+
+If a page always leads to the same mechanical action, either:
+
+- automate the action safely; or
+- address the root condition.
+
+A recurring page with a robotic response is evidence of unresolved operational debt.
+
+## Important tension
+
+The Bigtable example shows that temporarily relaxing alert/SLO pressure can be a strategic move if constant tactical response prevents durable improvement.
+
+EngSense implication:
+
+> Short-term local reliability can legitimately be traded for long-term system health when the trade is controlled, explicit, and evidence-backed.
+
+This is not permission to ignore incidents; it is a change-strategy decision.
+
+---
+
+# Chapter 7 — The Evolution of Automation at Google
+
+## Scope
+
+The chapter treats automation as a force multiplier with its own architecture, ownership, failure modes, and evolution path.
+
+It explicitly rejects automation as a universal answer.
+
+## Core principles
+
+### Better than automation can be removing the operation
+
+The chapter's strongest architectural point is that an autonomous system that requires neither manual work nor an external automation step can be better than both.
+
+This reinforces the earlier toil extraction:
+
+1. remove the need;
+2. redesign for autonomy;
+3. automate remaining stable procedures;
+4. keep human judgment only where genuinely necessary.
+
+### Automation value is broader than labor savings
+
+Automation can improve:
+
+- consistency;
+- repeatability;
+- speed;
+- delegation;
+- scalability;
+- platform leverage.
+
+Therefore "time to write automation vs minutes manually saved" is an incomplete cost model.
+
+### Automation magnifies mistakes
+
+A manual error can have local scope.
+
+Automation can reproduce the same error consistently across the fleet.
+
+Candidate context signal:
+
+- **automation_blast_radius**
+
+Candidate hard question:
+
+> What bounds the damage if the automation's assumptions are wrong?
+
+### High-level automation abstractions can fail systemically
+
+Higher-level automation is easier to reason about when its abstraction matches reality.
+
+When it hides partial/mixed states, failures can become systemic and difficult to repair.
+
+EngSense should require state/failure modeling rather than assuming operations are atomic.
+
+### Idempotency and rate limits are safety mechanisms for automation
+
+The disk-erasure incident demonstrates that automation needs explicit safeguards against repeated execution and unexpectedly broad scope.
+
+Candidate checks:
+
+- idempotency;
+- bounded target set;
+- rate limiting;
+- dry-run/preview where appropriate;
+- explicit empty-set semantics;
+- progressive scope;
+- independent verification.
+
+Exact controls depend on consequence.
+
+### Automation should live near domain knowledge and ownership
+
+The cluster-turnup case shows that separating automation maintenance from service owners can create incentives where:
+
+- users of automation lack domain expertise;
+- service owners stop designing for automability;
+- automation drifts from system reality.
+
+EngSense extraction:
+
+> Automation ownership should preserve feedback from the people who experience its failures and understand the domain.
+
+This is not necessarily "service owners must write every tool." The important property is aligned maintenance responsibility and feedback.
+
+### Automation can evolve from scripts to autonomous systems
+
+The described progression is useful as a maturity model, but should not be turned into a mandatory ladder.
+
+The portable point:
+
+- automation architecture should evolve with scale, variability, and ownership;
+- scripts that were correct at small scope can become technical debt at larger scope.
+
+---
+
+# Chapter 8 — Release Engineering
+
+## Scope
+
+The chapter treats build/release/deployment as a production reliability boundary rather than a packaging afterthought.
+
+## Core principles
+
+### Release reproducibility is an invariant
+
+A release should be traceable to:
+
+- source revision;
+- build inputs/toolchain;
+- tests;
+- configuration;
+- artifacts;
+- deployment process.
+
+Candidate quality dimension:
+
+- **release_reproducibility**
+
+This connects strongly to EngSense provenance reasoning.
+
+### Release provenance accelerates diagnosis
+
+Knowing exactly which changes and artifacts are in a release reduces uncertainty during incidents.
+
+Candidate signal:
+
+- **release_provenance**
+
+### Policy should be encoded where economical
+
+Review, approval, build, and deployment rules can be enforced by tooling rather than maintained only as documentation.
+
+But the policy must be defined before the tool can enforce it.
+
+EngSense anti-rule:
+
+> Do not automate an undefined or contradictory release policy and expect tooling to resolve the ambiguity.
+
+### Build environment is part of compatibility
+
+Rebuilding an older release with a newer compiler/toolchain can change behavior.
+
+Therefore source revision alone may be insufficient provenance.
+
+This reinforces a broader rule:
+
+> Reproducibility requires all material build inputs, not only application source.
+
+### Continuous testing should align with release gates
+
+If the tests that define "green" differ materially from the tests that gate release, teams can develop false confidence.
+
+Candidate finding:
+
+- **verification-path divergence**
+
+### Canary and staged rollout make change safer to observe
+
+The release system supports system testing and limited production exposure before full deployment.
+
+This reinforces EngSense's change-strategy lens: rollout architecture is part of reversibility and evidence collection.
+
+### Configuration lifecycle is part of release architecture
+
+Configuration can be:
+
+- embedded with the binary;
+- packaged separately;
+- read dynamically from an external store.
+
+Each choice changes:
+
+- coupling;
+- rollout;
+- rollback;
+- provenance;
+- runtime mutability.
+
+No one option is universally correct.
+
+### Release engineering should begin early enough to shape design
+
+Retrofitting repeatable builds/deployments late can be expensive.
+
+EngSense should interpret this proportionally, not as a requirement for enterprise release infrastructure in a prototype.
+
+---
+
+# Chapter 9 — Simplicity
+
+## Scope
+
+The chapter frames simplicity as a reliability property under continuous change.
+
+Its strongest contribution to EngSense is the relationship between code/feature surface and operational uncertainty.
+
+## Core principles
+
+### Stability and agility are a managed tension
+
+A system that never changes can avoid change-related defects but also cannot evolve.
+
+The engineering goal is not maximum stability.
+
+It is a sustainable balance where change remains understandable and recoverable.
+
+### Exploratory code can have a different quality contract
+
+Code with a truly bounded shelf life may justifiably have different testing/release requirements from production code.
+
+Candidate signal:
+
+- **artifact_lifetime**
+
+This aligns with EngSense's lifecycle context model.
+
+### "Boring" can be a reliability advantage
+
+Predictable behavior reduces operational surprise.
+
+This is not an aesthetic rule against innovation.
+
+It suggests:
+
+> Put novelty where it creates product/engineering value; avoid novelty in infrastructure merely for novelty's sake.
+
+### Essential and accidental complexity must be distinguished
+
+This directly reinforces EngSense's existing complexity-placement lens.
+
+The chapter advocates actively removing accidental complexity from systems a reliability team must operate.
+
+### Dead code and dormant behavior create risk
+
+Commented-out code or permanently disabled paths impose comprehension and latent-execution risk.
+
+Version control usually provides a better recovery mechanism than retaining dead implementation in active source.
+
+This should remain contextual for generated code, compatibility paths, staged migrations, etc.
+
+### Minimal APIs reduce obligations
+
+A narrower public API is easier to understand and support.
+
+But EngSense should preserve its existing counterweight:
+
+- too narrow/chattery remote APIs can increase coordination cost;
+- capability hiding can erase necessary semantics.
+
+The right API is the smallest one that still exposes the real task/capability boundary.
+
+### Modular separation limits failure blast radius
+
+The chapter values modularity when it contains defects and supports independent reasoning.
+
+This should not become "maximize module count."
+
+The relevant question remains whether the boundary contains a real failure/change/invariant axis.
+
+### Small release batches improve attribution
+
+Smaller independent changes make regressions easier to associate with causes.
+
+This creates a useful tension with batching for throughput or coordinated migrations.
+
+EngSense should not make "small releases" universal when a mixed-version state is itself dangerous.
+
+---
+
+# Updated cross-source synthesis after Part II
+
+## 8. Observability is a decision system
+
+POSA established performance observability as an architecture capability.
+
+SRE adds:
+
+- actionability;
+- human interruption cost;
+- symptom/cause separation;
+- alert trust;
+- lifecycle maintenance of monitoring rules.
+
+Candidate EngSense quality dimensions:
+
+- observability_actionability;
+- alert_trust;
+- diagnosis_support.
+
+## 9. Automation needs its own safety model
+
+Automation should be reviewed for:
+
+- scope;
+- authority;
+- idempotency;
+- rate limits;
+- partial-state handling;
+- ownership;
+- rollback/recovery;
+- blast radius.
+
+Automation is not inherently safer than manual operation.
+
+## 10. Reproducibility/provenance are reliability mechanisms
+
+Release provenance is not just build hygiene.
+
+It reduces diagnosis uncertainty and supports rollback/rebuild decisions.
+
+This strengthens EngSense's representation/provenance lens.
+
+## 11. Simplicity should be evaluated across operation, not only source code
+
+A small codebase with:
+
+- noisy paging;
+- opaque releases;
+- manual interventions;
+- fragile automation
+
+can be a complex system.
+
+This is a strong reason to keep EngSense's "total engineering complexity" model broader than code structure.
+
+## 12. Small-step change is strong but not absolute
+
+SRE's small release guidance improves causal attribution and rollback.
+
+EngSense's change-strategy lens preserves the counterexample:
+
+- when old/new coexistence is more dangerous than the coordinated transition, a larger atomic change can be justified.
+
+The conflict is real and should remain explicit.
+
+---
+
+# Reliability/operability lens decision
+
+After Part II, there is enough evidence that reliability/operability is a distinct decision surface, but implementation should wait until the full book is read.
+
+A future lens should likely own questions such as:
+
+> Is this design operationally sustainable and recoverable at the intended service level, and does its observability/release/automation model make reliability an enforceable property rather than a heroic human activity?
+
+It should **not** own:
+
+- consensus algorithms;
+- database durability internals;
+- lock-free concurrency;
+- networking internals;
+- security semantics.
+
+Those remain specialist boundaries.
+
+---
+
 # Next reading batch
 
 Next:
 
-- Chapter 6 — Monitoring Distributed Systems
-- Chapter 7 — The Evolution of Automation at Google
-- Chapter 8 — Release Engineering
-- Chapter 9 — Simplicity
+- Part III introduction
+- Chapter 10 — Practical Alerting
+- Chapter 11 — Being On-Call
+- Chapter 12 — Effective Troubleshooting
+- Chapter 13 — Emergency Response
+- Chapter 14 — Managing Incidents
+- Chapter 15 — Postmortem Culture: Learning from Failure
 
-These chapters should clarify whether EngSense needs a distinct reliability/operability lens or whether the new rules belong as smaller extensions to existing performance, sustainable-engineering, change-strategy, and complexity-placement lenses.
+This batch should sharpen the human-response, incident, diagnosis, and learning dimensions before any reliability/operability lens is implemented.

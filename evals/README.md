@@ -96,6 +96,9 @@ It does not judge model quality. Behavioral scoring will be added separately.
 13. Rolling persistence migration compatibility
 14. Chatty remote API / RPC granularity
 15. Test-double overuse against a cheap deterministic dependency
+16. Known future scale ceiling without current pressure
+17. Bounded measured performance escape hatch
+18. Complexity displacement from a shared invariant into callers
 
 The suite intentionally includes:
 

@@ -7,8 +7,9 @@ This file prevents the Phase 1 implementation from being mistaken for a complete
 - *Software Engineering at Google* — official Abseil digital edition.
 - *The Architecture of Open Source Applications, Volume 1* — official AOSA edition.
 - *The Architecture of Open Source Applications, Volume 2* — official AOSA edition.
+- *The Performance of Open Source Applications* — official AOSA edition.
 
-Research notes and the initial cross-source comparison are included in the current implementation branch.
+Completed research notes are tracked in the repository. AOSA Volume 2 and POSA are currently on research branches pending integration into `main`.
 
 ## Mandatory corpus still open
 

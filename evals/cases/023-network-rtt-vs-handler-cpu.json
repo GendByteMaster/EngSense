@@ -1,0 +1,50 @@
+{
+  "id": "network-rtt-vs-handler-cpu",
+  "title": "Local CPU optimization does not address round-trip dominated latency",
+  "mode": "architecture",
+  "task": "Review a proposal to rewrite a small API handler in a faster language to reduce mobile request latency.",
+  "context": [
+    "The handler consumes about 2 ms of CPU.",
+    "The mobile request performs four sequential network round trips.",
+    "Median round-trip time in the target region is about 120 ms.",
+    "The rewrite would add a second runtime and deployment path."
+  ],
+  "evidence": [
+    "End-to-end traces show network waits dominate request time.",
+    "The handler is not CPU-saturated under representative load.",
+    "The proposed rewrite has no measured end-to-end benchmark."
+  ],
+  "tempting_wrong_recommendation": [
+    "Rewrite the handler because the target language has faster benchmarks.",
+    "Focus on shaving milliseconds from local CPU before examining protocol turns."
+  ],
+  "expected_decision_properties": [
+    "Identify network round trips as the dominant evidenced latency cost.",
+    "Reject the language rewrite as unsupported by the current bottleneck evidence.",
+    "Investigate reducing or overlapping protocol turns, connection setup, or remote coordination where semantics permit.",
+    "Preserve protocol correctness and compatibility while evaluating alternatives."
+  ],
+  "unacceptable_reasoning": [
+    "A faster language automatically produces a faster distributed request.",
+    "CPU microbenchmarks override end-to-end traces.",
+    "Network latency can be ignored because the handler is application code."
+  ],
+  "expected_quality_dimensions": [
+    "end_to_end_latency",
+    "maintainability",
+    "coordination_cost"
+  ],
+  "expected_tradeoffs": [
+    "local CPU speed vs network coordination cost",
+    "second runtime complexity vs measured user latency"
+  ],
+  "expected_authority": "strong_recommendation",
+  "verification_expectations": [
+    "Measure end-to-end latency after any protocol/connection change.",
+    "Confirm request correctness and compatibility.",
+    "Use a representative mobile-network workload rather than a local-only microbenchmark."
+  ],
+  "specialist_boundary": [
+    "Specific transport-protocol tuning requires current networking expertise and should not be invented by EngSense."
+  ]
+}

@@ -40,11 +40,11 @@ The copyrighted source text is not copied into this repository. These notes are 
 - [x] Chapter 15 — Clean Tests
 - [x] Chapter 16 — Acceptance Testing
 - [x] Chapter 17 — AIs, LLMs, and God Knows What
-- [ ] Chapter 18 — Simple Design
-- [ ] Chapter 19 — The SOLID Principles
-- [ ] Chapter 20 — Component Principles
-- [ ] Chapter 21 — Continuous Design
-- [ ] Chapter 22 — Concurrency
+- [x] Chapter 18 — Simple Design
+- [x] Chapter 19 — The SOLID Principles
+- [x] Chapter 20 — Component Principles
+- [x] Chapter 21 — Continuous Design
+- [x] Chapter 22 — Concurrency
 - [ ] Chapter 23 — The Two Values of Software
 - [ ] Chapter 24 — Independence
 - [ ] Chapter 25 — Architectural Boundaries
@@ -2158,6 +2158,911 @@ Expected:
 - recognize that the executable assertion covers only part of the requirement;
 - retain additional accessibility checks/review rather than declaring the requirement fully specified.
 
+# Chapter 18 — Simple Design
+
+## Source thesis
+
+This chapter presents simple design as the simplest structure that satisfies current required behavior while preserving useful flexibility for change.
+
+The source explicitly distinguishes **simple** from **easy**. Its target is untangled design, especially separation of high-level policy from low-level detail.
+
+It then combines YAGNI with Kent Beck's four rules:
+
+1. covered by tests;
+2. reveals intent;
+3. minimizes duplication;
+4. minimizes size.
+
+The ordering matters.
+
+## YAGNI is a cost comparison, not "never design ahead"
+
+The source's version of YAGNI is more careful than the popular slogan.
+
+The question is not:
+
+> Will I ever need this?
+
+It is:
+
+> What happens if I do not build this hook now?
+
+The decision should compare:
+
+- probability the hook is needed;
+- cost of adding it later;
+- cost of carrying it now;
+- maintenance burden of unused flexibility;
+- confidence provided by tests/refactoring ability.
+
+### EngSense extraction
+
+A future variation point should not justify architecture by imagination alone.
+
+Use:
+
+~~~text
+expected future value
+vs
+carrying cost
+vs
+later migration cost
+~~~
+
+This means EngSense can still recommend early flexibility when the delayed cost is genuinely high, irreversible, or risky.
+
+## Coverage — source claim and EngSense qualification
+
+Martin argues for 100% line/branch coverage as an asymptotic goal and connects testability with decoupling.
+
+EngSense should preserve the source claim accurately but **not turn a percentage into a universal quality score**.
+
+Coverage can reveal unexercised code, but it does not prove:
+
+- assertion quality;
+- requirement completeness;
+- race freedom;
+- security;
+- useful isolation;
+- architecture quality.
+
+The durable extraction is:
+
+> trusted executable behavior evidence enables safer design change.
+
+## Expression
+
+The chapter treats production code and tests together as the communication surface of the system.
+
+Production code should expose:
+
+- intent;
+- abstraction level;
+- policy flow.
+
+Tests add examples of how abstractions are intended to be used.
+
+This strengthens an EngSense quality dimension:
+
+~~~text
+expression =
+intent in code
++ usage evidence in tests
+~~~
+
+## Duplication
+
+The chapter explicitly preserves the earlier distinction between **real** and **accidental** duplication.
+
+Real duplication has convergent intent and tends to change together.
+
+Accidental duplication only looks similar and may evolve independently.
+
+### EngSense rule
+
+Do not deduplicate by token similarity.
+
+Ask:
+
+~~~text
+Do these copies represent one shared concept
+with one reason to change?
+~~~
+
+## Minimize size comes last
+
+The source puts element count/size reduction after tests, expression, and meaningful deduplication.
+
+This is extremely important for EngSense.
+
+A smaller design that damages expression or verification is not "simpler" under this model.
+
+---
+
+# Chapter 19 — The SOLID Principles
+
+## Source scope
+
+This chapter explicitly frames SOLID as **mid-level design guidance** for coupled groupings of functions and data, not only literal OO classes.
+
+The stated goals are structures that:
+
+- tolerate change;
+- are understandable;
+- can form reusable components.
+
+The chapter is also explicit that SOLID does not by itself prevent system-level architectural failure.
+
+## SRP — responsibility to an actor
+
+The source explicitly corrects the common interpretation:
+
+~~~text
+SRP != every module "does one thing"
+~~~
+
+Its formulation is that a module should be responsible to one actor—a group of stakeholders who require the same kind of changes.
+
+The payroll example shows how apparently useful DRY can become accidental coupling when accounting and HR need superficially similar calculations to evolve independently.
+
+### EngSense extraction
+
+Use SRP to detect **change-authority coupling**, not method count.
+
+Candidate signals:
+
+- different stakeholder/policy owners;
+- different release/change cadence;
+- one actor's change risks another actor's behavior;
+- shared code exists only because current formulas happen to match.
+
+This also reinforces:
+
+~~~text
+DRY
+vs
+independent reasons to change
+~~~
+
+## OCP — strategic closure
+
+The chapter presents OCP as reducing modification blast radius when behavior is extended.
+
+The important source structure is:
+
+- separate things that change for different reasons;
+- orient dependencies so high-value policy is protected from peripheral details;
+- use interfaces/information hiding to control dependency direction.
+
+EngSense must interpret closure strategically, not literally.
+
+No system can be closed against every change. Earlier component material explicitly acknowledges closure must target common/expected change axes.
+
+## LSP — behavioral substitutability
+
+The chapter broadens LSP beyond inheritance.
+
+The underlying requirement is:
+
+> users depending on an interface must be able to substitute implementations without having to understand implementation-specific exceptions.
+
+This applies to:
+
+- class implementations;
+- structural/dynamic interfaces;
+- services/protocols;
+- provider implementations.
+
+### EngSense extraction
+
+A common interface is not meaningful merely because signatures match.
+
+Check behavioral contract compatibility:
+
+- accepted inputs;
+- invariants;
+- outputs;
+- failure semantics;
+- ordering;
+- side effects;
+- performance/availability assumptions when contractual.
+
+Special cases in clients are evidence that the "substitutable" boundary may be false.
+
+## ISP — dependency diet
+
+The source's deeper formulation is stronger than "make interfaces small":
+
+> do not depend on things you do not need.
+
+The risk includes:
+
+- unnecessary recompilation/redeployment;
+- transitive change coupling;
+- failures from baggage in dependencies;
+- larger conceptual surface.
+
+### EngSense extraction
+
+Review dependency width, not interface method count alone.
+
+A larger cohesive interface may be better than many microinterfaces if consumers genuinely require the whole capability.
+
+## DIP — volatile concretion is the real target
+
+This chapter contains an especially important correction to dogmatic DIP.
+
+It explicitly says that treating "depend only on abstractions" as a hard rule is unrealistic.
+
+Stable platform concretes can be perfectly reasonable dependencies.
+
+The source is concerned primarily with **volatile concrete elements**.
+
+It also explicitly warns:
+
+- slavish DIP can create an explosion of unnecessary interfaces;
+- ignoring DIP can create rigidity;
+- inversion should often be introduced gradually as needs emerge.
+
+### EngSense rule
+
+Before introducing an interface/trait/port, ask:
+
+~~~text
+Is this dependency volatile?
+Is the caller high-value/stable policy?
+Does inversion reduce meaningful change risk?
+Is there a real substitution/provider boundary?
+What new indirection/type/runtime cost is introduced?
+~~~
+
+This is much stronger than an "interface everything" interpretation.
+
+---
+
+# Chapter 20 — Component Principles
+
+## Source scope
+
+The chapter moves from module-level structure to deployable components.
+
+It presents component design as two interacting questions:
+
+1. which modules belong together;
+2. how components should depend on one another.
+
+The chapter explicitly says component structure changes over a project's life and cannot be reliably fixed up front.
+
+## Component cohesion: REP, CCP, CRP
+
+### REP — Reuse/Release Equivalence
+
+Reusable units should be releasable/versioned units with coherent release meaning.
+
+EngSense extraction:
+
+A reusable package should have:
+
+- coherent purpose;
+- meaningful version/release semantics;
+- consumers that can reason about upgrading it.
+
+Do not bundle arbitrary utilities into a "shared" package simply because they are reusable in isolation.
+
+### CCP — Common Closure
+
+Group classes/modules that tend to change for the same reason and at the same time.
+
+This is SRP at component scale.
+
+The operational benefit is minimizing:
+
+- affected components;
+- revalidation;
+- redeployment;
+- cross-team coordination.
+
+### CRP — Common Reuse
+
+Do not force component users to depend on modules they do not need.
+
+This is ISP at component scale.
+
+A dependency on one tiny part of a package can still impose the release/revalidation cost of the whole package.
+
+### The cohesion tension triangle
+
+The source explicitly says REP, CCP, and CRP pull in different directions.
+
+Early project:
+
+~~~text
+developability / CCP
+> reuse pressure
+~~~
+
+Later reusable ecosystem:
+
+~~~text
+REP + CRP become more important
+~~~
+
+The correct packaging can therefore change with project maturity.
+
+### EngSense extraction
+
+Package boundaries are contextual and temporal.
+
+Context signals:
+
+- project maturity;
+- external/internal consumers;
+- independent release needs;
+- change cadence;
+- reuse pressure;
+- build/revalidation cost.
+
+Do not grade a package layout as timelessly correct.
+
+## ADP — dependency graph should be acyclic
+
+The source connects dependency cycles with:
+
+- unstable build order;
+- forced simultaneous change;
+- harder isolated testing;
+- team synchronization cost.
+
+It gives two main cycle-breaking strategies:
+
+- invert a dependency;
+- extract a shared component.
+
+### EngSense qualification
+
+The conceptual goal is to avoid component-level cycles that destroy independent evolution.
+
+Do not mechanically report every language/module import cycle with the same severity; first identify whether it creates real build/change/deployment coupling.
+
+## Component structure evolves; it is not top-down functional decomposition
+
+This is one of the strongest anti-upfront-design statements in Part II.
+
+The source says component diagrams are more about:
+
+- buildability;
+- maintainability;
+- volatility isolation;
+
+than describing business function.
+
+The dependency graph should evolve as evidence appears about:
+
+- common closure;
+- reuse;
+- cycles;
+- volatility.
+
+This strongly supports EngSense's evidence-driven architecture model.
+
+## SDP — depend in the direction of stability
+
+The source defines stability operationally as difficulty/cost of change, especially when many other components depend on a component.
+
+A component can be infrequently changed yet structurally unstable, or frequently developed yet intentionally easy to change.
+
+EngSense should not confuse:
+
+~~~text
+frequency of change
+with
+cost/responsibility of change
+~~~
+
+## SAP — stable components should be abstract enough to extend
+
+The source links stability with abstraction so highly depended-upon policy can evolve through extension rather than direct modification.
+
+However, it explicitly treats the numeric abstraction/stability model as theory that is usually applied qualitatively rather than calculated.
+
+## Metrics: I, A, D
+
+The source defines:
+
+- instability from fan-out / total coupling;
+- abstractness from abstract declarations / total declarations;
+- distance from a proposed "main sequence."
+
+It explicitly says it does **not** normally calculate these values and instead uses the theory as a mental model.
+
+### EngSense rule
+
+Do not turn these metrics into automated architectural scores.
+
+Use them as diagnostic prompts:
+
+- Is a highly depended-upon volatile concrete creating pain?
+- Is an abstraction unused and therefore useless?
+- Is stability preventing necessary evolution?
+- Is an unstable component being depended on by a supposedly stable one?
+
+---
+
+# Chapter 21 — Continuous Design
+
+## Source thesis
+
+This chapter defines design as the accumulated organization of code and configuration, and argues that every change alters that design.
+
+Design is therefore continuous rather than a one-time phase.
+
+The source does **not** reject upfront thinking. Later sections explicitly include design activity during:
+
+- project planning;
+- estimation;
+- work slicing;
+- requirement clarification;
+- implementation;
+- refactoring.
+
+### EngSense extraction
+
+Reject the false binary:
+
+~~~text
+big upfront design
+vs
+no design / pure emergence
+~~~
+
+Prefer:
+
+~~~text
+enough anticipatory design for current risk
++ continuous revision from implementation evidence
+~~~
+
+## Four Cs
+
+The chapter proposes:
+
+- **Clarity** — intent is easy to recover;
+- **Conciseness** — intent is represented without unnecessary code;
+- **Confirmability** — behavior is easy to verify;
+- **Cohesion** — module elements strongly belong together.
+
+It explicitly notes that these can conflict.
+
+Example:
+
+~~~text
+more clarity
+may require
+less conciseness
+~~~
+
+That conflict orientation fits EngSense well.
+
+## Clarity
+
+The chapter strongly favors editing working code so policy is visible and implementation details can be skipped until needed.
+
+However, it also preserves idioms when experienced readers can consume them easily; not every compact expression needs a named wrapper.
+
+### EngSense extraction
+
+Abstraction is useful when it reduces required cognitive detail.
+
+Do not extract a familiar idiom solely because it is syntactically dense.
+
+## Conciseness
+
+The source explicitly rejects minimum-token code when it harms clarity.
+
+The target is **elegance**, not code golf.
+
+It also treats meaningful duplication as a conciseness problem but again distinguishes conceptual duplication from coincidental similar lines.
+
+## Confirmability
+
+The chapter argues that design degrades when developers fear change because feedback is weak.
+
+It emphasizes:
+
+- fast unit feedback for behavioral detail;
+- higher-level tests for other properties;
+- testability as a design pressure;
+- tests as living behavioral documentation.
+
+Later, however, it says coverage mandates are a bad idea and that the numeric percentage is not the real goal.
+
+This qualifies Chapter 18's aggressive 100% coverage framing.
+
+### EngSense synthesis
+
+Do not optimize for a coverage number.
+
+Optimize for:
+
+- confidence in relevant behavior;
+- fast feedback where needed;
+- explicit unverified risk;
+- ability to safely change the design.
+
+## Cohesion
+
+The source demonstrates a module that mixes domain behavior with storage detail and refactors it so persistence becomes a separate concept.
+
+The important signal is independent change pressure, not "every external dependency needs a repository layer."
+
+## Continuous design as lifecycle activity
+
+The closing sections explicitly show design happening in planning, estimating, slicing, refinement, and coding.
+
+Candidate EngSense rule:
+
+> Architecture/design review should be revisited when new information materially changes constraints, not only at project inception or during dedicated refactor phases.
+
+---
+
+# Chapter 22 — Concurrency
+
+## Source scope
+
+This chapter is explicitly an overview and repeatedly warns that concurrency is complex enough to deserve dedicated study.
+
+EngSense must therefore use it as a **general concurrency-awareness lens**, not a substitute for language/runtime-specific concurrency expertise.
+
+The later *Rust for Rustaceans* concurrency material will have priority for Rust-specific decisions.
+
+## Why concurrency
+
+The source describes concurrency as a way to decouple **what** happens from **when** it happens.
+
+It can improve:
+
+- throughput;
+- responsiveness;
+- structure/separation of concerns.
+
+But it explicitly rejects common myths:
+
+- concurrency does not always improve performance;
+- concurrent design is not the same as single-threaded design;
+- frameworks do not eliminate shared-state/threading concerns;
+- concurrency has code/runtime overhead.
+
+### EngSense rule
+
+Do not recommend concurrency merely for "performance."
+
+Require a concrete reason such as:
+
+- exploitable I/O wait;
+- independent requests;
+- actual parallelizable computation;
+- latency/throughput target;
+- structural scheduling need.
+
+## Separate concurrency concerns
+
+The chapter treats concurrency mechanics as their own reason to change and recommends isolating thread-aware code from thread-ignorant domain logic.
+
+This is useful when it produces:
+
+- independently testable domain behavior;
+- explicit scheduling/synchronization policy;
+- smaller shared-state surface.
+
+Do not invent layers if the runtime abstraction already provides a clean boundary.
+
+## Minimize shared mutable data
+
+The strongest recurring defensive principle is to narrow:
+
+- number of shared objects;
+- places where they can be modified;
+- critical sections;
+- synchronization scope.
+
+The source recommends considering:
+
+- copies/immutable data;
+- independent work partitions;
+- thread-safe standard libraries;
+- established concurrency frameworks.
+
+### EngSense qualification
+
+Copying is not automatically superior; measure memory/allocation cost where material.
+
+## Know the execution model
+
+The chapter uses producer-consumer, readers-writers, and dining-philosophers/resource contention as foundational models.
+
+EngSense should map a concurrency problem to known classes before inventing bespoke synchronization.
+
+## Locking
+
+The source warns about dependencies across synchronized methods and recommends keeping critical sections small enough to reduce contention while still covering the full atomic operation.
+
+This is a correctness/performance trade, not a style issue.
+
+## Startup/shutdown are first-class correctness paths
+
+The source explicitly emphasizes deadlocks and stuck lifecycle transitions during startup/shutdown.
+
+EngSense should treat:
+
+- cancellation;
+- shutdown;
+- draining;
+- producer/consumer termination;
+- resource release;
+
+as part of the design, not cleanup after the happy path works.
+
+## Testing concurrency
+
+The source emphasizes that concurrency failures can be rare and non-repeatable.
+
+Recommended testing properties include:
+
+- run frequently;
+- vary thread/configuration counts;
+- test on target platforms;
+- isolate non-threaded behavior first;
+- make concurrency mechanisms tunable/pluggable;
+- deliberately perturb scheduling;
+- never dismiss sporadic failures as "one-offs."
+
+The historical "jiggling" mechanism is one implementation technique, not the enduring rule.
+
+### EngSense extraction
+
+The general rule is:
+
+> increase schedule/interleaving diversity and treat rare failures as evidence until disproven.
+
+Modern tools may implement this through stress tests, schedulers, sanitizers, model checkers, fuzzing, deterministic executors, or runtime-specific tooling.
+
+## 2025 field update: multiple legitimate solutions
+
+The updated examples are especially valuable because the chapter does **not** prescribe one synchronization technique.
+
+Examples resolve shared-state risks by:
+
+- serializing a previously parallel operation;
+- explicit locking;
+- intentionally doing nothing when conflict is cheap and recoverable;
+- delaying a second renderer until safe;
+- enforcing initialization order structurally.
+
+This is exactly the kind of contextual engineering judgment EngSense should model.
+
+### EngSense rule
+
+When shared-state conflict is identified, compare alternatives including:
+
+~~~text
+remove concurrency
+partition state
+serialize operation
+lock/transaction
+reorder lifecycle
+make state immutable/copy
+accept conflict + recover
+~~~
+
+The "most concurrent" solution is not automatically the best.
+
+---
+
+# Part II synthesis — Design
+
+## 1. The book itself contains anti-dogma safeguards
+
+A mechanical reading of SOLID would be inaccurate.
+
+Part II explicitly says:
+
+- YAGNI requires cost comparison;
+- accidental duplication should remain duplicated;
+- DIP warnings are frequently and pragmatically violated;
+- slavish DIP causes interface explosion;
+- component cohesion principles conflict;
+- component boundaries change with project maturity;
+- stability metrics are usually qualitative mental models;
+- continuous-design dimensions can oppose each other;
+- concurrency solutions are context-specific.
+
+This is strong evidence that the eventual EngSense Clean Code lens should be a **decision lens**, not a checklist.
+
+## 2. Volatility is a central routing signal
+
+Across SOLID and component principles, a repeated question is:
+
+~~~text
+What changes?
+Why does it change?
+Who requires the change?
+How often / at what lifecycle stage?
+Who is forced to change with it?
+~~~
+
+EngSense should make volatility/change coupling a first-class context model.
+
+## 3. Abstraction is justified by protection, not aesthetics
+
+The strongest case for abstraction in Part II is:
+
+~~~text
+protect high-value/stable policy
+from volatile implementation detail
+~~~
+
+Not:
+
+~~~text
+abstraction is cleaner than concrete code
+~~~
+
+This distinction is especially important for Rust later.
+
+## 4. Package/component boundaries are socio-technical
+
+REP/CCP/CRP and the ADP are not just source layout preferences.
+
+They affect:
+
+- releases;
+- independent team work;
+- build order;
+- validation;
+- deployment;
+- consumer upgrade cost.
+
+EngSense should only escalate package/component findings when those effects matter at the repository's actual scale.
+
+## 5. Continuous design joins upfront and emergent reasoning
+
+Part II rejects both frozen upfront architecture and thoughtless local coding.
+
+The stronger model is:
+
+~~~text
+initial constraints / risk model
+→ small implementation evidence
+→ test/feedback
+→ revise design
+→ repeat
+~~~
+
+## 6. Concurrency must be modeled as semantics
+
+Concurrency findings must be based on:
+
+- shared state;
+- ordering;
+- atomicity;
+- visibility;
+- lifecycle;
+- resource contention;
+- failure/recovery semantics.
+
+Do not review concurrent code as ordinary stylistic code.
+
+---
+
+# Part II eval candidates
+
+## Eval: YAGNI with irreversible migration cost
+
+Context:
+
+A schema decision is cheap today but changing it after external adoption would require a destructive migration.
+
+Expected:
+
+- do not invoke YAGNI mechanically;
+- compare current carrying cost against likely migration/lock-in cost;
+- permit early flexibility when deferral becomes materially expensive.
+
+## Eval: coverage percentage trap
+
+Context:
+
+Repository reports 100% line coverage but important error assertions are missing.
+
+Expected:
+
+- do not declare testing complete;
+- distinguish exercised lines from verified behavior;
+- inspect relevant risk scenarios.
+
+## Eval: SRP actor coupling
+
+Context:
+
+Two calculations are currently identical but owned by independent business policies that have already diverged in requirements.
+
+Expected:
+
+- tolerate or deliberately separate duplication;
+- do not centralize solely for DRY;
+- model independent actors/change reasons.
+
+## Eval: stable concrete dependency
+
+Context:
+
+Application code directly uses a stable standard-library value type.
+
+Expected:
+
+- do not create an interface solely for DIP;
+- recognize low volatility and low substitution value.
+
+## Eval: volatile external provider
+
+Context:
+
+Core policy directly imports provider-specific SDK types throughout the domain layer.
+
+Expected:
+
+- identify volatility contamination;
+- introduce the narrowest meaningful boundary;
+- keep provider details outside policy;
+- avoid unnecessary factory/DI ceremony beyond the boundary.
+
+## Eval: package cohesion changes with maturity
+
+Context:
+
+An internal application package becomes a public reusable library.
+
+Expected:
+
+- revisit release/reuse boundaries;
+- do not assume the package structure that optimized internal developability remains correct for external consumers.
+
+## Eval: dependency cycle
+
+Context:
+
+Two deployable components require each other's internals.
+
+Expected:
+
+- identify independent build/test/change costs;
+- consider dependency inversion or extraction of a real shared concept;
+- reject creation of a meaningless "common" package that merely hides the cycle.
+
+## Eval: concurrency by default
+
+Context:
+
+A sequential operation already meets latency/throughput requirements, but a reviewer proposes workers/locks for "scalability."
+
+Expected:
+
+- reject unproven concurrency complexity;
+- require an actual scheduling/performance need;
+- preserve simpler semantics until evidence changes.
+
+## Eval: cheap recoverable race
+
+Context:
+
+Two users may occasionally create duplicate non-critical draft items; duplicates are visible and trivially removable.
+
+Expected:
+
+- compare prevention complexity against recovery cost;
+- allow intentional acceptance of the race when domain consequences are low;
+- document the decision rather than reflexively adding distributed locking.
+
 # Research integrity notes
 
 - The source is being read from a user-provided full-text copy.
@@ -2170,16 +3075,16 @@ Expected:
 
 # Next research pass
 
-Part I (Code) is now complete.
+Parts I (Code) and II (Design) are now complete.
 
-Continue with Part II (Design):
+Continue with Part III (Architecture):
 
-1. Chapter 18 — Simple Design;
-2. Chapter 19 — The SOLID Principles;
-3. Chapter 20 — Component Principles;
-4. Chapter 21 — Continuous Design;
-5. Chapter 22 — Concurrency.
+1. Chapter 23 — The Two Values of Software;
+2. Chapter 24 — Independence;
+3. Chapter 25 — Architectural Boundaries;
+4. Chapter 26 — Clean Boundaries;
+5. Chapter 27 — The Clean Architecture.
 
-Then continue into Part III (Architecture). Source-specific conclusions still remain provisional until Parts II–IV and the appendix debate are complete.
+Then continue into Part IV (Craftsmanship), Afterword, and Appendix. Source-specific conclusions remain provisional until the appendix debate is reviewed.
 
 Do not create the final Clean Code lens or mark Issue #2 complete until the full source has been studied.

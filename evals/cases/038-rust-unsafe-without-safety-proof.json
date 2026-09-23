@@ -1,0 +1,52 @@
+{
+  "id": "rust-unsafe-without-safety-proof",
+  "title": "Unsafe Rust requires an explicit safety proof and bounded audit surface",
+  "mode": "focused",
+  "task": "Review an unsafe pointer dereference that currently has no safety rationale because the surrounding code is believed to make it obvious.",
+  "context": [
+    "The unsafe block dereferences a raw pointer obtained from an internal allocation table.",
+    "Correctness depends on alignment, initialization, lifetime, and non-aliasing invariants maintained by nearby safe code.",
+    "The module may be changed by future contributors."
+  ],
+  "evidence": [
+    "The pointer is valid under the current construction path.",
+    "No local comment or documentation records the required invariants.",
+    "Several safe helper functions in the same module can mutate the state that makes the dereference safe."
+  ],
+  "tempting_wrong_recommendation": [
+    "Leave the block undocumented because comments are a code smell.",
+    "Review only the lines inside unsafe {} and ignore safe code that can invalidate the assumptions.",
+    "Mark the enclosing function safe without documenting the caller/implementation obligations."
+  ],
+  "expected_decision_properties": [
+    "Require a concise local safety rationale that names the relevant invariants and why they hold.",
+    "Treat the full privacy boundary capable of invalidating those invariants as the audit surface.",
+    "Keep the unsafe surface narrow and expose a safe API only if the module can enforce the contract internally.",
+    "Check panic and early-return paths when they can leave the state inconsistent."
+  ],
+  "unacceptable_reasoning": [
+    "Unsafe is acceptable whenever current tests pass.",
+    "Comments should always be removed in favor of self-documenting code.",
+    "Only explicit unsafe lines matter to soundness."
+  ],
+  "expected_quality_dimensions": [
+    "safety",
+    "maintainability",
+    "locality_of_invariants",
+    "verification"
+  ],
+  "expected_tradeoffs": [
+    "local terseness vs preserved safety proof",
+    "unsafe line count vs actual privacy-boundary audit scope"
+  ],
+  "expected_authority": "strong_recommendation",
+  "verification_expectations": [
+    "Run the ordinary test suite plus Miri or another relevant memory-safety tool where applicable.",
+    "Add or preserve assertions/regression coverage for the safety assumptions.",
+    "Review all code in the privacy boundary that can mutate the protected state."
+  ],
+  "specialist_boundary": [
+    "Escalate when soundness depends on subtle or unsettled Rust memory-model behavior."
+  ],
+  "notes": "Grounded in Rust for Rustaceans Chapter 9: unsafe boundaries, safety documentation, validity, panic behavior, and tool-assisted verification."
+}

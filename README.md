@@ -137,6 +137,10 @@ EngSense/
 ├── languages/
 ├── domains/
 ├── references/
+├── assets/
+│   └── agents-snippet.md
+├── scripts/
+│   └── sync_agents.py
 ├── research/
 ├── evals/
 ├── docs/
@@ -147,6 +151,22 @@ EngSense/
 The optional `agents/openai.yaml` file provides OpenAI Skill UI metadata and explicitly allows implicit invocation. It is **metadata, not an OpenAI API integration**. EngSense requires no API key, model SDK, MCP server, or external runtime for its core workflow.
 
 The deterministic fixtures under `evals/cases/` are development evidence for the Skill. They are intentionally lightweight and are not a model-execution platform.
+
+## Repository `AGENTS.md` registration
+
+EngSense can keep a small persistent repository instruction so Codex knows when to use the Skill even across new prompts.
+
+The Skill manages only:
+
+~~~text
+<!-- engsense:begin -->
+...
+<!-- engsense:end -->
+~~~
+
+in the repository-root `AGENTS.md` (or an existing case-variant such as `agents.md`).
+
+The bundled `scripts/sync_agents.py` helper creates/updates that block without overwriting user-authored instructions. It requires no API key, model SDK, MCP server, or EngSense backend.
 
 ## Research integrity
 
@@ -172,11 +192,13 @@ EngSense follows the Agent Skills shape: a skill directory with a required `SKIL
 
 ### Recommended: install directly from GitHub with npx
 
-Project scope for Codex:
+Project scope for Codex with immediate repository registration:
 
 ~~~bash
-npx skills add https://github.com/GendByteMaster/EngSense -a codex
+npx skills add https://github.com/GendByteMaster/EngSense -a codex -y && python .agents/skills/engsense/scripts/sync_agents.py
 ~~~
+
+A plain Skill install also works; on first substantive activation in a writable repository, EngSense self-registers a compact managed block in the repository-root `AGENTS.md`. The sync is idempotent and preserves all non-EngSense instructions.
 
 Global/user scope for Codex:
 

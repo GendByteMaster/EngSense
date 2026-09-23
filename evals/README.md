@@ -67,6 +67,7 @@ Run:
 ```bash
 python evals/validate.py
 python evals/validate_skill.py
+python evals/test_sync_agents.py
 ```
 
 `validate.py` validates fixture structure.

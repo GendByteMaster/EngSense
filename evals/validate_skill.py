@@ -13,6 +13,8 @@ CORE_FILES = {
     Path("decision-framework.md"),
     Path("review-workflow.md"),
     Path("agents/openai.yaml"),
+    Path("assets/agents-snippet.md"),
+    Path("scripts/sync_agents.py"),
 }
 
 CORE_DIRS = (
@@ -75,6 +77,22 @@ def validate_skill_references(errors: list[str]) -> None:
 
     if "domains/domain-modeling.md" not in referenced:
         errors.append("SKILL.md must expose domains/domain-modeling.md in its routing surface")
+
+
+def validate_agents_registration(errors: list[str]) -> None:
+    skill = load(Path("SKILL.md"))
+    if "scripts/sync_agents.py" not in skill:
+        errors.append("SKILL.md must route repository self-registration through scripts/sync_agents.py")
+    if "AGENTS.md" not in skill:
+        errors.append("SKILL.md must document repository AGENTS.md self-registration")
+
+    snippet = load(Path("assets/agents-snippet.md"))
+    begin = "<!-- engsense:begin -->"
+    end = "<!-- engsense:end -->"
+    if snippet.count(begin) != 1 or snippet.count(end) != 1:
+        errors.append("assets/agents-snippet.md must contain exactly one EngSense managed marker pair")
+    if "engsense" not in snippet.lower():
+        errors.append("assets/agents-snippet.md must explicitly reference the engsense Skill")
 
 
 def validate_no_api_runtime_dependency(errors: list[str]) -> None:
@@ -180,6 +198,7 @@ def main() -> int:
 
     validate_required_structure(errors)
     validate_skill_references(errors)
+    validate_agents_registration(errors)
     validate_no_api_runtime_dependency(errors)
     eval_count = validate_eval_catalog(errors)
 

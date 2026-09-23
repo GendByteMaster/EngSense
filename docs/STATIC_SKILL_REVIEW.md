@@ -87,6 +87,29 @@ The new `references/routing-map.md` makes lens ownership explicit and reduces th
 
 ---
 
+## 2a. Repository instruction registration
+
+Result: **PASS with bounded self-registration**
+
+EngSense can persist a compact activation rule in the repository-root `AGENTS.md` without turning the Skill into an installer service.
+
+The bundled helper:
+
+- creates `AGENTS.md` only when no case-variant exists;
+- reuses an existing case-variant;
+- preserves all user-authored instructions;
+- owns only the `<!-- engsense:begin --> ... <!-- engsense:end -->` block;
+- is idempotent;
+- can check drift without modifying files;
+- can remove only its own block;
+- fails closed on malformed markers.
+
+On writable repository activation, the Skill tells the active coding agent to run this helper before substantive work.
+
+This is distinct from an install hook. The Skill remains static and API-free.
+
+---
+
 ## 3. Principle overlap
 
 Result: **PASS with explicit resolution rules**

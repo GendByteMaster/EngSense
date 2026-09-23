@@ -32,11 +32,11 @@ The copyrighted source text is not copied into this repository. These notes are 
 - [x] Chapter 3 — Designing Interfaces
 - [x] Chapter 4 — Error Handling
 - [x] Chapter 5 — Project Structure
-- [ ] Chapter 6 — Testing
-- [ ] Chapter 7 — Macros
-- [ ] Chapter 8 — Asynchronous Programming
-- [ ] Chapter 9 — Unsafe Code
-- [ ] Chapter 10 — Concurrency (and Parallelism)
+- [x] Chapter 6 — Testing
+- [x] Chapter 7 — Macros
+- [x] Chapter 8 — Asynchronous Programming
+- [x] Chapter 9 — Unsafe Code
+- [x] Chapter 10 — Concurrency (and Parallelism)
 - [ ] Chapter 11 — Foreign Function Interfaces
 - [ ] Chapter 12 — Rust Without the Standard Library
 - [ ] Chapter 13 — The Rust Ecosystem
@@ -1070,6 +1070,701 @@ Expected:
 - compare downstream breakage with actual feature value;
 - avoid universal "always latest Rust" guidance.
 
+# Chapter 6 — Testing
+
+## Source thesis
+
+The chapter treats testing as a layered evidence system rather than only a collection of `#[test]` functions.
+
+It covers:
+
+- the standard Rust test harness;
+- unit versus integration-test compilation boundaries;
+- `#[cfg(test)]` instrumentation;
+- doctests as executable public examples;
+- linting;
+- fuzzing and property-based testing;
+- Miri and Loom as test augmentation;
+- performance testing.
+
+## Unit and integration tests exercise different contracts
+
+Unit tests can see private implementation details within their module/crate context, while integration tests under `tests/` compile as separate crates and therefore exercise the public interface.
+
+### EngSense extraction
+
+Do not ask one test layer to prove every property.
+
+Use the narrowest evidence surface that matches the contract:
+
+```text
+private implementation invariant
+→ unit/internal test
+
+public crate contract
+→ integration test
+
+documented usage
+→ doctest/example
+
+compile-time negative contract
+→ compile_fail / compile-time test
+```
+
+The existence of internal tests does not replace evidence at the public boundary.
+
+## Test-only observability can be legitimate
+
+The source shows `#[cfg(test)]` being used for:
+
+- read-only test accessors;
+- bookkeeping/counters;
+- additional instrumentation.
+
+This is a useful alternative to weakening production encapsulation just to make tests inspect internal state.
+
+### Qualification
+
+Test-only APIs should support meaningful invariants, not make tests mirror every implementation detail. If tests become coupled to incidental representation, refactoring cost rises.
+
+## Doctests are contract tests for examples
+
+Doctests are compiled like external use, which makes them valuable for validating that documentation examples remain real.
+
+The source also warns that hidden lines can make examples misleading if copied code no longer works without invisible setup.
+
+### EngSense rule
+
+Documentation examples should optimize for truthful user experience, not merely short snippets.
+
+## Testing technique should match the failure shape
+
+The chapter distinguishes several tools:
+
+- fuzzing for broad input-space exploration;
+- property-based testing for semantic properties and differential comparison;
+- Miri for runtime detection of certain Rust-specific undefined behavior;
+- Loom for systematic exploration of concurrent interleavings;
+- benchmarks/performance tests for regressions in non-functional behavior.
+
+EngSense should therefore avoid the generic recommendation:
+
+```text
+add more unit tests
+```
+
+when the relevant defect class requires a different testing mechanism.
+
+## Performance tests are noisy measurements
+
+The source stresses:
+
+- benchmark variance;
+- compiler optimization eliminating the work being measured;
+- accidental measurement of I/O/setup/random generation rather than the target operation.
+
+### EngSense extraction
+
+A benchmark is evidence only if its measurement boundary is credible.
+
+Review:
+
+- workload realism;
+- warmup/repetition;
+- distribution rather than one number;
+- optimization artifacts;
+- environmental noise;
+- setup/I/O contamination.
+
+This aligns with EngSense's existing performance-engineering lens.
+
+---
+
+# Chapter 7 — Macros
+
+## Source thesis
+
+Rust macros are legitimate language mechanisms, but the source consistently treats them as a trade-off rather than a sophistication badge.
+
+## Declarative macros
+
+`macro_rules!` is strongest for regular, mechanical repetition where ordinary functions/generics cannot express the source-level transformation.
+
+The source gives a particularly strong rule of thumb:
+
+```text
+variation by type
+→ prefer generics
+
+source/code-shape repetition
+→ macro may fit
+```
+
+### EngSense extraction
+
+Before introducing a macro, ask whether the problem is actually:
+
+- runtime behavior → function;
+- type-level polymorphism → generics/traits;
+- repetitive source structure → macro;
+- complex compile-time parsing/transformation → procedural macro.
+
+This prevents macros from becoming accidental abstraction machinery.
+
+## Procedural macros have hidden project cost
+
+The chapter calls out:
+
+- heavy compile-time dependencies;
+- code-generation volume;
+- maintenance/debugging complexity;
+- weaker hygiene than declarative macros.
+
+A macro can reduce author typing while increasing compiler and maintainer work.
+
+### Candidate rule
+
+Do not evaluate code generation by source-line reduction alone.
+
+Include:
+
+```text
+generated_code_volume
+compile_time
+diagnostic_quality
+discoverability
+IDE/tooling behavior
+maintenance complexity
+public DSL commitment
+```
+
+## Derives should match intuition
+
+The source recommends derive macros when:
+
+- the trait is implemented often;
+- the derived implementation is obvious/predictable.
+
+If the generated semantics are surprising, automation becomes a hidden policy.
+
+## Attribute macros are justified by real leverage
+
+Useful source cases include:
+
+- test generation;
+- framework annotations;
+- transparent instrumentation;
+- type transformation with safety checks.
+
+EngSense should distinguish such leverage from decorative metaprogramming.
+
+## Diagnostics are part of macro API quality
+
+Spans and `compile_error!` allow generated-code errors to point back to user-authored source.
+
+### EngSense rule
+
+For public macros, diagnostics and failure locality are part of interface quality, not polish added after functionality.
+
+---
+
+# Chapter 8 — Asynchronous Programming
+
+## Source thesis
+
+The chapter explicitly warns that asynchronous design is not always the right solution.
+
+The central trade-off is between:
+
+- simple blocking/synchronous flow;
+- threads with blocking APIs;
+- futures/tasks multiplexed by an executor.
+
+Async primarily helps when work spends substantial time waiting and many operations need to make progress concurrently.
+
+## Async is not synonymous with parallelism
+
+The source distinguishes:
+
+- concurrency — multiple operations can make progress in an interleaved fashion;
+- parallelism — operations execute simultaneously.
+
+A single executor thread can run many futures concurrently without parallelism.
+
+Parallel async execution requires explicit task boundaries and `Send` where work may move across threads.
+
+### EngSense rule
+
+Never justify async with the vague claim "it is faster."
+
+Ask instead:
+
+- Is the workload I/O/wait dominated?
+- How many concurrent waits exist?
+- Is thread-per-task cost material?
+- Is parallel CPU execution required?
+- What executor/runtime constraints are introduced?
+
+## Async state machines move complexity rather than erase it
+
+`async/await` makes code readable by letting the compiler generate the state machine that manual `Future` implementations would otherwise require.
+
+This is a strong example of useful abstraction: substantial mechanical complexity is hidden behind a stable semantic model.
+
+But the underlying contracts still matter for advanced code:
+
+- polling;
+- pinning;
+- wakeups;
+- executor ownership;
+- task boundaries.
+
+## Executor/runtime coupling is an architectural constraint
+
+Leaf futures may integrate with a specific reactor/executor for timers, network, and file events.
+
+A library that appears runtime-neutral at the syntax level can still be coupled through its resource/future types.
+
+### EngSense extraction
+
+When reviewing reusable async libraries, inspect runtime coupling explicitly rather than assuming `Future` alone guarantees portability.
+
+## Blocking inside async is a scheduler-level defect
+
+A blocking syscall, compute-heavy loop, or long section without yielding can stall unrelated tasks assigned to the same executor thread.
+
+The source recommends moving such work to dedicated blocking/compute threads or otherwise yielding appropriately.
+
+### Candidate rule
+
+In async code, "does this call block?" is part of API correctness/performance, not merely an implementation detail.
+
+## Spawning changes lifecycle and concurrency semantics
+
+Spawning a future makes it an independently scheduled task.
+
+That can enable concurrency/parallelism, but it also introduces lifecycle questions:
+
+- who owns task completion?
+- what happens if the executor stops?
+- how are errors observed?
+- can the task outlive caller state?
+- is detached work intentional?
+
+EngSense should not recommend `spawn` merely to avoid awaiting.
+
+---
+
+# Chapter 9 — Unsafe Code
+
+## Source thesis
+
+The chapter's central framing is precise:
+
+> unsafe is a mechanism for manually upholding invariants the compiler cannot prove.
+
+It is not a permission to ignore Rust's rules.
+
+## `unsafe fn` and `unsafe {}` represent different responsibilities
+
+The source distinguishes:
+
+- `unsafe fn` — caller must uphold documented preconditions;
+- `unsafe {}` — implementation author asserts that required invariants have been checked for the enclosed operations.
+
+### EngSense extraction
+
+An unsafe boundary is a contract boundary.
+
+Review must identify:
+
+```text
+caller obligations
+implementation proof
+privacy boundary
+failure/UB consequence
+verification mechanism
+```
+
+## Safe wrappers are a primary design goal
+
+The source repeatedly demonstrates unsafe internals exposed through safe APIs when the module can enforce all necessary invariants itself.
+
+### Candidate rule
+
+Prefer:
+
+```text
+small auditable unsafe core
+→ safe narrow interface
+```
+
+over spreading unsafe obligations across callers.
+
+But do not mark an API safe if its correctness still relies on undocumented caller behavior.
+
+## Unsafe optimization requires evidence
+
+Unchecked operations are sometimes available to remove runtime checks, but the source explicitly recommends measuring first because the safety/performance trade is rarely worthwhile by default.
+
+EngSense should reject "unsafe for speed" without benchmark evidence tied to a real bottleneck.
+
+## Validity is stronger than "I never read the bad value"
+
+References and many Rust types must be valid whenever they exist, not only when later dereferenced/used.
+
+Unsafe review must therefore reason about:
+
+- alignment;
+- lifetime/liveness;
+- aliasing;
+- valid bit patterns;
+- initialization;
+- ownership;
+- layout guarantees.
+
+## Panics and early returns are part of unsafe correctness
+
+Unwinding can expose partially initialized or inconsistent states.
+
+The source also calls out `?` as another early-exit path that can bypass later cleanup/repair logic.
+
+### EngSense rule
+
+For unsafe state transitions, verify safety at **every exit edge**, including panic/unwind where the configured panic strategy permits it.
+
+## Layout assumptions require explicit guarantees
+
+`repr(Rust)` does not give a stable field layout contract.
+
+Casts/transmutes must be based on actual representation guarantees such as `repr(C)`, `repr(transparent)`, or otherwise proven constraints.
+
+## Privacy boundary is the true audit scope
+
+A local unsafe block may depend on safe code elsewhere preserving field, trait, or lifecycle invariants.
+
+The source recommends shrinking the set of code capable of violating those invariants through encapsulation/module/crate boundaries.
+
+This is deeper than simply "minimize unsafe line count."
+
+### EngSense extraction
+
+Measure unsafe surface by:
+
+```text
+code that can invalidate the safety proof
+```
+
+not just:
+
+```text
+number of lines inside unsafe {}
+```
+
+## Safety comments are mandatory evidence
+
+This source directly conflicts with a mechanical anti-comment interpretation of Clean Code.
+
+For unsafe operations, comments should document why the required invariants hold at the call/block/implementation site.
+
+The act of writing that proof may itself expose missing reasoning.
+
+## Verification must be augmented
+
+The source recommends:
+
+- ordinary tests;
+- Miri;
+- sanitizers;
+- assertions/debug assertions;
+- CI automation;
+- regression tests for discovered failures.
+
+Miri/sanitizers analyze only executed paths, so coverage/evidence still matters.
+
+---
+
+# Chapter 10 — Concurrency (and Parallelism)
+
+## Source thesis
+
+Concurrency is difficult along two independent axes:
+
+1. correctness;
+2. performance/scalability.
+
+Adding concurrency can make both worse.
+
+## Race condition is not the same as data race
+
+The source distinguishes:
+
+- data race — unsynchronized conflicting memory access; undefined behavior in Rust's model;
+- race condition — result depends on relative timing; may be intentional or may be a logic bug.
+
+EngSense should preserve this terminology in findings.
+
+## More cores can make software slower
+
+Contention, synchronization, shared-resource exhaustion, allocator/kernel limits, and false sharing can create sublinear or negative scaling.
+
+### Candidate rule
+
+Before adding concurrency for performance, establish:
+
+```text
+single-thread baseline
+target workload
+bottleneck
+expected parallel fraction
+contention points
+measurement after change
+```
+
+"Uses all cores" is not evidence of improvement.
+
+## Concurrency model should match ownership/work shape
+
+The source describes three broad models:
+
+### Shared memory
+
+Best fit when threads truly need coordinated updates to shared state where operation ordering matters.
+
+### Worker pools
+
+Best fit when workers perform the same kind of independent work over different inputs/jobs.
+
+### Actors
+
+Best fit when independent resources/state can be exclusively owned and accessed through messages.
+
+Actors can become bottlenecks when work is skewed or one actor owns too much.
+
+### EngSense extraction
+
+Do not select a concurrency pattern by fashion.
+
+Choose based on:
+
+- state ownership;
+- commutativity;
+- workload homogeneity;
+- skew;
+- coordination frequency;
+- required parallelism.
+
+## Async synchronization is not automatically superior
+
+Async locks/channels avoid blocking executor threads but carry additional machinery.
+
+The source allows synchronous primitives in async code when critical sections are demonstrably short/nonblocking, while warning about the footguns.
+
+### EngSense rule
+
+Default toward the safer composable primitive. Cross to a riskier optimization only with workload evidence.
+
+## Atomics require explicit memory-model reasoning
+
+The chapter covers:
+
+- `Relaxed`;
+- Acquire/Release;
+- `SeqCst`;
+- compare-exchange;
+- fetch operations.
+
+The key EngSense lesson is not to memorize an ordering table. It is that lower-level atomics move correctness obligations from library primitives into developer reasoning about permitted executions.
+
+### Candidate rule
+
+If code uses nontrivial atomic ordering, require an explicit invariant/happens-before explanation and specialist-level verification.
+
+Do not "optimize" `SeqCst` to weaker orderings based solely on style or intuition.
+
+## Start simple, then measure
+
+The source gives a strong staged strategy:
+
+```text
+channels / locks / simple model
+→ benchmark
+→ identify concrete bottleneck
+→ optimize locally
+→ only then reach for fine-grained atomics/lock-free design
+```
+
+This maps directly to EngSense's evidence-driven complexity principle.
+
+## Concurrent tests need adversarial scheduling evidence
+
+The source recommends:
+
+- stress tests;
+- assertions;
+- Loom for systematic small-model interleavings;
+- ThreadSanitizer for larger runtime executions;
+- other sanitizers where relevant.
+
+It also explains Heisenbugs: instrumentation such as printing can change scheduling/synchronization and make the defect disappear.
+
+### EngSense extraction
+
+A concurrency review should not accept "tests passed once" as meaningful evidence for schedule-sensitive correctness.
+
+---
+
+# Cross-source conflicts established by Chapters 6–10
+
+## Clean Code comments skepticism vs unsafe proof comments
+
+Unsafe Rust requires prose that records invariants not mechanically evident in code.
+
+Conclusion:
+
+> For unsafe blocks/functions/impls, safety rationale is part of the contract and should not be removed merely to make code "self-documenting."
+
+## DRY vs macro opacity
+
+Macros can eliminate repetitive source code, but may add:
+
+- compile cost;
+- generated-code volume;
+- debugging indirection;
+- DSL maintenance.
+
+Conclusion:
+
+> Source duplication is not enough to justify metaprogramming. The repeated pattern must be mechanically stable enough that code generation reduces total complexity.
+
+## Simplicity vs async adoption
+
+Async can scale waiting-heavy workloads while increasing runtime/lifecycle complexity.
+
+Conclusion:
+
+> Prefer synchronous structure until concurrency/waiting requirements justify async machinery.
+
+## Abstraction vs executor lock-in
+
+`async fn` may look provider-neutral while concrete leaf futures bind a library to one runtime.
+
+Conclusion:
+
+> Evaluate architectural coupling below syntax-level abstractions.
+
+## Readability cleanup vs unsafe invariants
+
+Refactoring unsafe/concurrent code for local readability can invalidate nonlocal safety or ordering assumptions.
+
+Conclusion:
+
+> Preserve and re-prove invariants before applying ordinary structural-cleanup advice.
+
+## Performance optimization vs concurrency complexity
+
+Concurrency, atomics, unchecked operations, and macros can all make code faster in some context and slower overall in another.
+
+Conclusion:
+
+> Benchmark the actual bottleneck before paying correctness/complexity cost.
+
+---
+
+# Additional eval candidates from Chapters 6–10
+
+## Eval: mock-driven trait pollution
+
+Context:
+
+Production code has one concrete dependency. Tests introduce a public trait and dynamic dispatch solely so a mocking library can replace it.
+
+Expected:
+
+- consider test-only seams, fake concrete types, integration tests, or narrower internal abstraction;
+- require production abstraction to have production value;
+- do not let mocking style dictate public architecture.
+
+## Eval: macro replaces simple generic
+
+Context:
+
+A declarative macro dispatches behavior only by type, even though a generic function with trait bounds expresses the same contract.
+
+Expected:
+
+- prefer the generic solution;
+- reserve macro for source-shape generation not expressible ergonomically through types.
+
+## Eval: async for CPU-bound loop
+
+Context:
+
+A CPU-heavy transformation has no meaningful waiting but is rewritten as async to "make it faster."
+
+Expected:
+
+- reject async as a parallelism substitute;
+- consider parallel workers/rayon only if measurement and data partitioning justify it.
+
+## Eval: detached task lifecycle
+
+Context:
+
+A request handler calls `spawn` for important persistence work and ignores the task handle/error.
+
+Expected:
+
+- identify lifecycle/durability/error-observation risk;
+- require explicit detached-work semantics or await/supervision.
+
+## Eval: unsafe micro-optimization without benchmark
+
+Context:
+
+Bounds checks are replaced with `get_unchecked` in a non-hot path.
+
+Expected:
+
+- reject the safety cost without benchmark evidence;
+- prefer safe indexing;
+- if optimization is real, require documented invariants and dedicated verification.
+
+## Eval: unsafe block with no safety rationale
+
+Context:
+
+Code is technically correct today but contains an unsafe pointer dereference with no explanation of why lifetime/alignment/aliasing invariants hold.
+
+Expected:
+
+- require a local safety proof/comment;
+- inspect the full privacy boundary capable of invalidating the proof.
+
+## Eval: lock-free rewrite before bottleneck evidence
+
+Context:
+
+A correct mutex-based queue is proposed for replacement with custom atomics because lock-free "scales better."
+
+Expected:
+
+- require workload benchmark and contention evidence;
+- keep simple synchronization when it meets requirements;
+- if lower-level rewrite proceeds, require ordering proof plus Loom/TSan/stress evidence.
+
+## Eval: relaxed ordering used for security state
+
+Context:
+
+A flag guarding initialization/security state uses `Ordering::Relaxed` because atomic loads/stores are individually atomic.
+
+Expected:
+
+- reject the reasoning;
+- require explicit cross-thread ordering semantics;
+- escalate to concurrency-specialist review if necessary.
+
 # Research integrity notes
 
 - Full-source completion is not claimed yet.
@@ -1083,16 +1778,15 @@ Expected:
 
 # Next research pass
 
-Chapters 1–5 are complete.
+Chapters 1–10 are complete.
 
 Continue in source order:
 
-1. Chapter 6 — Testing
-2. Chapter 7 — Macros
-3. Chapter 8 — Asynchronous Programming
-4. Chapter 9 — Unsafe Code
-5. Chapter 10 — Concurrency (and Parallelism)
+1. Chapter 11 — Foreign Function Interfaces
+2. Chapter 12 — Rust Without the Standard Library
+3. Chapter 13 — The Rust Ecosystem
+4. Index/reference cross-check
 
-Then continue through FFI, `no_std`, and ecosystem guidance before revising `languages/rust.md`.
+After the full-source pass, revise `languages/rust.md` from the completed evidence base and add Rust-specific eval fixtures.
 
 Do not mark the mandatory Rust source complete or finalize Rust-specific evals until all 13 chapters have been reviewed.

@@ -61,16 +61,14 @@ jobs:
           set -euo pipefail
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            # Test the exact PR revision before it exists on main.
             SOURCE="$GITHUB_WORKSPACE"
           else
-            # After merge/manual runs, verify installation from the public GitHub source.
             SOURCE="https://github.com/GendByteMaster/EngSense"
           fi
 
           npx --yes skills add "$SOURCE" -a codex -y
 
-      - name: Verify Codex project-scope install
+      - name: Verify install and AGENTS registration
         shell: bash
         working-directory: ${{ runner.temp }}/engsense-smoke
         run: |
@@ -88,24 +86,17 @@ jobs:
           test -f .agents/skills/engsense/assets/agents-snippet.md
           test -f .agents/skills/engsense/scripts/sync_agents.py
 
-          grep -q '^name: engsense
- .agents/skills/engsense/SKILL.md
+          grep -Fqx "name: engsense" .agents/skills/engsense/SKILL.md
 
-          echo "# Existing project rule" > AGENTS.md
-          echo "" >> AGENTS.md
-          echo "Preserve this line." >> AGENTS.md
+          printf '%s\n\n%s\n' "# Existing project rule" "Preserve this line." > AGENTS.md
 
           python .agents/skills/engsense/scripts/sync_agents.py
           python .agents/skills/engsense/scripts/sync_agents.py --check
 
-          grep -q '^# Existing project rule
- AGENTS.md
-          grep -q '^Preserve this line\.
- AGENTS.md
-          test "$(grep -c '^<!-- engsense:begin -->
- AGENTS.md)" -eq 1
-          test "$(grep -c '^<!-- engsense:end -->
- AGENTS.md)" -eq 1
+          grep -Fqx "# Existing project rule" AGENTS.md
+          grep -Fqx "Preserve this line." AGENTS.md
+          test "$(grep -Fc "<!-- engsense:begin -->" AGENTS.md)" -eq 1
+          test "$(grep -Fc "<!-- engsense:end -->" AGENTS.md)" -eq 1
 
           before="$(sha256sum AGENTS.md | cut -d' ' -f1)"
           python .agents/skills/engsense/scripts/sync_agents.py

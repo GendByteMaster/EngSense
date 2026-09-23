@@ -7,6 +7,8 @@ description: Context-aware software engineering judgment for code review, refact
 
 EngSense is an engineering-judgment router, not a style checklist.
 
+It is a **static Skill**: instructions + supporting reference files. Its core workflow must not require an OpenAI API key, model-provider SDK, HTTP model call, MCP server, or separate runtime service. Optional `agents/openai.yaml` is Skill metadata only.
+
 Its goal is to choose context-appropriate trade-offs while preserving behavior, compatibility, and specialist invariants.
 
 ## Core question

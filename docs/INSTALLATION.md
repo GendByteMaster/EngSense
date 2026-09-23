@@ -17,11 +17,19 @@ Product availability and installation UI can change. The instructions below foll
 
 The recommended one-command install uses the open `skills` CLI with EngSense sourced directly from GitHub.
 
-Project scope for Codex:
+Project scope for Codex with immediate `AGENTS.md` registration:
+
+~~~bash
+npx skills add https://github.com/GendByteMaster/EngSense -a codex -y && python .agents/skills/engsense/scripts/sync_agents.py
+~~~
+
+Plain Skill install is still supported:
 
 ~~~bash
 npx skills add https://github.com/GendByteMaster/EngSense -a codex
 ~~~
+
+When EngSense is later activated in a writable repository, its Skill instructions tell the agent to run the same idempotent registration helper automatically.
 
 Global/user scope:
 
@@ -38,6 +46,54 @@ npx skills add https://github.com/GendByteMaster/EngSense -a codex -g -y
 The EngSense source is the GitHub repository URL above. EngSense does not need its own npm package.
 
 The `skills` CLI is a third-party open Agent Skills installer rather than an OpenAI product. Its upstream repository is `vercel-labs/skills`: https://github.com/vercel-labs/skills. Review its current repository/package documentation before using it in locked-down or security-sensitive environments.
+
+## Automatic `AGENTS.md` registration
+
+Codex automatically reads repository `AGENTS.md` instructions, so EngSense can keep a compact persistent activation rule there.
+
+EngSense ships:
+
+~~~text
+assets/agents-snippet.md
+scripts/sync_agents.py
+~~~
+
+The helper:
+
+- discovers the Git repository root (or accepts `--root`);
+- creates root `AGENTS.md` when no case-variant exists;
+- reuses an existing `AGENTS.md` / `agents.md` case variant;
+- preserves all existing user-authored instructions;
+- manages only the block between `<!-- engsense:begin -->` and `<!-- engsense:end -->`;
+- is idempotent, so repeated activation does not duplicate the block;
+- refuses to guess if the managed markers are malformed.
+
+Manual sync:
+
+~~~bash
+python .agents/skills/engsense/scripts/sync_agents.py
+~~~
+
+Check without modifying:
+
+~~~bash
+python .agents/skills/engsense/scripts/sync_agents.py --check
+~~~
+
+Remove only the EngSense managed block:
+
+~~~bash
+python .agents/skills/engsense/scripts/sync_agents.py --remove
+~~~
+
+For a globally installed Skill, run the bundled helper from the global EngSense directory while your shell is inside the target repository, or pass `--root <repo>`.
+
+The current open `skills` CLI does not provide Codex install hooks, so a plain `npx skills add ...` cannot safely mutate repository `AGENTS.md` as an installer side effect. EngSense therefore uses two supported paths:
+
+1. the one-line project install above, which immediately runs the deterministic helper;
+2. Skill self-registration on first/subsequent activation in a writable repository.
+
+This keeps EngSense a Skill rather than introducing a separate installer service or runtime.
 
 ## Codex — repository scope
 
@@ -64,7 +120,11 @@ The resulting layout should contain:
             ├── principles/
             ├── languages/
             ├── domains/
-            └── references/
+            ├── references/
+            ├── assets/
+            │   └── agents-snippet.md
+            └── scripts/
+                └── sync_agents.py
 ~~~
 
 Codex scans repository skill locations while walking from the current working directory toward the repository root.
@@ -93,7 +153,11 @@ Expected layout:
 ├── principles/
 ├── languages/
 ├── domains/
-└── references/
+├── references/
+├── assets/
+│   └── agents-snippet.md
+└── scripts/
+    └── sync_agents.py
 ~~~
 
 If Codex does not detect an updated Skill, restart Codex.
@@ -192,7 +256,13 @@ Because supporting files are part of the Skill, avoid updating only `SKILL.md` w
 
 Remove the EngSense skill directory from the scope where it was installed, or use the current Skills UI/installer removal action for the relevant product.
 
-For Codex, restart after removal if the Skill remains visible in the current session.
+For Codex, you can first remove the managed repository instruction with:
+
+~~~bash
+python <engsense-skill-path>/scripts/sync_agents.py --remove
+~~~
+
+Then remove the EngSense skill directory. Restart Codex if the Skill remains visible in the current session.
 
 ## Security note
 

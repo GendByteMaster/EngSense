@@ -5,7 +5,7 @@ Author: Jon Gjengset
 Publisher: No Starch Press  
 Research basis: user-provided full-text PDF available in the EngSense research session
 
-Research status: **IN PROGRESS — full-text study started**
+Research status: **COMPLETE — full user-provided edition reviewed end to end**
 
 This note intentionally separates:
 
@@ -37,10 +37,10 @@ The copyrighted source text is not copied into this repository. These notes are 
 - [x] Chapter 8 — Asynchronous Programming
 - [x] Chapter 9 — Unsafe Code
 - [x] Chapter 10 — Concurrency (and Parallelism)
-- [ ] Chapter 11 — Foreign Function Interfaces
-- [ ] Chapter 12 — Rust Without the Standard Library
-- [ ] Chapter 13 — The Rust Ecosystem
-- [ ] Index/reference cross-check
+- [x] Chapter 11 — Foreign Function Interfaces
+- [x] Chapter 12 — Rust Without the Standard Library
+- [x] Chapter 13 — The Rust Ecosystem
+- [x] Index/reference cross-check
 
 ---
 
@@ -1765,28 +1765,608 @@ Expected:
 - require explicit cross-thread ordering semantics;
 - escalate to concurrency-specialist review if necessary.
 
-# Research integrity notes
+# Chapter 11 — Foreign Function Interfaces
 
-- Full-source completion is not claimed yet.
-- Current findings come only from the fully reviewed opening material and the source's explicit chapter structure.
-- Existing `languages/rust.md` remains provisional.
-- No claim should be attributed to Gjengset unless the completed chapter supports it.
-- The final Rust lens must be cross-checked against the complete source, not only familiar Rust conventions.
-- The source's guidance should be allowed to contradict current EngSense assumptions.
+## Source thesis
+
+FFI is not merely a syntax feature for calling C. It is an ABI boundary where Rust's normal type and compiler guarantees stop being shared automatically.
+
+The source treats FFI as a problem of matching several independent contracts:
+
+- symbols and linking;
+- calling convention;
+- value representation and layout;
+- allocation ownership;
+- pointer validity and lifetime;
+- mutability;
+- thread-safety;
+- panic/unwind behavior.
+
+It also notes that the same class of problem can appear between separately compiled Rust components when they communicate only through a C-compatible binary interface.
+
+## ABI and representation are explicit contracts
+
+Rust's normal calling convention and default type layout are not stable cross-language ABI promises.
+
+For FFI, the two sides must agree on:
+
+- primitive widths and signedness;
+- endianness where relevant;
+- struct/union layout;
+- alignment;
+- calling convention;
+- symbol names.
+
+### EngSense rule
+
+Do not review an FFI boundary as if matching source-level type names were sufficient.
+
+Require explicit evidence for the binary representation contract, typically through the appropriate C-compatible types and representation annotations.
+
+Avoid exposing `repr(Rust)` layout as an ABI.
+
+## Static versus dynamic linking is contextual
+
+The source presents a real trade-off:
+
+- dynamic linking can allow independent library security updates and smaller binaries;
+- static linking simplifies distribution and avoids runtime library availability/version problems.
+
+### EngSense extraction
+
+Do not label static or dynamic linking as universally cleaner.
+
+Choose based on:
+
+```text
+patch/update model
+deployment environment
+binary-size constraints
+runtime dependency availability
+distribution simplicity
+version compatibility
+```
+
+## Allocation ownership must be obvious across the boundary
+
+The source distinguishes implementation-managed allocation from caller-managed allocation.
+
+A cross-language API must make clear:
+
+- who allocates;
+- who frees;
+- which allocator/deallocator pair is valid;
+- how long memory must remain alive;
+- whether ownership transfers;
+- whether the foreign side retains pointers after the call.
+
+### Candidate rule
+
+Every FFI pointer carrying owned or borrowed storage should have an explicit lifecycle story.
+
+If lifecycle cannot be stated precisely, the interface is not ready to be wrapped as safe Rust.
+
+## Panics must not accidentally cross the ABI boundary
+
+Callbacks and exported functions require an explicit panic/unwind policy.
+
+Where the ABI does not support unwinding safely, contain the panic and translate it into a boundary-compatible failure signal rather than allowing Rust unwinding to cross blindly.
+
+## Safe wrappers should encode foreign invariants
+
+The strongest design lesson of the chapter is to put raw FFI behind a Rust API that uses the type system to preserve the foreign library's real constraints.
+
+Examples include:
+
+- `&` versus `&mut` reflecting whether foreign code can mutate;
+- lifetimes tying dependent handles to their owners;
+- withholding `Send`/`Sync` unless the foreign library documents thread safety;
+- marker types enforcing thread-affinity/lifecycle constraints;
+- distinct opaque Rust handle types preventing pointer-kind confusion.
+
+### EngSense extraction
+
+Prefer:
+
+```text
+raw ABI layer
+→ explicit unsafe boundary
+→ safe typed wrapper
+→ application code
+```
+
+Do not scatter raw pointers and foreign preconditions through normal application code.
+
+## Raw bindings and safe wrappers have different versioning roles
+
+The source recommends separating generated/raw bindings into a `-sys`-style crate for nontrivial FFI integrations.
+
+The broader EngSense principle is valuable even when the exact naming convention changes:
+
+> separate the volatile machine/ABI binding surface from the higher-level safe semantic API.
+
+Leaking raw binding types through the safe wrapper's public API weakens that separation and couples downstream compatibility to the raw layer.
+
+## Build scripts are part of reproducibility
+
+Generating bindings at build time can avoid target-specific checked-in layouts, but build scripts themselves can become environment-sensitive hidden inputs.
+
+### Candidate rule
+
+Treat build scripts as part of the build/reproducibility boundary.
+
+Avoid unnecessary dependence on ambient machine state, network state, or incidental environment properties.
+
+## FFI review checklist
+
+For a nontrivial FFI boundary, EngSense should inspect:
+
+```text
+ABI / calling convention
+symbol and version contract
+type layout / alignment / endianness
+ownership and allocator pairing
+borrow/lifetime duration
+mutability
+thread-safety / Send / Sync
+panic and error translation
+opaque-handle typing
+build/binding reproducibility
+safe-wrapper boundary
+```
 
 ---
 
-# Next research pass
+# Chapter 12 — Rust Without the Standard Library
 
-Chapters 1–10 are complete.
+## Source thesis
 
-Continue in source order:
+The chapter makes target capabilities explicit.
 
-1. Chapter 11 — Foreign Function Interfaces
-2. Chapter 12 — Rust Without the Standard Library
-3. Chapter 13 — The Rust Ecosystem
-4. Index/reference cross-check
+Rust can be viewed as layers:
 
-After the full-source pass, revise `languages/rust.md` from the completed evidence base and add Rust-specific eval fixtures.
+```text
+language/compiler
+→ core
+→ alloc
+→ std
+```
 
-Do not mark the mandatory Rust source complete or finalize Rust-specific evals until all 13 chapters have been reviewed.
+Different environments may provide only a subset.
+
+This means that "ordinary" facilities such as files, sockets, heap allocation, process startup, panic handling, or even standard output are environmental capabilities rather than language axioms.
+
+## `#![no_std]` is not proof of actual no-std compatibility
+
+The attribute changes the default prelude and keeps code from implicitly depending on `std`, but code may still explicitly pull `std` back in.
+
+Dependencies may also reintroduce unsupported facilities.
+
+### EngSense rule
+
+If no-std compatibility is a product/library promise, verify it against a target that actually lacks `std`, not only by checking for the attribute.
+
+A cross-target CI build is stronger evidence than source inspection alone.
+
+## Cargo feature direction matters
+
+The source reinforces the additive feature principle:
+
+```text
+default/core capability
++ std feature
+→ more capability
+```
+
+is safer than a subtractive `no_std` feature because Cargo feature unification combines enabled features across the dependency graph.
+
+### EngSense extraction
+
+Feature semantics are dependency-graph API design.
+
+Prefer additive capability features where possible.
+
+## Allocation is a policy decision
+
+`alloc` reintroduces heap-backed facilities without requiring all of `std`, but only where an allocator exists.
+
+Some environments also require allocation failure to be handled rather than converted into panic/abort behavior.
+
+### Candidate rule
+
+When allocation is constrained or operationally significant, make allocation policy visible in API design:
+
+- bounded storage;
+- caller-provided buffers;
+- fallible allocation;
+- explicit capacity;
+- heapless structures.
+
+Do not reach for unsafe representation tricks merely to avoid small safe overhead unless requirements justify them.
+
+The source itself uses a safe fixed-capacity representation in an example where an unsafe `MaybeUninit` version would be possible but unwarranted.
+
+## Panic, startup, and OOM are runtime contracts
+
+The chapter explicitly shows that Rust has a small runtime surface:
+
+- panic handling;
+- program initialization;
+- allocation-failure handling.
+
+On constrained targets these policies may need to be supplied by the program itself.
+
+### EngSense extraction
+
+For embedded/kernel/no-std software, failure behavior is architecture.
+
+"Panics" cannot be reviewed in isolation without knowing whether the target unwinds, aborts, resets, loops, or uses a custom handler.
+
+## Volatile access is for side-effecting hardware memory
+
+Memory-mapped device registers violate assumptions the compiler can safely make about ordinary memory.
+
+Volatile operations preserve the relevant access side effects/order relative to other volatile operations.
+
+### Anti-rule
+
+Do not generalize volatile into a replacement for atomics or inter-thread synchronization.
+
+The problem it solves is different: observable hardware/externally side-effecting memory access.
+
+## Typestate can be justified by catastrophic invalid states
+
+The chapter applies type-state/marker techniques to hardware registers so illegal state combinations cannot be constructed.
+
+This is a useful counterexample to "typestate is always over-engineering."
+
+### EngSense rule
+
+Typestate has strong justification when:
+
+- the state machine is small and stable;
+- invalid transitions are dangerous;
+- runtime recovery is weak or absent;
+- the compiler can erase runtime checks/state;
+- the type-level complexity is lower than the operational risk it removes.
+
+Do not impose typestate on ordinary CRUD-style state merely because the technique exists.
+
+## Cross-compilation is verification, not just packaging
+
+Host and target differ in:
+
+- instruction set;
+- binary format;
+- available standard-library components;
+- allocator availability.
+
+### EngSense extraction
+
+When portability is a requirement, compile/test the meaningful target matrix.
+
+A host-only build is insufficient evidence.
+
+---
+
+# Chapter 13 — The Rust Ecosystem
+
+## Source thesis
+
+Engineering quality in Rust also depends on ecosystem/tooling judgment.
+
+The chapter surveys tools, libraries, standard-library capabilities, common patterns, and ways of staying current.
+
+EngSense should extract stable decision principles, not freeze 2021-era crate recommendations into timeless rules.
+
+## Use tooling to expose hidden project dimensions
+
+The source highlights tools for:
+
+- dependency policy/security/licensing;
+- macro expansion;
+- Cargo feature combinations;
+- compile-time/IR bloat;
+- stale dependencies;
+- unused dependencies;
+- dependency-path inspection;
+- compiler/toolchain compatibility;
+- benchmark statistics;
+- type/layout assertions.
+
+### EngSense extraction
+
+Repository quality is not only source structure.
+
+For Rust work, relevant evidence may include:
+
+```text
+dependency graph
+feature powerset
+MSRV/toolchain matrix
+generated macro expansion
+compile-time cost
+layout/size contracts
+benchmark distributions
+```
+
+Load these checks only when the decision actually depends on them.
+
+## Prefer existing stable capability over custom machinery
+
+The chapter repeatedly points to standard-library operations and mature ecosystem crates that replace hand-written boilerplate.
+
+### Candidate rule
+
+Before inventing a custom abstraction, check whether the standard library or a mature, appropriately scoped dependency already captures the requirement.
+
+But dependency adoption itself has costs:
+
+- maintenance;
+- supply chain;
+- MSRV;
+- compile time;
+- transitive dependencies;
+- API commitment.
+
+So "use a crate" is not a universal answer either.
+
+## Index pointers: representation can beat lifetime machinery
+
+The source shows index-based references into an owning collection as an alternative to:
+
+- duplicated values;
+- `Rc`/`Arc`;
+- self-referential borrowed structures;
+- raw pointers plus pinning.
+
+This trades direct references for explicit indirection and update work when elements move/delete.
+
+### EngSense extraction
+
+When ownership/lifetime machinery becomes disproportionate, reconsider the representation before adding unsafe or pervasive reference counting.
+
+A data-structure change can remove an entire class of lifetime complexity.
+
+## Drop guards encode cleanup structurally
+
+A small RAII guard can guarantee cleanup on normal return and unwinding panic.
+
+This is especially useful when state must be restored around user-provided code.
+
+### Limitation
+
+The guarantee does not apply when panic policy aborts the process.
+
+### EngSense rule
+
+Prefer structural cleanup via ownership/Drop when it matches the lifecycle instead of duplicating cleanup across return paths.
+
+Still verify the configured panic model.
+
+## Extension traits are an ecosystem compatibility tool
+
+Extension traits can add ergonomic methods when:
+
+- the base type/trait is outside your control;
+- the stable core trait is intentionally kept small;
+- higher-level convenience should evolve separately.
+
+This is a real use case for traits beyond runtime polymorphism.
+
+### EngSense update
+
+The earlier provisional heuristic "trait = capability/substitution boundary" is too narrow.
+
+Traits may also provide:
+
+- extension methods;
+- compile-time contracts;
+- marker semantics;
+- generic behavior;
+- sealed capability sets.
+
+The final Rust guidance must reflect this broader taxonomy.
+
+## Preludes and glob imports trade ergonomics for compatibility surface
+
+A crate prelude can make extension-heavy APIs practical, but glob imports can introduce ambiguity as exported names/traits grow.
+
+### Candidate rule
+
+A prelude should be intentional public API with a curated compatibility policy, not a dump of all exports.
+
+## Time-bound ecosystem advice must remain time-bound
+
+Specific tools/crates and unstable compiler flags from the source are historically useful evidence, not permanent EngSense requirements.
+
+### EngSense rule
+
+Extract the capability category first, then verify the current tool when applying it in a live repository.
+
+Example:
+
+```text
+source capability: feature-matrix verification
+historical example: cargo-hack
+application-time action: use the current maintained tool that provides this capability
+```
+
+---
+
+# Full-source Rust synthesis
+
+The complete source materially strengthens the provisional Rust lens.
+
+The most important shift is that idiomatic Rust quality is not reducible to "avoid Java-style abstractions."
+
+A better model is:
+
+```text
+behavior/invariants
+        ↓
+ownership + lifetime model
+        ↓
+type/representation/API contract
+        ↓
+dispatch + allocation + compatibility cost
+        ↓
+async/concurrency model when relevant
+        ↓
+unsafe/FFI boundary only when justified
+        ↓
+target/toolchain/ecosystem constraints
+        ↓
+verification matched to the failure class
+```
+
+## Stable context dimensions for EngSense
+
+For nontrivial Rust decisions, consider only the dimensions relevant to the task:
+
+- ownership and borrowing;
+- public lifetime coupling;
+- static versus dynamic dispatch;
+- trait/coherence/public-impl promises;
+- representation/layout guarantees;
+- typed versus opaque error contract;
+- panic/unwind policy;
+- Cargo features and MSRV;
+- async runtime/task lifecycle;
+- concurrency ownership and memory ordering;
+- unsafe safety proof/privacy boundary;
+- ABI/FFI ownership and thread-safety;
+- target capabilities (`core`/`alloc`/`std`);
+- dependency and compile-time cost;
+- performance evidence.
+
+## Final high-level Rust rules extracted from the source
+
+1. **Model the real invariant first.** Do not begin from a favorite abstraction.
+2. **Treat ownership as part of design.** Borrow-checker friction can reveal a representation/ownership mismatch.
+3. **Use the type system to remove invalid states when the value exceeds the type complexity.**
+4. **Traits have several roles.** Runtime substitution is only one of them.
+5. **Public APIs create hidden compatibility promises** through trait impls, auto-traits, re-exported types, lifetimes, features, and behavior.
+6. **Prefer safe mechanisms first.** Unsafe should carry a proof obligation and a narrow audit boundary.
+7. **Async is a concurrency tool, not a synonym for speed.**
+8. **Concurrency requires measurement and execution-model reasoning.**
+9. **FFI is an ownership/ABI/safety boundary.** Wrap it, do not leak it casually.
+10. **Target constraints are part of architecture.** `no_std`, allocation, panic, and cross-target behavior require real verification.
+11. **Use failure-specific evidence.** Unit tests alone cannot prove memory safety, scheduling correctness, API portability, or performance.
+12. **Prefer representation changes over fighting the language.** Indexes, enums, wrappers, ownership changes, and typestate can remove complexity more effectively than more indirection.
+
+---
+
+# Additional eval candidates from Chapters 11–13
+
+## Eval: raw FFI handle leaks into application layer
+
+Context:
+
+Application modules exchange `*mut c_void` handles directly and remember manually which foreign type each pointer represents.
+
+Expected:
+
+- introduce a narrow raw binding boundary;
+- distinguish handle types in Rust;
+- make ownership/free and lifetime rules explicit;
+- expose a safe wrapper where possible.
+
+## Eval: FFI type is marked Send without external guarantee
+
+Context:
+
+A wrapper adds `unsafe impl Send` because tests happen to work across threads.
+
+Expected:
+
+- reject empirical success as thread-safety proof;
+- require foreign-library contract/documentation or a stronger synchronization wrapper;
+- keep the type non-Send otherwise.
+
+## Eval: fake no-std compatibility
+
+Context:
+
+A crate has `#![no_std]` but a feature/dependency path imports `std`.
+
+Expected:
+
+- do not accept the attribute as proof;
+- build a real no-std target/feature matrix;
+- inspect transitive features/dependencies.
+
+## Eval: unsafe heapless micro-optimization
+
+Context:
+
+A fixed-capacity container uses `MaybeUninit` and unsafe code solely to avoid `Option<T>` storage overhead, with no size/performance requirement.
+
+Expected:
+
+- prefer the safe representation until evidence shows the overhead matters;
+- if the optimization becomes necessary, require safety proof and targeted verification.
+
+## Eval: hardware invalid-state typestate
+
+Context:
+
+Two hardware registers must never be enabled simultaneously and violation can wedge the device.
+
+Expected:
+
+- recognize typestate/marker-state as justified;
+- encode legal transitions where practical;
+- keep raw register access behind a small unsafe/volatile boundary.
+
+## Eval: self-referential structure versus index representation
+
+Context:
+
+A graph-like structure is becoming lifetime-heavy and proposes raw pointers + `Pin` to keep internal references stable.
+
+Expected:
+
+- consider index/arena-style representation first;
+- compare deletion/update complexity against unsafe/lifetime complexity;
+- do not prefer raw pointers merely because they avoid borrow-checker errors.
+
+## Eval: giant crate prelude
+
+Context:
+
+A library re-exports nearly every public trait/type through `prelude::*`.
+
+Expected:
+
+- identify ambiguity/compatibility growth;
+- curate the common surface;
+- keep explicit imports for uncommon or collision-prone APIs.
+
+---
+
+# Research integrity notes
+
+- The full user-provided edition has now been reviewed end to end, including all 13 chapters and an index/reference cross-check.
+- The copyrighted source itself is not committed to the repository.
+- Repository text remains original synthesis rather than a substitute for the book.
+- Source-derived claims and EngSense interpretations remain distinct.
+- Specific crate/tool recommendations in Chapter 13 are time-bound examples; application-time tooling should be re-verified.
+- Existing `languages/rust.md` is still provisional until the implementation pass integrates this completed research.
+- Genuine conflicts with other engineering schools remain explicit rather than being flattened into universal rules.
+
+---
+
+# Next implementation pass
+
+The mandatory *Rust for Rustaceans* full-text research pass is complete.
+
+Next:
+
+1. revise `languages/rust.md` from the completed source;
+2. add deterministic Rust-specific eval fixtures for the major trade-offs found here;
+3. update source status and Issue #2;
+4. validate routing/eval structure;
+5. perform a strict branch review before PR.
+
+Completing this source does **not** complete the overall mandatory EngSense corpus; the remaining books in Issue #2 stay open.

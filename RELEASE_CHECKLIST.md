@@ -114,14 +114,15 @@ The eval folder remains lightweight development evidence. A model-execution plat
 ## 8. Installation and packaging
 
 - [x] Repository contains a valid `SKILL.md`-based Skill layout.
+- [x] GitHub-first CLI package exposes `engsense install/status/uninstall` via `npx github:GendByteMaster/EngSense`.
 - [x] Codex repository-scope installation is documented.
 - [x] Codex user-scope installation is documented.
 - [x] ChatGPT installation flow is documented with current official references.
 - [x] Supporting files are documented as required parts of the Skill.
 - [x] Optional `agents/openai.yaml` metadata added; implicit invocation enabled; no tool dependencies declared.
-- [x] Root `AGENTS.md` self-registration uses a bounded managed block and preserves existing instructions.
-- [x] AGENTS registration helper is idempotent, checkable, and safely removable.
-- [x] Final install smoke test in a clean Codex repository verifies Skill installation plus AGENTS registration.
+- [x] GitHub-first installer manages a bounded EngSense AGENTS block and preserves existing instructions.
+- [x] Installer `install/status/uninstall` behavior is idempotent and removes only EngSense-owned AGENTS content.
+- [x] Final install smoke test in a clean Codex repository verifies ForgeGuard-style GitHub install/status/uninstall plus AGENTS integration.
 - [ ] Final install smoke test in a supported ChatGPT Skills surface, when available to an eligible Business/Enterprise/Healthcare/Edu release tester.
 
 ## 9. Public repository readiness

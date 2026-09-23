@@ -22,6 +22,7 @@ A pre-v1 development release may be reasonable once the repository is packaged a
 - [x] Principle modules are separated from language/domain modules.
 - [x] References and research status are separated from runtime guidance.
 - [x] Skill core does not depend on credentials, MCP servers, or model-provider SDKs.
+- [x] Static Skill integrity validator guards against accidental API-key/model-provider runtime integration.
 
 ## 2. Progressive disclosure
 
@@ -131,6 +132,7 @@ The eval folder remains lightweight development evidence. A model-execution plat
 - [x] Internal Markdown links in README/release/contribution/usage/installation/example docs checked against the repository tree.
 - [x] Stale research/integration and license claims removed.
 - [x] Final terminology/status pass completed for current pre-v1 documentation; stale Phase 1 wording removed and current ChatGPT Skills availability clarified.
+- [x] API-free static Skill behavior/routing contract reviewed in `docs/STATIC_SKILL_REVIEW.md`.
 
 ## 10. Final Skill behavior review
 

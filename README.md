@@ -81,6 +81,7 @@ SKILL.md
 
 Current research-grounded principle lenses include:
 
+- Clean Code 2e source-specific engineering lens;
 - sustainable engineering;
 - empirical architecture;
 - complexity placement;
@@ -158,7 +159,8 @@ Completed full-text research currently includes:
 - *The Architecture of Open Source Applications, Volume 1*;
 - *The Architecture of Open Source Applications, Volume 2*;
 - *The Performance of Open Source Applications*;
-- *Site Reliability Engineering: How Google Runs Production Systems*.
+- *Site Reliability Engineering: How Google Runs Production Systems*;
+- *Clean Code: A Handbook of Agile Software Craftsmanship, Second Edition*.
 
 Several planned source-specific lenses remain blocked until their required full-book research is complete. See [references/source-status.md](references/source-status.md).
 
@@ -214,7 +216,7 @@ Official references:
 
 ## Project status
 
-The reusable Skill foundation, language/domain routing, conflict matrix, research-grounded general lenses, and 32 deterministic eval fixtures are implemented.
+The reusable Skill foundation, language/domain routing, conflict matrix, research-grounded general/source-specific lenses, and 37 deterministic eval fixtures are implemented.
 
 EngSense is still **pre-v1.0** while the mandatory source corpus and blocked source-specific lenses remain incomplete. The release checklist records the remaining gates explicitly rather than treating unfinished research as complete.
 

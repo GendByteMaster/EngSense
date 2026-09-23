@@ -1,0 +1,56 @@
+{
+  "id": "cohesive-function-overdecomposition",
+  "title": "Cohesive function should not be split by line count",
+  "mode": "refactoring",
+  "task": "Review a proposal to split a cohesive parsing function into several tiny helpers solely because the function is longer than the team's preferred size.",
+  "context": [
+    "The function is 42 lines and implements one sequential parsing state transition.",
+    "The proposed helpers would share parser state and are each called from one place.",
+    "Several helper names mostly restate the statements they contain.",
+    "The current function has no independent change axes inside it."
+  ],
+  "evidence": [
+    "Repository history shows changes to the parsing steps usually occur together.",
+    "The proposed extraction requires readers to carry caller state across five helper calls.",
+    "Existing tests cover the parser behavior and no current defect is caused by the function length."
+  ],
+  "tempting_wrong_recommendation": [
+    "Require every function to stay under a fixed line threshold.",
+    "Split every conditional or loop body into its own function because smaller is always cleaner.",
+    "Treat the number of extracted helpers as a quality improvement by itself."
+  ],
+  "expected_decision_properties": [
+    "Reject line count as sufficient evidence for decomposition.",
+    "Compare abstraction gain against entanglement, navigation cost, and locality loss.",
+    "Keep the function cohesive unless an extraction exposes a meaningful independent abstraction.",
+    "Allow a larger deep helper extraction later if a real subproblem or change boundary emerges."
+  ],
+  "unacceptable_reasoning": [
+    "Clean Code requires functions below twenty lines.",
+    "Every extract-method refactoring improves readability.",
+    "A long function is automatically multi-responsibility."
+  ],
+  "expected_quality_dimensions": [
+    "locality",
+    "comprehension",
+    "cohesion",
+    "navigation_cost",
+    "cognitive_complexity"
+  ],
+  "expected_tradeoffs": [
+    "small decomposition vs locality/deep cohesive behavior",
+    "named abstraction vs entanglement"
+  ],
+  "expected_authority": "guidance",
+  "verification_expectations": [
+    "Confirm parser behavior remains covered by tests.",
+    "Inspect whether any candidate extraction has an independent contract or reason to change.",
+    "Compare the readable flow before and after extraction rather than relying on function length."
+  ],
+  "revisit_when": [
+    "A parsing subproblem develops an independent reason to change.",
+    "A helper becomes reusable behind a stable meaningful contract.",
+    "The current function begins mixing unrelated abstraction levels or policies."
+  ],
+  "notes": "Grounded in Clean Code 2e Chapters 7 and 10 plus the appendix Martin/Ousterhout method-length debate."
+}

@@ -85,6 +85,7 @@ Do not load every module for every task.
 
 ### Research-grounded principle lenses
 
+- `principles/clean-code.md` — reader-first design, naming, decomposition, comments, semantic DRY, SOLID/component boundaries, verification, and architecture/changeability trade-offs from the completed Clean Code 2e source study; preserve its explicit Martin/Ousterhout disagreements.
 - `principles/sustainable-engineering.md`
 - `principles/empirical-architecture.md`
 - `principles/complexity-placement.md`
@@ -102,7 +103,7 @@ Do not load every module for every task.
 - `references/decision-examples.md`
 - `references/source-status.md`
 
-Source-specific Clean Code, Ousterhout, Fowler, DDD, DDIA, Release It!, Code Complete, Legacy Code, and related lenses remain blocked until their required full-book research is complete.
+Source-specific Ousterhout, Fowler, DDD, DDIA, Release It!, Code Complete, Legacy Code, and related lenses remain blocked until their required full-book research is complete. The Clean Code 2e source-specific lens is available because its full-book research gate is complete.
 
 ## Evidence rule
 

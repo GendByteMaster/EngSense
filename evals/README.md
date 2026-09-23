@@ -115,6 +115,11 @@ It does not judge model quality. Behavioral scoring can be performed externally 
 30. Dependency order discovered through retry instead of an explicit graph
 31. Human CLI presentation scraped as a machine protocol
 32. Normalization layer erases a provider capability required for correctness
+33. Cohesive function should not be split by line count
+34. Preserve non-obvious rationale in the right information channel
+35. TDD vs disciplined small bundles
+36. High coverage without semantic confidence
+37. Data/operations vs polymorphism from the dominant variation axis
 
 The suite intentionally includes:
 

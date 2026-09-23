@@ -1,0 +1,54 @@
+{
+  "id": "comment-rationale-channel",
+  "title": "Preserve non-obvious rationale in the right information channel",
+  "mode": "focused",
+  "task": "Review a proposal to delete a comment explaining why a numerical bound is safe because the code should be self-documenting.",
+  "context": [
+    "The code uses a non-obvious mathematical bound that is correct only because of an invariant not visible from the expression itself.",
+    "The implementation is already clearly named.",
+    "The rationale is important for future modifications but cannot be mechanically encoded by renaming alone."
+  ],
+  "evidence": [
+    "A reviewer can understand what the calculation does from the code but not why the optimization is valid.",
+    "Removing the rationale would force future readers to re-derive the proof.",
+    "The comment can be kept adjacent to the invariant it explains."
+  ],
+  "tempting_wrong_recommendation": [
+    "Delete the comment because comments are always failures.",
+    "Replace the explanation with an extremely long identifier even though the mathematical rationale remains implicit.",
+    "Keep redundant prose that merely restates each line of code."
+  ],
+  "expected_decision_properties": [
+    "Keep or improve the rationale documentation because it carries information the executable expression does not communicate well.",
+    "Use code/types/names for mechanically enforceable facts and prose for rationale or non-obvious constraints.",
+    "Check the comment for precision and proximity so drift risk remains bounded.",
+    "Avoid turning this into a general rule that every implementation detail needs a comment."
+  ],
+  "unacceptable_reasoning": [
+    "Clean Code means comments should be removed whenever possible.",
+    "Comments are always more trustworthy than code.",
+    "A descriptive name can encode arbitrary historical or mathematical rationale."
+  ],
+  "expected_quality_dimensions": [
+    "comprehension",
+    "maintainability",
+    "documentation_quality",
+    "semantic_clarity"
+  ],
+  "expected_tradeoffs": [
+    "code-expressed intent vs comments/documentation",
+    "information value vs documentation drift"
+  ],
+  "expected_authority": "guidance",
+  "verification_expectations": [
+    "Check that the rationale is actually correct for the current implementation.",
+    "Confirm the comment explains why rather than redundantly narrating what the code does.",
+    "Review whether any part of the invariant can also be encoded in a type, assertion, or test."
+  ],
+  "revisit_when": [
+    "The invariant becomes mechanically expressible in the type/API.",
+    "The algorithm changes so the rationale no longer applies.",
+    "A better executable representation makes the prose unnecessary."
+  ],
+  "notes": "Grounded in Clean Code 2e Chapter 5 and the appendix Martin/Ousterhout comments debate."
+}

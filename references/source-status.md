@@ -15,14 +15,20 @@ Completed research notes are tracked in the repository. The completed AOSA Volum
 
 - *Site Reliability Engineering: How Google Runs Production Systems* — official complete online edition at `sre.google`; Foreword, Preface, Parts I–V, Chapters 1–34, Appendices A–F, and Bibliography studied in full. This source strengthens reliability/operability synthesis but does **not** replace any mandatory commercial source.
 
-## Mandatory corpus still open
+## Completed mandatory full-text sources
 
-The roadmap research issue still lists commercial sources that have not been read in full because lawful full copies are not currently available in the project.
+- *Clean Code: A Handbook of Agile Software Craftsmanship, 2nd Edition* — user-provided full-text edition reviewed end to end on `research/clean-code-2e`; structured research note, conflicts, qualifications, and eval candidates recorded.
+
+## Mandatory corpus research now in progress
+
+- *Rust for Rustaceans* — full-text study started on `research/rust-for-rustaceans`; completion is **not** yet claimed.
+
+The remaining mandatory commercial sources are still open until full-text research material is made available and their research gates are completed.
 
 Therefore:
 
 - General cross-source guidance may still be revised as the mandatory source-specific corpus is completed.
-- Source-specific lens modules for unread books must not claim that those books were studied.
+- Source-specific lens modules for unread or partially read books must not claim that those books were fully studied.
 - Unresolved code-level conflicts remain unresolved.
 - Future corpus research may revise the framework.
 - Do not close the research gate until its original definition of done is actually satisfied.

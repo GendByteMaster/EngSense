@@ -31,7 +31,8 @@ EngSense is not:
 - a performance profiler;
 - a database-engine expert;
 - a distributed-systems correctness verifier;
-- a justification for rewriting code because another architecture looks cleaner.
+- a justification for rewriting code because another architecture looks cleaner;
+- an API-backed agent service or model-execution runtime.
 
 It can recognize when one of those specialist reviews is required and should defer instead of guessing.
 
@@ -143,7 +144,7 @@ EngSense/
 └── RELEASE_CHECKLIST.md
 ~~~
 
-The optional `agents/openai.yaml` file provides OpenAI Skill UI metadata and explicitly allows implicit invocation. EngSense declares no tool dependencies because its core workflow is instruction/reference based.
+The optional `agents/openai.yaml` file provides OpenAI Skill UI metadata and explicitly allows implicit invocation. It is **metadata, not an OpenAI API integration**. EngSense requires no API key, model SDK, MCP server, or external runtime for its core workflow.
 
 The deterministic fixtures under `evals/cases/` are development evidence for the Skill. They are intentionally lightweight and are not a model-execution platform.
 

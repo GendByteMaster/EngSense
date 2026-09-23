@@ -99,6 +99,35 @@ class SyncAgentsTests(unittest.TestCase):
             after = self.run_sync(root, "--check")
             self.assertEqual(after.returncode, 0, after.stderr)
 
+    def test_remove_preserves_user_content(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root / "AGENTS.md"
+            path.write_text("# Project\n\nKeep me.\n", encoding="utf-8")
+
+            synced = self.run_sync(root)
+            self.assertEqual(synced.returncode, 0, synced.stderr)
+
+            removed = self.run_sync(root, "--remove")
+            self.assertEqual(removed.returncode, 0, removed.stderr)
+
+            content = path.read_text(encoding="utf-8")
+            self.assertEqual(content, "# Project\n\nKeep me.\n")
+            self.assertNotIn(BEGIN, content)
+
+    def test_remove_deletes_engsense_only_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root / "AGENTS.md"
+
+            synced = self.run_sync(root)
+            self.assertEqual(synced.returncode, 0, synced.stderr)
+            self.assertTrue(path.exists())
+
+            removed = self.run_sync(root, "--remove")
+            self.assertEqual(removed.returncode, 0, removed.stderr)
+            self.assertFalse(path.exists())
+
     def test_malformed_markers_fail_without_overwrite(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

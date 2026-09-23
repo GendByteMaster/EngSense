@@ -15,12 +15,13 @@ Completed research notes are tracked in the repository. The completed AOSA Volum
 
 - *Site Reliability Engineering: How Google Runs Production Systems* — official complete online edition at `sre.google`; Foreword, Preface, Parts I–V, Chapters 1–34, Appendices A–F, and Bibliography studied in full. This source strengthens reliability/operability synthesis but does **not** replace any mandatory commercial source.
 
+## Completed mandatory full-text sources
+
+- *Clean Code: A Handbook of Agile Software Craftsmanship, 2nd Edition* — user-provided full-text edition reviewed end to end on `research/clean-code-2e`; structured research note, conflicts, qualifications, and eval candidates recorded.
+
 ## Mandatory corpus research now in progress
 
-Full-text research material has now been supplied for two mandatory sources:
-
-- *Clean Code: A Handbook of Agile Software Craftsmanship, 2nd Edition* — full-text study started on `research/clean-code-2e`; completion is **not** yet claimed.
-- *Rust for Rustaceans* — full-text source is available for the next language-specific research pass; completion is **not** yet claimed.
+- *Rust for Rustaceans* — full-text study started on `research/rust-for-rustaceans`; completion is **not** yet claimed.
 
 The remaining mandatory commercial sources are still open until full-text research material is made available and their research gates are completed.
 

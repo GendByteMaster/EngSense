@@ -309,3 +309,17 @@ The project should remain a Skill.
 Do not add model orchestration, provider SDKs, authentication flows, agent hosting, or general-purpose evaluation infrastructure to EngSense unless the project scope is explicitly changed first.
 
 External tooling can test EngSense without becoming part of the Skill itself.
+
+
+## Static Skill integrity
+
+Before opening a PR that changes Skill routing, modules, evals, metadata, or release counts, run:
+
+~~~bash
+python evals/validate.py
+python evals/validate_skill.py
+~~~
+
+EngSense must remain a static Skill. Do not add an API-key/model-provider runtime, OpenAI SDK client, direct model HTTP calls, MCP requirement, or separate EngSense backend to the core Skill.
+
+External installation tooling and GitHub Actions are development/distribution tooling, not EngSense runtime dependencies.

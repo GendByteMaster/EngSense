@@ -43,6 +43,7 @@ A pre-v1 development release may be reasonable once the repository is packaged a
 - [x] Concurrency domain guidance.
 - [x] Persistence domain guidance.
 - [x] Distributed-systems domain guidance.
+- [x] Domain-modeling routing guidance (source-neutral; DDD source lens remains research-gated).
 - [x] Sustainable engineering lens.
 - [x] Empirical architecture lens.
 - [x] Complexity placement lens.
@@ -93,7 +94,7 @@ Do not mark these complete from summaries, excerpts, general knowledge, or unrel
 - [x] Language-pattern transfer scenarios exist.
 - [x] Specialist-boundary scenarios exist.
 - [x] Performance/change-strategy/representation scenarios exist.
-- [x] Current fixture set contains 45 scenarios.
+- [x] Current fixture set contains 48 scenarios.
 - [ ] Final v1.0 fixture review after all mandatory source-specific lenses are added.
 
 The eval folder remains lightweight development evidence. A model-execution platform is not part of the EngSense Skill.

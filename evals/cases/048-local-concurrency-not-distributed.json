@@ -1,0 +1,56 @@
+{
+  "id": "local-concurrency-not-distributed",
+  "title": "In-process concurrency should not be treated as a distributed system without a remote failure boundary",
+  "mode": "focused",
+  "task": "Review a local in-process work queue used by one process and decide whether distributed-systems retry/idempotency guidance should be applied.",
+  "context": [
+    "Producer and consumer run in the same process and share the same lifecycle.",
+    "The queue is in memory and is lost when the process exits.",
+    "There is no network call, independent deployment, broker, or remote persistence.",
+    "The main risk is bounded concurrency and shutdown behavior."
+  ],
+  "evidence": [
+    "A failed task is reported directly to the owning process.",
+    "There is no timeout ambiguity about whether a remote operation committed.",
+    "Duplicate delivery is not part of the queue contract."
+  ],
+  "tempting_wrong_recommendation": [
+    "Add distributed idempotency keys, retry backoff, and deduplication because all queues are distributed systems.",
+    "Introduce a broker to make the design more robust without a product requirement.",
+    "Ignore concurrency/shutdown semantics because no network is involved."
+  ],
+  "expected_decision_properties": [
+    "Do not load distributed-systems semantics solely because a queue exists.",
+    "Route the review to concurrency/lifecycle guidance for bounds, cancellation, and shutdown.",
+    "Preserve the possibility of distributed guidance if the queue later crosses a process/network boundary or gains at-least-once delivery.",
+    "Avoid adding remote-failure machinery with no matching failure model."
+  ],
+  "unacceptable_reasoning": [
+    "Any queue implies distributed-system semantics.",
+    "Retries are always needed for background work.",
+    "Local concurrency has no correctness concerns."
+  ],
+  "expected_quality_dimensions": [
+    "routing_accuracy",
+    "concurrency",
+    "simplicity",
+    "lifecycle",
+    "reliability"
+  ],
+  "expected_tradeoffs": [
+    "specialist routing precision vs generic reliability ceremony",
+    "local lifecycle handling vs distributed retry machinery"
+  ],
+  "expected_authority": "guidance",
+  "verification_expectations": [
+    "Test bounded queue behavior and shutdown/cancellation.",
+    "Verify task failures remain observable.",
+    "Re-evaluate delivery/idempotency semantics if the work boundary becomes remote or durable."
+  ],
+  "revisit_when": [
+    "A broker or cross-process worker is introduced.",
+    "Delivery becomes at-least-once or retry ambiguity appears.",
+    "Producer and consumer gain independent deployment/failure lifecycles."
+  ],
+  "notes": "Tests that EngSense recognizes when distributed-systems guidance is not relevant."
+}

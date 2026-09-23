@@ -1,0 +1,55 @@
+{
+  "id": "domain-invariant-needs-authoritative-model",
+  "title": "Repeated business invariant needs an authoritative domain home",
+  "mode": "architecture",
+  "task": "Review a subsystem where the same entitlement transition rules are implemented independently in an HTTP handler, background worker, and admin command.",
+  "context": [
+    "The three entry points can all change an entitlement from pending to active or revoked.",
+    "A transition is valid only when several business conditions hold.",
+    "Each entry point currently reimplements the rule with slightly different conditionals.",
+    "Persistence and transport details differ across the entry points."
+  ],
+  "evidence": [
+    "Recent bugs were caused by one entry point accepting a transition another rejected.",
+    "The transition rules are business policy rather than transport-specific behavior.",
+    "The policy can be expressed independently of HTTP, job, or CLI concerns."
+  ],
+  "tempting_wrong_recommendation": [
+    "Keep the duplicated conditionals because each entry point is a separate feature.",
+    "Introduce a full DDD stack with aggregates, repositories, factories, and services before identifying the invariant owner.",
+    "Move all transport and persistence code into one giant domain object."
+  ],
+  "expected_decision_properties": [
+    "Identify the transition rule as a shared business invariant that needs one authoritative implementation.",
+    "Recommend the smallest domain-oriented abstraction that centralizes the rule without forcing a full DDD architecture.",
+    "Keep transport/orchestration and persistence concerns outside the invariant when they are not part of the business rule.",
+    "Preserve language and repository idioms rather than assuming class-oriented mechanisms."
+  ],
+  "unacceptable_reasoning": [
+    "DDD is required whenever business rules exist.",
+    "Duplicated policy is harmless because handlers are separate.",
+    "A domain model must own every side effect and infrastructure dependency."
+  ],
+  "expected_quality_dimensions": [
+    "correctness",
+    "domain_clarity",
+    "change_locality",
+    "consistency",
+    "maintainability"
+  ],
+  "expected_tradeoffs": [
+    "centralized invariant ownership vs local duplication",
+    "richer domain abstraction vs architectural ceremony"
+  ],
+  "expected_authority": "strong_recommendation",
+  "verification_expectations": [
+    "Add shared tests for legal and illegal transitions independent of entry point.",
+    "Run entry-point integration tests to verify unchanged external behavior.",
+    "Confirm all mutation paths call the authoritative rule."
+  ],
+  "revisit_when": [
+    "The transition rules simplify enough that the abstraction becomes pass-through.",
+    "The domain grows new independently owned lifecycle boundaries."
+  ],
+  "notes": "Tests EngSense domain-modeling routing without claiming the blocked source-specific DDD lens."
+}

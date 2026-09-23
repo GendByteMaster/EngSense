@@ -9,6 +9,11 @@ For each pair, ask which side dominates under the current context.
 | Principle A | Principle B | Signals favoring A | Signals favoring B |
 |---|---|---|---|
 | Small decomposition | Locality/deep cohesive behavior | independent reasons to change; isolated invariants; focused tests | shared state; sequential algorithm; shallow wrappers would add navigation |
+| Code-expressed intent | Comments/documentation | fact can be encoded mechanically in types/names/code; comment would restate implementation; drift risk dominates | rationale, public/cross-team contract, surprising side effect, mathematical/nonlocal constraint is not obvious from code |
+| TDD short cycles | Larger tested bundles | defect localization and very short feedback dominate; team is disciplined about continuous refactoring/design review | strategic design benefits from a slightly larger coherent unit; bundle stays small, fully tested, and quickly reversible |
+| Coverage quantity | Semantic confidence | uncovered high-risk code is the main evidence gap; coverage guides targeted test creation | line/branch execution is already high but assertions/oracles are weak; mutation or scenario evidence exposes missing semantics |
+| Open options / deferred detail | Concrete commitment now | uncertainty is high; lock-in/migration cost is material; boundary already has semantic value | future variation is hypothetical; migration is cheap; keeping option open requires ongoing abstraction/translation cost |
+| Polymorphic objects | Transparent data + operations | new variants/types are expected; behavior set is comparatively stable; representation should be hidden | data variants are stable; new operations are expected; transparent representation/local processing localizes change better |
 | DRY | Duplication until stable | same invariant; synchronized changes; stable concept | unstable requirements; superficially similar concepts; abstraction needs flags |
 | Dependency inversion | Concrete simplicity | real provider/platform boundary; multiple implementations; volatility isolation | one implementation; no substitution; added factory/adapter layers add no capability |
 | Standardization | Local specialization | large org/repo; shared tooling; migration automation; cross-team mobility | distinct workload; measurable local need; standard solution imposes material cost |

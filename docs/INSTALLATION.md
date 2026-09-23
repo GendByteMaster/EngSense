@@ -4,7 +4,7 @@ EngSense is a standalone Agent Skill: the directory contains a required `SKILL.m
 
 The Skill depends on its supporting files, so install the **whole EngSense directory**, not only `SKILL.md`.
 
-EngSense also includes optional OpenAI metadata at `agents/openai.yaml`. It provides user-facing metadata and keeps implicit invocation enabled. No MCP/tool dependencies are declared.
+EngSense also includes optional OpenAI metadata at `agents/openai.yaml`. It provides user-facing metadata and keeps implicit invocation enabled. This file does **not** create an OpenAI API integration. EngSense does not require `OPENAI_API_KEY`, an OpenAI SDK, direct model HTTP calls, an MCP server, or any other model-provider runtime.
 
 Official OpenAI references:
 
@@ -196,6 +196,6 @@ For Codex, restart after removal if the Skill remains visible in the current ses
 
 ## Security note
 
-EngSense currently contains instructions, references, and deterministic eval fixtures. It does not require credentials, network access, or an MCP server to perform its core workflow.
+EngSense currently contains instructions, references, and deterministic eval fixtures. Its core workflow is static and does not require credentials, `OPENAI_API_KEY`, an OpenAI/model-provider SDK, direct model API calls, network access, or an MCP server. Network access used by an installer or GitHub Actions smoke test is installation/development tooling, not EngSense runtime behavior.
 
 As with any downloaded Skill, review the source before installing or sharing it.

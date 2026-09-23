@@ -66,7 +66,12 @@ Run:
 
 ```bash
 python evals/validate.py
+python evals/validate_skill.py
 ```
+
+`validate.py` validates fixture structure.
+
+`validate_skill.py` validates the static Skill package itself: module references, required files, contiguous eval numbering/counts, and the invariant that EngSense does not acquire an API-key/model-provider runtime.
 
 The validator checks:
 

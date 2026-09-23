@@ -5,6 +5,26 @@ on:
     paths:
       - "SKILL.md"
       - "agents/**"
+      - "decision-framework.md"
+      - "review-workflow.md"
+      - "principles/**"
+      - "languages/**"
+      - "domains/**"
+      - "references/**"
+      - "docs/INSTALLATION.md"
+      - ".github/workflows/skill-install-smoke.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "SKILL.md"
+      - "agents/**"
+      - "decision-framework.md"
+      - "review-workflow.md"
+      - "principles/**"
+      - "languages/**"
+      - "domains/**"
+      - "references/**"
       - "docs/INSTALLATION.md"
       - ".github/workflows/skill-install-smoke.yml"
   workflow_dispatch:
@@ -13,25 +33,38 @@ permissions:
   contents: read
 
 jobs:
-  install-from-github:
+  install-skill:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
+      - name: Checkout current revision
+        uses: actions/checkout@v4
+
       - name: Set up clean test repository
         shell: bash
         run: |
           set -euo pipefail
+          rm -rf "$RUNNER_TEMP/engsense-smoke"
           mkdir -p "$RUNNER_TEMP/engsense-smoke"
           cd "$RUNNER_TEMP/engsense-smoke"
           git init -q
 
-      - name: Install EngSense from GitHub with npx
+      - name: Install EngSense with npx
         shell: bash
         working-directory: ${{ runner.temp }}/engsense-smoke
         run: |
           set -euo pipefail
-          npx --yes skills add https://github.com/GendByteMaster/EngSense -a codex -y
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            # Test the exact PR revision before it exists on main.
+            SOURCE="$GITHUB_WORKSPACE"
+          else
+            # After merge/manual runs, verify installation from the public GitHub source.
+            SOURCE="https://github.com/GendByteMaster/EngSense"
+          fi
+
+          npx --yes skills add "$SOURCE" -a codex -y
 
       - name: Verify Codex project-scope install
         shell: bash
@@ -46,7 +79,9 @@ jobs:
           test -f .agents/skills/engsense/principles/performance-engineering.md
           test -f .agents/skills/engsense/languages/rust.md
           test -f .agents/skills/engsense/domains/distributed-systems.md
+          test -f .agents/skills/engsense/domains/domain-modeling.md
+          test -f .agents/skills/engsense/references/routing-map.md
 
           grep -q '^name: engsense$' .agents/skills/engsense/SKILL.md
 
-          echo "EngSense GitHub npx install smoke test passed."
+          echo "EngSense Skill install smoke test passed."

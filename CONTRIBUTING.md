@@ -318,30 +318,35 @@ Before opening a PR that changes Skill routing, modules, evals, metadata, or rel
 ~~~bash
 python evals/validate.py
 python evals/validate_skill.py
-python evals/test_sync_agents.py
+npm test
 ~~~
 
 EngSense must remain a static Skill. Do not add an API-key/model-provider runtime, OpenAI SDK client, direct model HTTP calls, MCP requirement, or separate EngSense backend to the core Skill.
 
 External installation tooling and GitHub Actions are development/distribution tooling, not EngSense runtime dependencies.
 
+## Installer and AGENTS.md integration
 
-## AGENTS.md registration
+EngSense follows the ForgeGuard model: persistent Codex AGENTS integration is owned by the GitHub-first installer CLI, not by SKILL.md execution.
 
-EngSense may manage only the bounded block between:
+The CLI may manage only the bounded block between:
 
 ~~~text
-<!-- engsense:begin -->
-<!-- engsense:end -->
+<!-- engsense:managed-start -->
+<!-- engsense:managed-end -->
 ~~~
 
-Never overwrite unrelated repository instructions.
+Never overwrite unrelated AGENTS instructions.
 
-Changes to `scripts/sync_agents.py` or `assets/agents-snippet.md` must preserve:
+Changes to `bin/engsense.js` must preserve:
 
-- repository-root scope by default;
-- case-variant reuse for an existing AGENTS.md;
-- idempotence;
-- safe failure on malformed markers;
-- removal of only EngSense-owned content;
-- no network, API-key, model-provider, or MCP dependency.
+- project/global scope separation;
+- non-empty `AGENTS.override.md` precedence;
+- preservation of unrelated `AGENTS.md` / `AGENTS.override.md` content;
+- idempotent reinstall;
+- removal of only EngSense-owned content on uninstall;
+- failure on malformed/duplicate managed markers;
+- `--no-agents` and `--dry-run`;
+- no network/model-provider/API-key/MCP runtime dependency.
+
+Run `npm test` after installer changes.

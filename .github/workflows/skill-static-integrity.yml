@@ -7,8 +7,9 @@ on:
       - "decision-framework.md"
       - "review-workflow.md"
       - "agents/**"
-      - "assets/**"
-      - "scripts/**"
+      - "bin/**"
+      - "test/**"
+      - "package.json"
       - "principles/**"
       - "languages/**"
       - "domains/**"
@@ -23,8 +24,9 @@ on:
       - "decision-framework.md"
       - "review-workflow.md"
       - "agents/**"
-      - "assets/**"
-      - "scripts/**"
+      - "bin/**"
+      - "test/**"
+      - "package.json"
       - "principles/**"
       - "languages/**"
       - "domains/**"
@@ -50,8 +52,13 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
       - name: Validate static Skill integrity
         run: python evals/validate_skill.py
 
-      - name: Test AGENTS.md registration helper
-        run: python evals/test_sync_agents.py
+      - name: Test installer and AGENTS integration
+        run: npm test

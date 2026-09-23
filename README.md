@@ -137,10 +137,9 @@ EngSense/
 ├── languages/
 ├── domains/
 ├── references/
-├── assets/
-│   └── agents-snippet.md
-├── scripts/
-│   └── sync_agents.py
+├── bin/
+│   └── engsense.js
+├── package.json
 ├── research/
 ├── evals/
 ├── docs/
@@ -148,25 +147,25 @@ EngSense/
 └── RELEASE_CHECKLIST.md
 ~~~
 
-The optional `agents/openai.yaml` file provides OpenAI Skill UI metadata and explicitly allows implicit invocation. It is **metadata, not an OpenAI API integration**. EngSense requires no API key, model SDK, MCP server, or external runtime for its core workflow.
+The optional `agents/openai.yaml` file provides OpenAI Skill UI metadata and explicitly allows implicit invocation. It is **metadata, not an OpenAI API integration**. EngSense requires no API key, model SDK, MCP server, or external runtime for its core workflow. The Node CLI only handles local installation/status/uninstall and managed Codex AGENTS instructions.
 
 The deterministic fixtures under `evals/cases/` are development evidence for the Skill. They are intentionally lightweight and are not a model-execution platform.
 
-## Repository `AGENTS.md` registration
+## Repository `AGENTS.md` integration
 
-EngSense can keep a small persistent repository instruction so Codex knows when to use the Skill even across new prompts.
+EngSense uses the same installer-owned pattern as ForgeGuard.
 
-The Skill manages only:
+The GitHub-first CLI installs the Skill and manages only a bounded Codex instruction block:
 
 ~~~text
-<!-- engsense:begin -->
+<!-- engsense:managed-start -->
 ...
-<!-- engsense:end -->
+<!-- engsense:managed-end -->
 ~~~
 
-in the repository-root `AGENTS.md` (or an existing case-variant such as `agents.md`).
+Existing user-authored `AGENTS.md` / `AGENTS.override.md` content is preserved. Reinstall updates the block instead of duplicating it, and uninstall removes only EngSense-owned content.
 
-The bundled `scripts/sync_agents.py` helper creates/updates that block without overwriting user-authored instructions. It requires no API key, model SDK, MCP server, or EngSense backend.
+This behavior belongs to the installer CLI, not to `SKILL.md` execution.
 
 ## Research integrity
 
@@ -188,46 +187,39 @@ Several planned source-specific lenses remain blocked until their required full-
 
 ## Install
 
-EngSense follows the Agent Skills shape: a skill directory with a required `SKILL.md` and optional supporting resources.
+EngSense follows a ForgeGuard-style GitHub-first installer model.
 
-### Recommended: install directly from GitHub with npx
-
-Project scope for Codex with immediate repository registration:
+Install into the current repository for Codex:
 
 ~~~bash
-npx skills add https://github.com/GendByteMaster/EngSense -a codex -y && python .agents/skills/engsense/scripts/sync_agents.py
+npx --yes github:GendByteMaster/EngSense install --client codex
 ~~~
 
-A plain Skill install also works; on first substantive activation in a writable repository, EngSense self-registers a compact managed block in the repository-root `AGENTS.md`. The sync is idempotent and preserves all non-EngSense instructions.
+That command installs the Skill at `.agents/skills/engsense/` and automatically reconciles the EngSense managed block in the active root `AGENTS.md` / `AGENTS.override.md`.
 
-Global/user scope for Codex:
+Check status:
 
 ~~~bash
-npx skills add https://github.com/GendByteMaster/EngSense -a codex -g
+npx --yes github:GendByteMaster/EngSense status --client codex
 ~~~
 
-The EngSense Skill source is GitHub; there is no separate EngSense npm package required.
+Uninstall:
 
-Manual installation is also supported at:
-
-~~~text
-.agents/skills/engsense/
+~~~bash
+npx --yes github:GendByteMaster/EngSense uninstall --client codex
 ~~~
 
-or user scope:
+Global/user scope:
 
-~~~text
-~/.codex/skills/engsense/
+~~~bash
+npx --yes github:GendByteMaster/EngSense install --client codex --global
 ~~~
 
-The full folder must be available because `SKILL.md` references the supporting files in this repository.
+Use `--force` to refresh an existing installation, `--no-agents` to skip AGENTS management, and `--dry-run` to preview changes.
 
-For current ChatGPT installation and sharing options, see [docs/INSTALLATION.md](docs/INSTALLATION.md).
+The generic `npx skills add https://github.com/GendByteMaster/EngSense -a codex` path remains possible, but it does not run EngSense's installer and therefore does not provide automatic AGENTS integration.
 
-Official references:
-
-- OpenAI — Build skills: https://developers.openai.com/docs/build-skills
-- OpenAI Help Center — Skills in ChatGPT: https://help.openai.com/en/articles/20001066
+For full installation details, see [docs/INSTALLATION.md](docs/INSTALLATION.md).
 
 ## Documentation
 

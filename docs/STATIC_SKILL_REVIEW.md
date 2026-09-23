@@ -89,24 +89,25 @@ The new `references/routing-map.md` makes lens ownership explicit and reduces th
 
 ## 2a. Repository instruction registration
 
-Result: **PASS with bounded self-registration**
+Result: **PASS with installer-owned integration**
 
-EngSense can persist a compact activation rule in the repository-root `AGENTS.md` without turning the Skill into an installer service.
+EngSense now follows the ForgeGuard model.
 
-The bundled helper:
+Persistent Codex repository instructions are managed by the GitHub-first installer CLI, not by `SKILL.md` activation.
 
-- creates `AGENTS.md` only when no case-variant exists;
-- reuses an existing case-variant;
-- preserves all user-authored instructions;
-- owns only the `<!-- engsense:begin --> ... <!-- engsense:end -->` block;
-- is idempotent;
-- can check drift without modifying files;
-- can remove only its own block;
-- fails closed on malformed markers.
+The installer:
 
-On writable repository activation, the Skill tells the active coding agent to run this helper before substantive work.
+- installs/removes the Skill in project or user scope;
+- prefers a non-empty `AGENTS.override.md` over `AGENTS.md`;
+- preserves all unrelated instructions;
+- owns only `<!-- engsense:managed-start --> ... <!-- engsense:managed-end -->`;
+- updates rather than duplicates the block on reinstall;
+- removes only EngSense-owned content on uninstall;
+- supports `--no-agents`, `--force`, and `--dry-run`;
+- migrates the earlier experimental `engsense:begin/end` block;
+- fails closed on malformed/duplicate managed markers.
 
-This is distinct from an install hook. The Skill remains static and API-free.
+The CLI performs local file management only. It does not add a model-provider runtime to EngSense.
 
 ---
 
@@ -323,6 +324,7 @@ The current architecture is appropriately:
 ```text
 static instructions
 + progressive-disclosure reference modules
++ small local installer CLI for Skill/AGENTS management
 + deterministic development fixtures
 + static integrity checks
 ```

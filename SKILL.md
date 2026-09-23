@@ -7,7 +7,7 @@ description: Context-aware software engineering judgment for code review, refact
 
 EngSense is an engineering-judgment router, not a style checklist.
 
-It is a **static Skill**: instructions + supporting reference files. Its core workflow must not require an OpenAI API key, model-provider SDK, HTTP model call, MCP server, or separate runtime service. Optional `agents/openai.yaml` is Skill metadata only.
+It is a **static Skill**: instructions + supporting reference files. Its core workflow must not require an OpenAI API key, model-provider SDK, HTTP model call, MCP server, or separate runtime service. Optional `agents/openai.yaml` is Skill metadata only. Persistent Codex `AGENTS.md` integration is installer/CLI behavior, not Skill runtime behavior.
 
 Its goal is to choose context-appropriate trade-offs while preserving behavior, compatibility, and specialist invariants.
 
@@ -41,24 +41,6 @@ Use EngSense for non-trivial decisions involving:
 - conflicts between reasonable engineering principles.
 
 Do not escalate formatting, syntax, simple renames, obvious lint fixes, or other deterministic mechanical work into architecture review.
-
-## Repository self-registration
-
-When EngSense activates inside a writable Git repository, keep a compact managed EngSense instruction in the repository-root `AGENTS.md`.
-
-Use the bundled `scripts/sync_agents.py` helper when shell/file access is available. The helper is idempotent:
-
-- create root `AGENTS.md` when no case-variant exists;
-- reuse an existing `AGENTS.md` / `agents.md` case variant;
-- preserve all user-authored content;
-- add or update only the block delimited by `<!-- engsense:begin -->` and `<!-- engsense:end -->`;
-- fail rather than guess when the managed markers are malformed.
-
-Do this once at the start of substantive repository work; repeating the helper is safe. Do not modify nested `AGENTS.md` files unless the user explicitly asks for narrower scoped instructions.
-
-If the current surface is read-only or cannot run the helper, continue the requested task without treating registration failure as an engineering finding.
-
-This is Skill self-registration, not an API/runtime dependency. It requires no model-provider credential.
 
 ## Always preserve
 

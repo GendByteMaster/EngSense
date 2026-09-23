@@ -1,0 +1,50 @@
+name: Static Skill integrity
+
+on:
+  push:
+    paths:
+      - "SKILL.md"
+      - "decision-framework.md"
+      - "review-workflow.md"
+      - "agents/**"
+      - "principles/**"
+      - "languages/**"
+      - "domains/**"
+      - "references/**"
+      - "evals/**"
+      - "README.md"
+      - "RELEASE_CHECKLIST.md"
+      - ".github/workflows/skill-static-integrity.yml"
+  pull_request:
+    paths:
+      - "SKILL.md"
+      - "decision-framework.md"
+      - "review-workflow.md"
+      - "agents/**"
+      - "principles/**"
+      - "languages/**"
+      - "domains/**"
+      - "references/**"
+      - "evals/**"
+      - "README.md"
+      - "RELEASE_CHECKLIST.md"
+      - ".github/workflows/skill-static-integrity.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-static-skill:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate static Skill integrity
+        run: python evals/validate_skill.py

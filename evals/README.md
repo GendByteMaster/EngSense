@@ -124,3 +124,17 @@ The suite intentionally includes:
 - specialist-boundary cases;
 - compatibility risks;
 - conflicting-principle scenarios.
+
+## Rust source-grounded cases on `research/rust-for-rustaceans`
+
+The completed *Rust for Rustaceans* research pass adds these branch-local cases. Their numeric filenames intentionally start at 038 because 033–037 are reserved by the parallel Clean Code research branch and will be reconciled during integration.
+
+38. Unsafe Rust without an explicit safety proof
+39. Relaxed atomic ordering used for security-sensitive publication state
+40. Detached async task lifecycle / durability mismatch
+41. FFI handle marked `Send` without a foreign thread-safety contract
+42. False `no_std` compatibility inferred from the crate attribute alone
+43. Macro used where type-level variation belongs in generics
+44. Self-referential/raw-pointer design versus index/arena representation
+45. Cargo feature-composition failure under feature unification
+

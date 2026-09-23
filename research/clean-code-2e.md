@@ -35,11 +35,11 @@ The copyrighted source text is not copied into this repository. These notes are 
 - [x] Chapter 10 — One Thing
 - [x] Chapter 11 — Be Polite
 - [x] Chapter 12 — Objects and Data Structures
-- [ ] Chapter 13 — Clean Classes
-- [ ] Chapter 14 — Testing Disciplines
-- [ ] Chapter 15 — Clean Tests
-- [ ] Chapter 16 — Acceptance Testing
-- [ ] Chapter 17 — AIs, LLMs, and God Knows What
+- [x] Chapter 13 — Clean Classes
+- [x] Chapter 14 — Testing Disciplines
+- [x] Chapter 15 — Clean Tests
+- [x] Chapter 16 — Acceptance Testing
+- [x] Chapter 17 — AIs, LLMs, and God Knows What
 - [ ] Chapter 18 — Simple Design
 - [ ] Chapter 19 — The SOLID Principles
 - [ ] Chapter 20 — Component Principles
@@ -1611,6 +1611,553 @@ Expected:
 - do not add ceremony solely to appear object-oriented;
 - preserve validation at the actual boundary where it belongs.
 
+# Chapter 13 — Clean Classes
+
+## Source scope
+
+This chapter, by Jeff Langr, carries the earlier function-level ideas upward to classes/modules.
+
+It explicitly separates **class/module design** from file layout. Files are packaging units; the engineering concern is how related concepts are grouped and how they change.
+
+## Quality is assessed under change
+
+One of the strongest claims in the chapter is that class quality becomes visible when requirements change.
+
+Useful EngSense signals include:
+
+- how many existing modules must be opened for a feature;
+- whether unrelated policies change together;
+- whether defects rise as the system grows;
+- whether the class name still summarizes its responsibilities;
+- whether isolated behavior is independently testable.
+
+This aligns with EngSense's existing focus on change cost rather than static pattern compliance.
+
+## SRP without speculative decomposition
+
+The chapter favors small, cohesive, single-responsibility classes, but explicitly says SRP does **not** require guessing every future reason to change.
+
+A particularly useful source rule is:
+
+> do not roam the codebase creating speculative classes; use real change requests as evidence and reshape the design when an independent axis of change appears.
+
+### EngSense extraction
+
+~~~text
+observed independent change pressure
+→ evidence for decomposition
+
+imagined possible future change
+→ not sufficient by itself
+~~~
+
+This is strong support for evidence-driven abstraction.
+
+## Tiny classes and overengineering
+
+The source defends small classes and argues that class creation is cheap, but also acknowledges the "ravioli" extreme and says design principles require balance.
+
+The chapter's own Beck-rule discussion notes that minimizing the number of elements acts as a counterpressure against useless micro-abstractions.
+
+EngSense must preserve both sides:
+
+- large multipurpose modules hide reasons to change;
+- tiny modules with no useful boundary create navigation and conceptual overhead.
+
+## Policy vs implementation detail
+
+The chapter distinguishes:
+
+- orchestration/policy;
+- implementation-specific domain/utility behavior.
+
+It recommends avoiding classes that mix both when they change for independent reasons.
+
+EngSense extraction:
+
+Separate policy from detail when it creates a real stability/change boundary. Do not create delegation layers merely because "policy" and "implementation" can be named separately.
+
+## OCP as observed change locality
+
+The chapter strongly favors classes that can become closed to modification while new behavior is added through extension.
+
+But the most useful operational question is simpler:
+
+> How many existing classes did the last feature force us to edit?
+
+This should be an EngSense diagnostic, not a requirement to make every class plugin-like.
+
+## Testing public concepts, not implementation fragments
+
+When a new extracted strategy becomes a meaningful reusable/public concept, focused tests can document it directly.
+
+When an extracted class is only a private implementation detail, the source advises against exposing it merely for testing.
+
+Candidate rule:
+
+> Do not distort visibility boundaries just to unit-test internal mechanics. Test stable behavioral concepts at the narrowest meaningful public boundary.
+
+## AI section — source position, not EngSense fact
+
+The chapter argues that modular, small, testable units are advantageous for AI-generated code because failures are easier to localize and generated modules can be verified through tests.
+
+The source also makes speculative claims about future AI capability and error rates. EngSense must treat those as author opinion, not validated engineering facts.
+
+Useful extraction that does survive:
+
+- AI-generated code still requires behavioral verification;
+- examples/tests can constrain generation;
+- modular boundaries can reduce verification scope;
+- generated code does not remove the need for architecture.
+
+---
+
+# Chapter 14 — Testing Disciplines
+
+## Source thesis
+
+The chapter broadens the first edition's TDD-only position and presents **three acceptable testing disciplines**:
+
+1. TDD;
+2. Test && Commit || Revert (TCR);
+3. Small Bundles.
+
+Martin remains personally committed to TDD, but explicitly says other disciplines can be compatible with clean code and that there may be more.
+
+That is important for EngSense: the source itself rejects a single mandatory ritual.
+
+## TDD
+
+The source describes the three laws as a seconds-scale feedback loop:
+
+- no production code without a failing test;
+- write only enough test to fail;
+- write only enough production code to make the current failure pass.
+
+EngSense should record this as the source's strongest testing discipline, not as a universal rule.
+
+## TCR
+
+TCR permits code/test ordering freedom but automatically commits passing states and reverts failing states.
+
+The engineering property of interest is **very small recoverable steps**, not the specific tool ritual.
+
+## Small Bundles
+
+Ousterhout's Small Bundles approach uses a longer cycle—minutes rather than seconds—and allows code-first, test-first, or interleaved work, provided each small bundle ends with strong coverage and all tests passing.
+
+This is a major cross-source bridge.
+
+### EngSense extraction
+
+The common invariant across the three approaches is:
+
+~~~text
+bounded change
++ nearby verification
++ frequent known-good state
++ low rollback/debug distance
+~~~
+
+EngSense should optimize for those properties rather than enforcing one ceremony.
+
+## Strategic design vs tactical discipline
+
+The chapter explicitly says testing disciplines do not replace strategic design.
+
+Martin states:
+
+- upfront thinking is important;
+- months of design without code is harmful;
+- code without strategic thinking is also harmful;
+- TDD can help with low-level design but does not guarantee good architecture.
+
+This directly prevents a common misuse:
+
+~~~text
+tests are green
+→ design must be good
+~~~
+
+False.
+
+## Disciplines are not universally applicable
+
+The chapter says these disciplines should be taken seriously but not followed blindly.
+
+EngSense candidate rule:
+
+> Treat process disciplines as tools with intended safety properties. Preserve the safety property when context requires a different ritual.
+
+## Untestable boundaries
+
+The source identifies practical testing limits around:
+
+- hardware/UI boundaries;
+- external I/O;
+- third-party frameworks;
+- subjective outputs.
+
+Its response is to keep hard-to-test boundary code thin and push testable intelligence inward (Humble Object style).
+
+EngSense should preserve the architectural idea without pretending all external behavior is literally untestable; modern integration, browser, snapshot, hardware-in-loop, and contract tests may change what is practical in a given repository.
+
+---
+
+# Chapter 15 — Clean Tests
+
+## Source thesis
+
+The chapter summarizes good tests as:
+
+- readable;
+- fast;
+- isolated;
+- repeatable;
+- self-verifying;
+- timely;
+- designed.
+
+Test code is treated as production-critical engineering infrastructure, not disposable support code.
+
+## Readability and test DSLs
+
+The source encourages refactoring test setup/assertion noise into a domain-specific testing API.
+
+Useful forms include:
+
+- helpers that express domain setup;
+- composed assertions;
+- composed results;
+- Arrange / Act / Assert.
+
+The goal is not abstraction for its own sake; it is to let the test state its behavioral intent without drowning in irrelevant setup mechanics.
+
+## Dual standard
+
+The source permits test code to make different performance/resource trade-offs from production code.
+
+That is not a license for dirty tests.
+
+EngSense extraction:
+
+~~~text
+production constraints != test constraints
+quality/readability requirements still matter
+~~~
+
+For example, a test may allocate freely when production cannot, if that makes intent clearer and test runtime remains acceptable.
+
+## Single Assert → Single Act
+
+The chapter corrects a common interpretation.
+
+"One assert" does not mean one assertion statement. Multiple assertions may verify one logical outcome.
+
+The stronger rule is **Single Act**:
+
+- arrange;
+- perform one action;
+- verify its resulting behavior.
+
+This reduces causal ambiguity and test dependence.
+
+## FIRST
+
+The source's memory aid:
+
+- Fast;
+- Isolated;
+- Repeatable;
+- Self-validating;
+- Timely.
+
+EngSense should use these as diagnostic dimensions, not checkbox dogma.
+
+## Test-suite coupling
+
+A test suite is poorly designed when one production change forces broad unrelated test rewrites.
+
+This mirrors production change coupling.
+
+Candidate metric/question:
+
+~~~text
+one behavior/API change
+→ how many unrelated tests must be edited?
+~~~
+
+Broad blast radius may indicate tests are coupled to incidental implementation structure.
+
+---
+
+# Chapter 16 — Acceptance Testing
+
+## Source thesis
+
+The chapter treats executable acceptance tests as a formal representation of requirements and definition of done.
+
+Its strict form involves business analysts and QA producing feature-level specifications/tests shortly before implementation, with developers automating them.
+
+## EngSense extraction
+
+The durable principle is not the exact BA/QA role assignment.
+
+It is:
+
+> important requirements should have executable, reviewable evidence that the implemented system satisfies them.
+
+Useful forms can include:
+
+- acceptance tests;
+- executable examples;
+- BDD/Given-When-Then;
+- contract tests;
+- conformance vectors;
+- scenario tests.
+
+## Requirements as tests — qualification
+
+The source makes a strong claim that the acceptance tests are the "true requirements."
+
+EngSense should not flatten all requirements into tests.
+
+Some requirements are difficult to encode as simple pass/fail acceptance cases:
+
+- usability;
+- accessibility;
+- security properties;
+- latency distributions;
+- organizational constraints;
+- legal/compliance requirements;
+- long-horizon operability.
+
+Candidate EngSense rule:
+
+> Use executable acceptance evidence wherever the requirement is meaningfully testable, but retain non-executable constraints explicitly rather than pretending they do not exist.
+
+## Definition of done and continuous build
+
+Once an acceptance test passes, the source expects it to join the continuously executed suite.
+
+A previously green requirement becoming red is treated as an immediate regression signal.
+
+EngSense extraction:
+
+Acceptance evidence should become durable regression evidence, not a one-time signoff artifact.
+
+---
+
+# Chapter 17 — AIs, LLMs, and God Knows What
+
+## Source framing
+
+This chapter is the author's 2025-era view of programming with LLMs.
+
+It mixes:
+
+- historical analogy;
+- observed prompt/generation examples;
+- engineering recommendations;
+- speculative claims about AI cognition and future labor.
+
+EngSense must separate these categories carefully.
+
+## Durable engineering observation: prompts are specifications with ambiguity
+
+The example demonstrates that a natural-language prompt can leave core terms underspecified, such as definitions and behavioral edge cases.
+
+A regenerated solution can also differ substantially from the previous solution while still appearing plausible.
+
+EngSense extraction:
+
+For non-trivial AI-generated software, do not rely on one prose instruction as the sole behavioral oracle.
+
+Use redundant/independent evidence such as:
+
+- explicit definitions;
+- constraints;
+- examples;
+- executable scenarios;
+- tests;
+- schemas/contracts;
+- invariants.
+
+## "Overloading" intent
+
+The source uses "overloading" to mean stating intent in more than one independent form so inconsistency can reveal errors.
+
+This maps naturally to EngSense:
+
+~~~text
+prose requirement
++ executable example/test
++ type/schema/invariant where appropriate
+→ stronger specification evidence
+~~~
+
+The important property is **independence**. Having an LLM generate both implementation and tests from the same ambiguous interpretation can reproduce the same misunderstanding.
+
+## Generated tests are not automatically trustworthy
+
+The chapter's example shows generated tests and generated implementation failing to agree with intended semantics.
+
+Candidate EngSense rule:
+
+> Tests generated by the same model from the same prompt are evidence, but not independent validation unless a human, separate specification, oracle, or other independent mechanism verifies them.
+
+This is particularly relevant to coding-agent workflows.
+
+## Source claims that EngSense must NOT adopt as established fact
+
+The author argues that current LLMs are statistical rather than inferential and concludes they do not reason. That is an author's technical/philosophical claim, not something this source alone establishes for EngSense.
+
+Likewise, predictions about programmer employment and future AI capability are outside EngSense's code-quality mandate.
+
+EngSense should extract the engineering lesson—ambiguity and verification risk—without embedding the author's broader AI predictions as rules.
+
+## AI does not remove engineering discipline
+
+The source's most useful conclusion for EngSense is that increasing generation capability raises the importance of:
+
+- precise constraints;
+- formalizable contracts;
+- independent verification;
+- tests;
+- architecture and modularity.
+
+That aligns with EngSense's role as a judgment layer around generated as well as human-written code.
+
+---
+
+# Cross-chapter synthesis from Chapters 13–17
+
+## 1. Change evidence should drive decomposition
+
+Chapter 13 strengthens a recurring principle:
+
+~~~text
+speculative future variation
+≠ sufficient abstraction evidence
+
+observed independent change axes
+= strong abstraction evidence
+~~~
+
+## 2. Testing discipline is about feedback distance
+
+TDD, TCR, and Small Bundles differ in ritual but share a deeper property: the distance between a known-good state and a defect is kept small.
+
+EngSense should reason about **feedback latency** and **rollback distance**, not prescribe TDD universally.
+
+## 3. Test architecture is real architecture
+
+Tests have:
+
+- coupling;
+- APIs;
+- abstraction levels;
+- change blast radius;
+- performance constraints;
+- maintenance costs.
+
+A production architecture that can change safely while its tests shatter on every refactor is not actually easy to evolve.
+
+## 4. Executable specifications are powerful but incomplete
+
+Acceptance tests are strong evidence for testable behavior.
+
+They do not eliminate the need to model non-functional and qualitative constraints separately.
+
+## 5. AI-generated artifacts require independent evidence
+
+Authorship is irrelevant to correctness.
+
+For generated code, generated tests, prompts, and model-produced design, EngSense should ask:
+
+~~~text
+what is the independent oracle?
+what invariant is checked?
+what evidence would detect a shared misunderstanding?
+~~~
+
+This is stronger than merely asking whether "the AI wrote tests."
+
+---
+
+# Additional eval candidates from Chapters 13–17
+
+## Eval: speculative SRP split
+
+Context:
+
+A cohesive class has one current change axis. A reviewer invents four hypothetical future policies and proposes four classes now.
+
+Expected:
+
+- reject speculative decomposition;
+- preserve current cohesion;
+- define observable change pressure that would justify extraction later.
+
+## Eval: real SRP split discovered by change
+
+Context:
+
+Two policies in one service repeatedly change independently for different requirements.
+
+Expected:
+
+- identify independent reasons to change;
+- separate them behind meaningful boundaries;
+- avoid preserving the monolith only for file-count simplicity.
+
+## Eval: green tests do not prove good design
+
+Context:
+
+A deeply coupled module has excellent coverage and all tests pass.
+
+Expected:
+
+- credit verification strength;
+- still evaluate coupling/change cost separately;
+- do not use test success as proof of architecture quality.
+
+## Eval: test suite mirrors implementation
+
+Context:
+
+A small refactor preserving behavior breaks hundreds of unit tests because they directly assert private call sequences.
+
+Expected:
+
+- identify test-design coupling;
+- move tests toward stable behavioral contracts where appropriate;
+- preserve implementation-level tests only when those implementation details are themselves important contracts.
+
+## Eval: generated code + generated tests share ambiguity
+
+Context:
+
+One coding agent generates implementation and tests from the same underspecified prompt; all tests pass.
+
+Expected:
+
+- do not treat green tests as independent proof;
+- inspect the original requirement ambiguity;
+- add an independent scenario/invariant/oracle before claiming correctness.
+
+## Eval: acceptance test cannot represent full requirement
+
+Context:
+
+An accessibility requirement is reduced to one DOM assertion.
+
+Expected:
+
+- recognize that the executable assertion covers only part of the requirement;
+- retain additional accessibility checks/review rather than declaring the requirement fully specified.
+
 # Research integrity notes
 
 - The source is being read from a user-provided full-text copy.
@@ -1623,14 +2170,16 @@ Expected:
 
 # Next research pass
 
-Continue with:
+Part I (Code) is now complete.
 
-1. Chapter 13 — Clean Classes;
-2. Chapter 14 — Testing Disciplines;
-3. Chapter 15 — Clean Tests;
-4. Chapter 16 — Acceptance Testing;
-5. Chapter 17 — AIs, LLMs, and God Knows What.
+Continue with Part II (Design):
 
-After that, continue into Part II (Design). The comments/function/locality conclusions still remain provisional until the appendix debate is reviewed.
+1. Chapter 18 — Simple Design;
+2. Chapter 19 — The SOLID Principles;
+3. Chapter 20 — Component Principles;
+4. Chapter 21 — Continuous Design;
+5. Chapter 22 — Concurrency.
+
+Then continue into Part III (Architecture). Source-specific conclusions still remain provisional until Parts II–IV and the appendix debate are complete.
 
 Do not create the final Clean Code lens or mark Issue #2 complete until the full source has been studied.

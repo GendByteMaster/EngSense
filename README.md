@@ -160,7 +160,8 @@ Completed full-text research currently includes:
 - *The Architecture of Open Source Applications, Volume 2*;
 - *The Performance of Open Source Applications*;
 - *Site Reliability Engineering: How Google Runs Production Systems*;
-- *Clean Code: A Handbook of Agile Software Craftsmanship, Second Edition*.
+- *Clean Code: A Handbook of Agile Software Craftsmanship, Second Edition*;
+- *Rust for Rustaceans*.
 
 Several planned source-specific lenses remain blocked until their required full-book research is complete. See [references/source-status.md](references/source-status.md).
 
@@ -216,7 +217,7 @@ Official references:
 
 ## Project status
 
-The reusable Skill foundation, language/domain routing, conflict matrix, research-grounded general/source-specific lenses, and 37 deterministic eval fixtures are implemented.
+The reusable Skill foundation, language/domain routing, conflict matrix, research-grounded general/source-specific lenses, and 45 deterministic eval fixtures are implemented.
 
 EngSense is still **pre-v1.0** while the mandatory source corpus and blocked source-specific lenses remain incomplete. The release checklist records the remaining gates explicitly rather than treating unfinished research as complete.
 

@@ -19,11 +19,11 @@ Completed research notes are tracked in the repository. The completed AOSA Volum
 
 - *Clean Code: A Handbook of Agile Software Craftsmanship, 2nd Edition* — user-provided full-text edition reviewed end to end on `research/clean-code-2e`; structured research note, conflicts, qualifications, and eval candidates recorded.
 
-## Mandatory corpus research now in progress
+- *Rust for Rustaceans* — user-provided full-text edition reviewed end to end on `research/rust-for-rustaceans`; structured research note, research-grounded Rust guidance, conflicts, and Rust-specific evals recorded.
 
-- *Rust for Rustaceans* — full-text study started on `research/rust-for-rustaceans`; completion is **not** yet claimed.
+## Mandatory corpus still open
 
-The remaining mandatory commercial sources are still open until full-text research material is made available and their research gates are completed.
+The remaining mandatory commercial sources are still open until lawful full-text research material is made available and their research gates are completed.
 
 Therefore:
 

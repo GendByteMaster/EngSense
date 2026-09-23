@@ -1,0 +1,52 @@
+{
+  "id": "rust-relaxed-ordering-security-state",
+  "title": "Do not weaken atomic ordering for security state without an execution proof",
+  "mode": "focused",
+  "task": "Review code that uses Ordering::Relaxed for an atomic flag indicating whether security-sensitive initialization is complete.",
+  "context": [
+    "One thread initializes non-atomic shared state and then sets an atomic ready flag.",
+    "Other threads read the flag before consuming the initialized state.",
+    "The proposed rationale is that the flag load/store itself is atomic and Relaxed is faster."
+  ],
+  "evidence": [
+    "Consumers require visibility of initialization writes that precede publishing the ready flag.",
+    "No benchmark shows ordering cost is a bottleneck.",
+    "No happens-before argument is documented."
+  ],
+  "tempting_wrong_recommendation": [
+    "Keep Relaxed because atomic operations cannot tear.",
+    "Choose the weakest ordering by default for performance.",
+    "Rely on x86 behavior without preserving a portable Rust memory-model argument."
+  ],
+  "expected_decision_properties": [
+    "Distinguish atomicity of the flag from ordering/visibility of the associated state.",
+    "Require an explicit synchronization argument before selecting an ordering.",
+    "Prefer the simplest correct ordering first and weaken it only with concrete evidence.",
+    "Treat security-sensitive publication as higher consequence than a metrics counter."
+  ],
+  "unacceptable_reasoning": [
+    "Relaxed is safe whenever a value is atomic.",
+    "Wall-clock execution order proves cross-thread visibility.",
+    "Memory ordering is a readability-only concern."
+  ],
+  "expected_quality_dimensions": [
+    "correctness",
+    "concurrency",
+    "security_boundary",
+    "performance"
+  ],
+  "expected_tradeoffs": [
+    "weaker ordering performance vs cross-thread visibility guarantees",
+    "micro-optimization vs reasoning complexity"
+  ],
+  "expected_authority": "invariant",
+  "verification_expectations": [
+    "Document the intended happens-before/publication relationship.",
+    "Add concurrency-focused tests and use Loom/model checking where the interaction can be modeled.",
+    "Benchmark only after a correct baseline exists if ordering strength is suspected to matter."
+  ],
+  "specialist_boundary": [
+    "Require specialist concurrency review if a weaker ordering is retained or custom atomics remain central to correctness."
+  ],
+  "notes": "Grounded in Rust for Rustaceans Chapter 10 memory-ordering discussion and the distinction between Relaxed, Acquire/Release, and SeqCst."
+}

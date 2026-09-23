@@ -1,0 +1,50 @@
+{
+  "id": "rust-index-representation-vs-self-reference",
+  "title": "Reconsider representation before introducing self-referential unsafe machinery",
+  "mode": "architecture",
+  "task": "Review a graph-like Rust structure that proposes raw internal pointers plus Pin because borrowed self-references are difficult to express.",
+  "context": [
+    "One container clearly owns all nodes.",
+    "Edges only need stable handles to nodes, not direct references.",
+    "Node deletion is infrequent and can update derived indexes."
+  ],
+  "evidence": [
+    "The raw-pointer design would add unsafe code and pinning invariants.",
+    "Reference-counted nodes would add allocation/reference-counting overhead.",
+    "An arena/vector plus typed index handles can represent the same graph."
+  ],
+  "tempting_wrong_recommendation": [
+    "Use raw pointers because the borrow checker is getting in the way.",
+    "Wrap every node in Arc to make lifetimes disappear.",
+    "Treat Pin as the default solution for any self-reference."
+  ],
+  "expected_decision_properties": [
+    "Reconsider the data representation before adding unsafe/lifetime machinery.",
+    "Compare typed index/arena handles against raw pointers and reference counting.",
+    "Account for deletion/index-update cost rather than pretending index handles are free.",
+    "Prefer the lowest-total-complexity representation for the actual mutation pattern."
+  ],
+  "unacceptable_reasoning": [
+    "Borrow-checker difficulty proves unsafe is necessary.",
+    "Arc is free enough to use without lifecycle/performance analysis.",
+    "Direct references are always more idiomatic than stable indexes."
+  ],
+  "expected_quality_dimensions": [
+    "representation_design",
+    "safety",
+    "ownership",
+    "complexity",
+    "performance"
+  ],
+  "expected_tradeoffs": [
+    "index indirection/update bookkeeping vs lifetime/unsafe complexity",
+    "reference counting overhead vs explicit ownership"
+  ],
+  "expected_authority": "guidance",
+  "verification_expectations": [
+    "Test deletion/movement semantics for index validity.",
+    "Benchmark only if the extra indirection is performance-sensitive.",
+    "If unsafe remains, document and tool-check its invariants."
+  ],
+  "notes": "Grounded in Rust for Rustaceans Chapter 13 index-pointer pattern and earlier ownership/unsafe chapters."
+}

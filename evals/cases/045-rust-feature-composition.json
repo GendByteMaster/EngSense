@@ -1,0 +1,49 @@
+{
+  "id": "rust-feature-composition",
+  "title": "Cargo features must compose under feature unification",
+  "mode": "architecture",
+  "task": "Review a crate where sqlite and postgres features compile separately but fail when both are enabled.",
+  "context": [
+    "Both features are public and downstream dependency graphs may enable them independently.",
+    "Cargo unifies enabled features for a package.",
+    "The crate currently treats the two features as mutually exclusive without documenting or enforcing that contract."
+  ],
+  "evidence": [
+    "Default-feature CI covers sqlite only.",
+    "A workspace consumer can indirectly enable both backends.",
+    "Compilation fails due duplicate/conflicting definitions when both are active."
+  ],
+  "tempting_wrong_recommendation": [
+    "Ignore the combined case because users should enable only one feature.",
+    "Rely on local Cargo.toml choices to prevent downstream feature unification.",
+    "Make one backend a subtractive disable-feature for the other."
+  ],
+  "expected_decision_properties": [
+    "Treat public Cargo features as additive/composable unless mutual exclusion is deliberate and enforced.",
+    "Design the feature surface so unified combinations compile or fail with an explicit supported contract.",
+    "Add feature-matrix verification for public combinations.",
+    "Separate compile-time capability selection from runtime backend selection where that reduces conflict."
+  ],
+  "unacceptable_reasoning": [
+    "Cargo features remain isolated per dependency edge.",
+    "Testing each feature separately proves their union works.",
+    "Feature design is only build tooling and not public API."
+  ],
+  "expected_quality_dimensions": [
+    "compatibility",
+    "build_correctness",
+    "api_design",
+    "evolvability"
+  ],
+  "expected_tradeoffs": [
+    "feature simplicity vs composability",
+    "compile-time specialization vs runtime selection"
+  ],
+  "expected_authority": "rule",
+  "verification_expectations": [
+    "Run no-default/default/all-features and relevant pairwise feature combinations.",
+    "Exercise downstream-consumer feature unification in at least one integration scenario.",
+    "Document intentionally unsupported combinations."
+  ],
+  "notes": "Grounded in Rust for Rustaceans Chapter 5 and reinforced by Chapter 12 additive std-feature guidance."
+}

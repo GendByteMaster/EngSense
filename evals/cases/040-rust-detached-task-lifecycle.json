@@ -1,0 +1,52 @@
+{
+  "id": "rust-detached-task-lifecycle",
+  "title": "Spawning an async task is a lifecycle decision, not a shortcut around await",
+  "mode": "architecture",
+  "task": "Review a request handler that spawns background persistence work and drops the task handle so the response can return sooner.",
+  "context": [
+    "The persistence result is required for the operation to be durable.",
+    "The runtime may shut down or cancel outstanding tasks during deployment.",
+    "Errors inside the spawned task are not observed by the caller."
+  ],
+  "evidence": [
+    "There is no supervisor, retry queue, or durable handoff before returning success.",
+    "The spawned task owns cloned request data and may outlive the request scope.",
+    "The code was changed from await to spawn only to reduce apparent response latency."
+  ],
+  "tempting_wrong_recommendation": [
+    "Keep the detached spawn because async work is automatically reliable in the background.",
+    "Treat spawn as equivalent to calling the same future with await.",
+    "Ignore task errors because the request has already returned."
+  ],
+  "expected_decision_properties": [
+    "Identify the change in lifecycle, error-observation, shutdown, and durability semantics.",
+    "Require await or a deliberate durable/supervised background-work boundary before reporting success.",
+    "Separate concurrency needs from durability requirements.",
+    "Make cancellation and shutdown behavior explicit."
+  ],
+  "unacceptable_reasoning": [
+    "Async means the runtime will eventually finish every task.",
+    "Detached tasks are only a performance implementation detail.",
+    "Returning sooner is sufficient evidence of improvement."
+  ],
+  "expected_quality_dimensions": [
+    "correctness",
+    "reliability",
+    "lifecycle",
+    "operability"
+  ],
+  "expected_tradeoffs": [
+    "response latency vs durability guarantee",
+    "task concurrency vs supervision complexity"
+  ],
+  "expected_authority": "invariant",
+  "verification_expectations": [
+    "Test shutdown/cancellation behavior.",
+    "Verify failures are observable and handled.",
+    "If a background queue is introduced, test the handoff and recovery semantics."
+  ],
+  "specialist_boundary": [
+    "Coordinate with reliability/persistence review if durability depends on an external queue or transactional handoff."
+  ],
+  "notes": "Grounded in Rust for Rustaceans Chapters 8 and 10: tasks/futures, spawn semantics, concurrency, and runtime behavior."
+}

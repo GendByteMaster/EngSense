@@ -1,0 +1,52 @@
+{
+  "id": "rust-fake-no-std",
+  "title": "A no_std attribute is not proof of no-std compatibility",
+  "mode": "focused",
+  "task": "Review a crate advertised as no_std-compatible because lib.rs contains #![no_std].",
+  "context": [
+    "An optional feature explicitly imports std.",
+    "A transitive dependency can also enable std through Cargo feature unification.",
+    "CI currently builds only the host desktop target."
+  ],
+  "evidence": [
+    "No build is run against a target that lacks std.",
+    "The crate documentation promises embedded compatibility.",
+    "Feature combinations are not tested."
+  ],
+  "tempting_wrong_recommendation": [
+    "Accept the no_std claim because the crate-level attribute is present.",
+    "Add a no-std disabling feature instead of modeling std as an additive capability.",
+    "Test only the default desktop feature set."
+  ],
+  "expected_decision_properties": [
+    "Distinguish source annotation from actual dependency/target compatibility.",
+    "Prefer additive std capability where the feature model permits it.",
+    "Require a real no-std target build and meaningful feature combinations in CI.",
+    "Inspect transitive dependency features that can reintroduce std or alloc."
+  ],
+  "unacceptable_reasoning": [
+    "#![no_std] guarantees all dependencies are also no_std.",
+    "Cargo features are isolated per dependency consumer.",
+    "Host compilation is sufficient evidence for embedded support."
+  ],
+  "expected_quality_dimensions": [
+    "portability",
+    "compatibility",
+    "build_correctness",
+    "dependency_design"
+  ],
+  "expected_tradeoffs": [
+    "feature simplicity vs capability accuracy",
+    "broad platform promise vs verification cost"
+  ],
+  "expected_authority": "strong_recommendation",
+  "verification_expectations": [
+    "Build against at least one target that genuinely lacks std.",
+    "Run a relevant feature matrix.",
+    "Inspect dependency feature activation and allocator requirements."
+  ],
+  "revisit_when": [
+    "The crate drops its no_std/embedded compatibility promise."
+  ],
+  "notes": "Grounded in Rust for Rustaceans Chapter 12: core/alloc/std layers, no_std behavior, additive std features, and cross-compilation."
+}

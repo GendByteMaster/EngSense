@@ -120,6 +120,14 @@ It does not judge model quality. Behavioral scoring can be performed externally 
 35. TDD vs disciplined small bundles
 36. High coverage without semantic confidence
 37. Data/operations vs polymorphism from the dominant variation axis
+38. Unsafe Rust without an explicit safety proof
+39. Relaxed atomic ordering used for security-sensitive publication state
+40. Detached async task lifecycle / durability mismatch
+41. FFI handle marked `Send` without a foreign thread-safety contract
+42. False `no_std` compatibility inferred from the crate attribute alone
+43. Macro used where type-level variation belongs in generics
+44. Self-referential/raw-pointer design versus index/arena representation
+45. Cargo feature-composition failure under feature unification
 
 The suite intentionally includes:
 

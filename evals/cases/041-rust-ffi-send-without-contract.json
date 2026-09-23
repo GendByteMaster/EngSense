@@ -1,0 +1,52 @@
+{
+  "id": "rust-ffi-send-without-contract",
+  "title": "Do not make an FFI handle Send without a foreign thread-safety contract",
+  "mode": "focused",
+  "task": "Review unsafe impl Send for a Rust wrapper around an opaque foreign-library handle.",
+  "context": [
+    "The external C library documentation does not state that the handle can move between threads.",
+    "The wrapper currently owns a raw opaque pointer.",
+    "A developer added unsafe impl Send because multithreaded tests passed."
+  ],
+  "evidence": [
+    "No synchronization or thread-affinity guarantee exists in the Rust wrapper.",
+    "The foreign library may use thread-local or unsynchronized internal state.",
+    "Passing tests exercise only a small subset of schedules and platforms."
+  ],
+  "tempting_wrong_recommendation": [
+    "Keep unsafe impl Send because no failure was observed.",
+    "Assume C pointers are Send because they are just addresses.",
+    "Push the thread-safety responsibility onto every caller of the safe wrapper."
+  ],
+  "expected_decision_properties": [
+    "Treat Send as a semantic safety promise, not a convenience trait.",
+    "Require the foreign contract to guarantee thread-safe movement or add a wrapper that enforces the needed synchronization/affinity.",
+    "Keep raw FFI details behind a narrow unsafe layer.",
+    "Document ownership and thread-affinity invariants."
+  ],
+  "unacceptable_reasoning": [
+    "Passing concurrency tests proves an undocumented foreign invariant.",
+    "Opaque pointers have no thread-safety semantics.",
+    "unsafe impl is acceptable because the compiler cannot know better."
+  ],
+  "expected_quality_dimensions": [
+    "safety",
+    "ffi",
+    "concurrency",
+    "api_contract"
+  ],
+  "expected_tradeoffs": [
+    "cross-thread ergonomics vs soundness",
+    "safe wrapper convenience vs foreign invariant preservation"
+  ],
+  "expected_authority": "invariant",
+  "verification_expectations": [
+    "Check authoritative foreign-library documentation/source for thread-safety guarantees.",
+    "Add compile-time assertions/tests for the intended Send/Sync contract once justified.",
+    "Exercise any wrapper synchronization or thread-affinity enforcement."
+  ],
+  "specialist_boundary": [
+    "Escalate when ABI/threading guarantees vary by platform or foreign-library build configuration."
+  ],
+  "notes": "Grounded in Rust for Rustaceans Chapter 11: safe FFI wrappers, lifetimes, Send/Sync, and opaque pointer types."
+}

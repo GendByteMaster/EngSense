@@ -5,6 +5,8 @@ on:
     paths:
       - "SKILL.md"
       - "agents/**"
+      - "assets/**"
+      - "scripts/**"
       - "decision-framework.md"
       - "review-workflow.md"
       - "principles/**"
@@ -19,6 +21,8 @@ on:
     paths:
       - "SKILL.md"
       - "agents/**"
+      - "assets/**"
+      - "scripts/**"
       - "decision-framework.md"
       - "review-workflow.md"
       - "principles/**"
@@ -81,7 +85,31 @@ jobs:
           test -f .agents/skills/engsense/domains/distributed-systems.md
           test -f .agents/skills/engsense/domains/domain-modeling.md
           test -f .agents/skills/engsense/references/routing-map.md
+          test -f .agents/skills/engsense/assets/agents-snippet.md
+          test -f .agents/skills/engsense/scripts/sync_agents.py
 
-          grep -q '^name: engsense$' .agents/skills/engsense/SKILL.md
+          grep -q '^name: engsense
+ .agents/skills/engsense/SKILL.md
 
-          echo "EngSense Skill install smoke test passed."
+          echo "# Existing project rule" > AGENTS.md
+          echo "" >> AGENTS.md
+          echo "Preserve this line." >> AGENTS.md
+
+          python .agents/skills/engsense/scripts/sync_agents.py
+          python .agents/skills/engsense/scripts/sync_agents.py --check
+
+          grep -q '^# Existing project rule
+ AGENTS.md
+          grep -q '^Preserve this line\.
+ AGENTS.md
+          test "$(grep -c '^<!-- engsense:begin -->
+ AGENTS.md)" -eq 1
+          test "$(grep -c '^<!-- engsense:end -->
+ AGENTS.md)" -eq 1
+
+          before="$(sha256sum AGENTS.md | cut -d' ' -f1)"
+          python .agents/skills/engsense/scripts/sync_agents.py
+          after="$(sha256sum AGENTS.md | cut -d' ' -f1)"
+          test "$before" = "$after"
+
+          echo "EngSense Skill install + AGENTS.md registration smoke test passed."

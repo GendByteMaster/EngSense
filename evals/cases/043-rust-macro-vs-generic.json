@@ -1,0 +1,49 @@
+{
+  "id": "rust-macro-vs-generic",
+  "title": "Prefer generics when the variation is type-level rather than source-shape repetition",
+  "mode": "refactoring",
+  "task": "Review a declarative macro that duplicates one algorithm for several input types even though the behavior is otherwise identical.",
+  "context": [
+    "Each expansion differs only in the concrete type.",
+    "A trait bound can express the required operations.",
+    "The macro makes diagnostics point into generated expansion rather than the generic algorithm."
+  ],
+  "evidence": [
+    "No source-syntax generation or identifier construction is required.",
+    "The generic implementation compiles for all current types.",
+    "Runtime behavior is identical across expansions."
+  ],
+  "tempting_wrong_recommendation": [
+    "Keep the macro because it removes repeated source code.",
+    "Prefer metaprogramming because it is more idiomatic Rust.",
+    "Add a procedural macro for even more flexibility."
+  ],
+  "expected_decision_properties": [
+    "Identify the variation as type-level.",
+    "Prefer a generic/trait-bound implementation when it expresses the contract directly.",
+    "Reserve macros for source transformations that ordinary functions/generics cannot express ergonomically.",
+    "Include compile-time and diagnostic quality in the decision."
+  ],
+  "unacceptable_reasoning": [
+    "Macros are always better than duplicated generic code.",
+    "Any repeated syntax justifies code generation.",
+    "Fewer handwritten lines automatically means lower complexity."
+  ],
+  "expected_quality_dimensions": [
+    "readability",
+    "compile_time",
+    "diagnostics",
+    "abstraction_quality"
+  ],
+  "expected_tradeoffs": [
+    "source deduplication vs macro indirection",
+    "generic constraints vs generated-code complexity"
+  ],
+  "expected_authority": "guidance",
+  "verification_expectations": [
+    "Compile all current call sites after replacing the macro.",
+    "Run tests for behavior parity.",
+    "Check compiler diagnostics for representative invalid inputs."
+  ],
+  "notes": "Grounded in Rust for Rustaceans Chapter 7 guidance on declarative/procedural macros and generic alternatives."
+}

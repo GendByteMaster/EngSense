@@ -213,6 +213,7 @@ Official references:
 - [Usage examples](docs/USAGE.md)
 - [Installation](docs/INSTALLATION.md)
 - [Example reviews](docs/EXAMPLE_REVIEWS.md)
+- [Static Skill behavior review](docs/STATIC_SKILL_REVIEW.md)
 - [Contributing](CONTRIBUTING.md)
 - [v1.0 release checklist](RELEASE_CHECKLIST.md)
 

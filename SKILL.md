@@ -78,6 +78,7 @@ Do not load every module for every task.
 ### Domain modules
 
 - `domains/api-design.md`
+- `domains/domain-modeling.md`
 - `domains/testing.md`
 - `domains/concurrency.md`
 - `domains/persistence.md`
@@ -104,6 +105,18 @@ Do not load every module for every task.
 - `references/source-status.md`
 
 Source-specific Ousterhout, Fowler, DDD, DDIA, Release It!, Code Complete, Legacy Code, and related lenses remain blocked until their required full-book research is complete. The Clean Code 2e source-specific lens is available because its full-book research gate is complete.
+
+## Routing guardrails
+
+Load a domain module only when its semantics materially affect the decision.
+
+Use `domains/domain-modeling.md` when business invariants, state transitions, lifecycle ownership, or domain-language boundaries are the actual source of complexity. Do **not** load it just because code uses entities, repositories, services, DTOs, or CRUD.
+
+Use `domains/distributed-systems.md` when process/network boundaries introduce partial failure, timeout ambiguity, retry/deduplication, version skew, replication/consistency, or queue/stream delivery semantics. Do **not** treat ordinary in-process calls as distributed solely because the architecture has multiple modules.
+
+Domain complexity and distributed complexity are independent axes. Load both only when both materially apply.
+
+If a source-specific lens is still research-gated, use the neutral domain/language router without pretending the blocked book-specific doctrine has been studied.
 
 ## Evidence rule
 
@@ -174,6 +187,7 @@ Do not create ceremony for trivial changes.
 
 Use or consult:
 
+- domain/business invariant complexity → `domains/domain-modeling.md`;
 - persistence concerns → `domains/persistence.md`;
 - distributed semantics → `domains/distributed-systems.md`;
 - concurrency semantics → `domains/concurrency.md`;

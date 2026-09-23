@@ -45,11 +45,11 @@ The copyrighted source text is not copied into this repository. These notes are 
 - [x] Chapter 20 — Component Principles
 - [x] Chapter 21 — Continuous Design
 - [x] Chapter 22 — Concurrency
-- [ ] Chapter 23 — The Two Values of Software
-- [ ] Chapter 24 — Independence
-- [ ] Chapter 25 — Architectural Boundaries
-- [ ] Chapter 26 — Clean Boundaries
-- [ ] Chapter 27 — The Clean Architecture
+- [x] Chapter 23 — The Two Values of Software
+- [x] Chapter 24 — Independence
+- [x] Chapter 25 — Architectural Boundaries
+- [x] Chapter 26 — Clean Boundaries
+- [x] Chapter 27 — The Clean Architecture
 - [ ] Chapter 28 — Harm
 - [ ] Chapter 29 — No Defect in Behavior or Structure
 - [ ] Chapter 30 — Repeatable Proof
@@ -3063,6 +3063,536 @@ Expected:
 - allow intentional acceptance of the race when domain consequences are low;
 - document the decision rather than reflexively adding distributed locking.
 
+# Chapter 23 — The Two Values of Software
+
+## Source thesis
+
+Martin distinguishes two values of software:
+
+- behavior — what the system does now;
+- structure — how easily the system can continue changing.
+
+The source makes the normative claim that structure is the greater value because changeability is what keeps software "soft."
+
+EngSense should preserve that as **Martin's position**, not universal fact. In some contexts, immediate correctness, safety, legal compliance, or hard real-time behavior can dominate structural flexibility.
+
+## Policy vs detail
+
+The chapter divides systems conceptually into:
+
+- policy — business rules and procedures;
+- details — mechanisms that connect policy to the outside world, such as databases, frameworks, servers, protocols, and interfaces.
+
+The architectural goal is to keep policy from depending unnecessarily on details.
+
+## Deferring decisions
+
+The source repeatedly recommends postponing detail choices when policy can progress without them:
+
+- database technology;
+- web delivery;
+- REST;
+- microservice/SOA frameworks;
+- UI frameworks;
+- dependency-injection frameworks.
+
+The benefit is not indecision for its own sake. Deferral preserves the ability to experiment with more information later.
+
+### EngSense extraction
+
+Do not ask only whether a decision can theoretically be postponed.
+
+Ask:
+
+~~~text
+What information will improve later?
+What is the carrying cost of keeping the option open?
+What is the lock-in/migration cost if we decide now?
+Does abstraction needed for deferral already have independent value?
+~~~
+
+Deferral is valuable when it buys meaningful information or prevents costly premature coupling.
+
+Do not introduce abstraction solely to preserve imaginary future choices with negligible migration cost.
+
+---
+
+# Chapter 24 — Independence
+
+## Source thesis
+
+A good architecture must support four dimensions:
+
+- use cases;
+- operation;
+- development;
+- deployment.
+
+This makes architecture a lifecycle concern, not merely code organization.
+
+## Use cases should be visible
+
+The source argues that a system's structure should expose its intent. A shopping application should visibly contain shopping use cases rather than bury them under framework-oriented organization.
+
+### EngSense extraction
+
+Prefer domain/use-case discoverability when it helps developers locate behavior.
+
+Do not require every repository to mirror one use-case folder template. The target is visible intent, not naming ceremony.
+
+## Operation
+
+Operational requirements may imply:
+
+- one process;
+- threads;
+- multiple processes;
+- services;
+- distributed deployment.
+
+The source explicitly says a good architecture should avoid assuming one of these mechanisms earlier than necessary.
+
+### EngSense rule
+
+Do not use microservices, threads, or process boundaries as default architecture.
+
+Start from actual operational requirements:
+
+- throughput;
+- latency;
+- isolation;
+- fault boundaries;
+- scaling shape;
+- data locality.
+
+Keep deployment topology flexible where the cost of doing so is low.
+
+## Development
+
+The source connects architecture to team independence through Conway's law and SRP.
+
+Large organizations may need boundaries that allow teams to work without constant interference.
+
+### EngSense qualification
+
+Team topology is a valid architectural constraint, but it scales with organization size.
+
+Do not impose multi-team component boundaries on a one-person or small-team repository without another engineering reason.
+
+## Deployment
+
+The source values straightforward deployment and warns against fragile manual configuration/setup.
+
+EngSense extraction:
+
+Deployment complexity is part of architectural quality.
+
+A design that is elegant in source code but requires manual, order-sensitive deployment has moved complexity rather than removed it.
+
+## Uncertainty
+
+The chapter explicitly recognizes that use cases, operational requirements, team structures, and deployment constraints are initially incomplete and evolve.
+
+That strengthens EngSense's context-first model: architecture should preserve useful optionality without pretending uncertainty can be eliminated upfront.
+
+---
+
+# Chapter 25 — Architectural Boundaries
+
+## Source thesis
+
+Architectural boundaries separate core policy from details whose premature commitment would otherwise contaminate the core.
+
+The source uses GUI and database boundaries as primary examples and frames databases/UIs as plug-ins to business rules.
+
+## Boundary direction
+
+The dependency direction is the important property:
+
+~~~text
+low-level detail
+→ higher-level policy abstraction
+~~~
+
+The policy owns the abstraction it needs; the detail implements/adapts to it.
+
+This is architecture-scale DIP/SAP.
+
+## FitNesse case study
+
+The FitNesse example is especially useful because it demonstrates decision deferral empirically rather than only theoretically.
+
+The source reports that:
+
+- database choice was deferred;
+- an in-memory implementation enabled feature development;
+- flat-file persistence later proved sufficient;
+- MySQL became unnecessary for the main product;
+- a consumer was still able to add a MySQL implementation without rewriting the core.
+
+### EngSense extraction
+
+A boundary is valuable when it enables real independent experimentation or isolates a high-volatility detail.
+
+However, EngSense must not copy the case as a universal rule that every database requires a repository interface.
+
+The decision must consider:
+
+- whether persistence representation is actually volatile;
+- whether business logic can meaningfully be independent;
+- whether the interface would be stable and domain-shaped;
+- whether the system is small CRUD with negligible replacement value;
+- whether the extra mapping/abstraction cost exceeds expected benefit.
+
+## Plugin architecture
+
+Treating GUI/database/other mechanisms as plug-ins can protect policy, but replacements are not claimed to be free. The source explicitly acknowledges some substitutions can still be challenging.
+
+That is important: a boundary reduces coupling; it does not make every replacement trivial.
+
+---
+
+# Chapter 26 — Clean Boundaries
+
+## Source scope
+
+James Grenning focuses on code we do not control:
+
+- third-party packages;
+- frameworks;
+- vendor infrastructure;
+- separately owned subsystems;
+- APIs that do not exist yet.
+
+The central risk is letting foreign representation and behavior spread throughout the application's own model.
+
+## Narrow vendor surface
+
+The Hydra IoT example deliberately uses only a small subset of a wide vendor interface and concentrates vendor-specific calls in low-complexity boundary code.
+
+The application-facing interface is shaped around **Hydra's needs**, not the vendor's feature catalog.
+
+### EngSense extraction
+
+At external/vendor boundaries, prefer:
+
+~~~text
+application-owned semantics
+→ adapter
+→ vendor semantics
+~~~
+
+when vendor volatility or replacement risk is material.
+
+Do not copy a third-party SDK's types and naming through the whole core merely for convenience.
+
+## Concurrency and UI boundaries
+
+The Hydra case also separates:
+
+- business logic from IoT implementation;
+- business logic from UI;
+- business logic from concurrency;
+- object creation/binding from object use.
+
+The useful principle is not "Hexagonal everywhere." It is that independently volatile mechanisms should remain at a small, explicit boundary.
+
+## Learning tests
+
+The chapter recommends small tests used as controlled experiments to learn a third-party API.
+
+They serve two purposes:
+
+1. verify the team's understanding;
+2. detect behavioral changes during dependency upgrades.
+
+### EngSense rule
+
+When integrating an unfamiliar/high-risk dependency, a focused executable experiment can be more reliable than learning and integrating simultaneously inside production code.
+
+Boundary tests should reflect the production usage that matters, not attempt to test the vendor's whole library.
+
+## Unknown boundaries
+
+The transmitter example defines an application-owned interface before the eventual hardware API exists, then adds an adapter when the external API becomes known.
+
+This is an important exception to naive YAGNI:
+
+A boundary can be justified before the implementation exists when the **application need is already known but the external mechanism is unknown/outside the team's control**.
+
+## Depend on something you control
+
+The chapter's durable principle is to minimize the number of places that know third-party particulars.
+
+EngSense qualification:
+
+Do not wrap every stable standard-library call or trivial dependency.
+
+A wrapper/adapter is valuable when it:
+
+- protects application semantics;
+- isolates volatility;
+- provides a test seam with real value;
+- translates representations;
+- concentrates migration risk.
+
+A one-to-one wrapper with no semantic boundary is only indirection.
+
+---
+
+# Chapter 27 — The Clean Architecture
+
+## Source thesis
+
+The chapter compares Hexagonal, DCI, and BCE and extracts a common objective: separation of concerns between high-level policy and external mechanisms.
+
+Desired outcomes include systems that are:
+
+- independent of frameworks;
+- testable;
+- independent of UI;
+- independent of database;
+- independent of external agencies.
+
+## Dependency Rule
+
+The core rule is that source-code dependencies point inward toward higher-level policy.
+
+Inner policy should not name outer framework/database/UI declarations or consume their representation directly.
+
+## Layers are semantic, not a four-circle template
+
+The source explicitly says the four circles are schematic and that systems may need more or fewer layers.
+
+This is a critical anti-dogma safeguard.
+
+### EngSense rule
+
+Never review architecture by counting layers.
+
+Review:
+
+- dependency direction;
+- volatility isolation;
+- policy independence;
+- representation leakage;
+- testability;
+- change cost.
+
+## Entities and use cases
+
+The source distinguishes:
+
+- entities — the most general/high-level business rules;
+- use cases — application-specific orchestration of those rules.
+
+EngSense should treat that as one useful separation model, not require an Entities class/package in every codebase.
+
+A small application may have no useful distinction between enterprise and application-wide policy.
+
+## Interface adapters
+
+Adapters translate between internal policy-oriented representations and external representations.
+
+This includes UI, persistence, and external-service translation.
+
+The useful property is **representation containment**.
+
+## Frameworks/drivers
+
+Frameworks, database engines, and web mechanisms remain outside the policy.
+
+The source's goal is not "frameworks are bad"; it is using them as tools rather than letting them determine the core domain model.
+
+## Crossing boundaries
+
+Flow of control may cross outward while source dependency still points inward through inversion/polymorphism.
+
+EngSense must implement this in language-idiomatic ways.
+
+For Rust this may be:
+
+- traits;
+- generic parameters;
+- functions/closures;
+- enums;
+- modules;
+- explicit data conversion.
+
+Do not assume Java-style interfaces are the only mechanism.
+
+## Boundary data
+
+The source recommends passing simple isolated data across boundaries and warns against passing database/framework row objects inward.
+
+### EngSense extraction
+
+A representation leak exists when core policy must understand a format whose lifecycle is owned by an outer mechanism.
+
+DTOs are useful when they decouple representation. They are not automatically necessary when the same simple data shape is already stable and mechanism-neutral.
+
+---
+
+# Part III synthesis — Architecture
+
+## 1. Architecture is change economics
+
+The most durable message of Part III is not "use Clean Architecture."
+
+It is:
+
+~~~text
+shape dependencies so high-value policy
+is not forced to change
+when lower-value volatile mechanisms change
+~~~
+
+This fits EngSense's central metric of total system complexity and change cost.
+
+## 2. Optionality has value and cost
+
+Martin strongly values leaving options open.
+
+EngSense must add the missing balancing term:
+
+~~~text
+option value
+-
+cost of abstraction / translation / indirection / maintenance
+~~~
+
+An option should remain open when uncertainty and future lock-in justify that cost.
+
+## 3. Boundary strength should follow volatility and consequence
+
+Strong boundaries are especially justified around:
+
+- third-party/vendor APIs;
+- unstable providers;
+- hardware;
+- persistence formats likely to change;
+- externally owned services;
+- framework-generated representations;
+- cross-team contracts.
+
+They are less obviously valuable around stable local mechanics with one implementation and low migration cost.
+
+## 4. Architecture should expose intent
+
+Use cases/domain behavior should be discoverable without understanding framework wiring first.
+
+This is a readability principle at system scale.
+
+## 5. Representation leakage is dependency leakage
+
+Passing a framework/database structure into policy imports the outer mechanism's vocabulary and lifecycle into the core even when there is no explicit import in every file.
+
+EngSense should inspect both:
+
+- source dependencies;
+- data-format dependencies.
+
+## 6. Architecture is not deployment topology
+
+Part III explicitly leaves monolith/thread/process/service choices open until operation requires them.
+
+That supports an EngSense anti-rule:
+
+> Do not equate Clean Architecture with microservices.
+
+---
+
+# Part III eval candidates
+
+## Eval: framework type leaked into domain
+
+Context:
+
+Core pricing policy accepts ORM row objects directly.
+
+Expected:
+
+- identify representation coupling;
+- determine whether ORM lifecycle/schema volatility matters;
+- introduce a domain/input representation at the boundary when it reduces real coupling;
+- avoid redundant mapping if the data is already mechanism-neutral.
+
+## Eval: tiny CRUD application
+
+Context:
+
+A small internal CRUD service has stable storage, few rules, one team, and short expected lifetime.
+
+Tempting answer:
+
+> Create entities/use-cases/ports/adapters/repositories for every operation.
+
+Expected:
+
+- reject architecture-by-template;
+- retain only boundaries justified by current risk/change;
+- recognize that Clean Architecture's dependency goal can be satisfied with much less ceremony.
+
+## Eval: multiple frontends around stable policy
+
+Context:
+
+The same core must support CLI, web, and automation clients.
+
+Expected:
+
+- isolate UI-specific representations;
+- keep shared use-case/policy behavior independent;
+- recognize real plugin/boundary value.
+
+## Eval: unknown external hardware API
+
+Context:
+
+Business behavior is known, but a hardware team's API is not yet designed.
+
+Expected:
+
+- allow an application-owned port representing the known need;
+- test core behavior with a fake;
+- add an adapter later;
+- avoid blocking the core on unknown vendor mechanics.
+
+## Eval: vendor SDK spread across repository
+
+Context:
+
+Provider-specific SDK types appear in domain services, tests, storage, and UI.
+
+Expected:
+
+- flag wide migration/change blast radius;
+- concentrate SDK usage behind the narrowest meaningful adapter;
+- add boundary/contract tests for the subset actually relied upon.
+
+## Eval: speculative microservices
+
+Context:
+
+A modular monolith meets current operational needs. A proposal splits components into network services because "Clean Architecture means independent services."
+
+Expected:
+
+- reject the premise;
+- preserve source-level boundaries without imposing deployment boundaries;
+- require operational/team/failure evidence before distribution.
+
+## Eval: option-value boundary with no value
+
+Context:
+
+A wrapper interface mirrors a stable standard-library API one-for-one and has one implementation.
+
+Expected:
+
+- identify negligible option value;
+- remove or avoid the wrapper unless another test/security/domain boundary justifies it.
+
 # Research integrity notes
 
 - The source is being read from a user-provided full-text copy.
@@ -3075,16 +3605,23 @@ Expected:
 
 # Next research pass
 
-Parts I (Code) and II (Design) are now complete.
+Parts I (Code), II (Design), and III (Architecture) are now complete.
 
-Continue with Part III (Architecture):
+Continue with Part IV (Craftsmanship):
 
-1. Chapter 23 — The Two Values of Software;
-2. Chapter 24 — Independence;
-3. Chapter 25 — Architectural Boundaries;
-4. Chapter 26 — Clean Boundaries;
-5. Chapter 27 — The Clean Architecture.
+1. Chapter 28 — Harm;
+2. Chapter 29 — No Defect in Behavior or Structure;
+3. Chapter 30 — Repeatable Proof;
+4. Chapter 31 — Small Cycles;
+5. Chapter 32 — Relentless Improvement;
+6. Chapter 33 — Maintain High Productivity;
+7. Chapter 34 — Work as a Team;
+8. Chapter 35 — Estimate Honestly and Fairly;
+9. Chapter 36 — Respect for Fellow Programmers;
+10. Chapter 37 — Never Stop Learning;
+11. Afterword;
+12. Appendix — The Clean Code Debate.
 
-Then continue into Part IV (Craftsmanship), Afterword, and Appendix. Source-specific conclusions remain provisional until the appendix debate is reviewed.
+The source-specific lens remains provisional until Part IV, Afterword, and especially the appendix disagreement are fully reviewed.
 
-Do not create the final Clean Code lens or mark Issue #2 complete until the full source has been studied.
+Do not mark Issue #2 complete until the full source has been studied.

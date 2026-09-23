@@ -324,6 +324,27 @@ Do not design remote APIs as though calls are local.
 
 ---
 
+## Domain complexity routing
+
+Load `domains/domain-modeling.md` when the review is dominated by business/domain semantics rather than code organization alone.
+
+Relevant evidence includes:
+
+- non-trivial business invariants;
+- meaningful state transitions;
+- duplicated business policy across entry points;
+- lifecycle/ownership boundaries;
+- conflicting meanings for the same domain concept;
+- orchestration that is hiding a state machine.
+
+Do not recommend DDD-like structure because a service has entities, repositories, handlers, or a database.
+
+For straightforward CRUD/data movement with little invariant complexity, prefer simple application/data-flow structure and keep the source-specific DDD lens blocked until its research gate is complete.
+
+Load `domains/distributed-systems.md` separately when correctness also depends on process/network failure semantics. Rich domain logic and distributed behavior are independent concerns.
+
+---
+
 ## Testing review
 
 Ask:

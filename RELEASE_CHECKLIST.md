@@ -119,7 +119,9 @@ The eval folder remains lightweight development evidence. A model-execution plat
 - [x] ChatGPT installation flow is documented with current official references.
 - [x] Supporting files are documented as required parts of the Skill.
 - [x] Optional `agents/openai.yaml` metadata added; implicit invocation enabled; no tool dependencies declared.
-- [x] Final install smoke test in a clean Codex repository via GitHub Actions using `npx skills add https://github.com/GendByteMaster/EngSense -a codex -y`.
+- [x] Root `AGENTS.md` self-registration uses a bounded managed block and preserves existing instructions.
+- [x] AGENTS registration helper is idempotent, checkable, and safely removable.
+- [x] Final install smoke test in a clean Codex repository verifies Skill installation plus AGENTS registration.
 - [ ] Final install smoke test in a supported ChatGPT Skills surface, when available to an eligible Business/Enterprise/Healthcare/Edu release tester.
 
 ## 9. Public repository readiness

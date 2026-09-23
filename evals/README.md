@@ -128,6 +128,9 @@ It does not judge model quality. Behavioral scoring can be performed externally 
 43. Macro used where type-level variation belongs in generics
 44. Self-referential/raw-pointer design versus index/arena representation
 45. Cargo feature-composition failure under feature unification
+46. Repeated business invariant needs an authoritative domain home
+47. Straightforward CRUD should not be escalated into rich domain architecture
+48. In-process concurrency should not be treated as a distributed system without a remote failure boundary
 
 The suite intentionally includes:
 

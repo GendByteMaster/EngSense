@@ -318,8 +318,30 @@ Before opening a PR that changes Skill routing, modules, evals, metadata, or rel
 ~~~bash
 python evals/validate.py
 python evals/validate_skill.py
+python evals/test_sync_agents.py
 ~~~
 
 EngSense must remain a static Skill. Do not add an API-key/model-provider runtime, OpenAI SDK client, direct model HTTP calls, MCP requirement, or separate EngSense backend to the core Skill.
 
 External installation tooling and GitHub Actions are development/distribution tooling, not EngSense runtime dependencies.
+
+
+## AGENTS.md registration
+
+EngSense may manage only the bounded block between:
+
+~~~text
+<!-- engsense:begin -->
+<!-- engsense:end -->
+~~~
+
+Never overwrite unrelated repository instructions.
+
+Changes to `scripts/sync_agents.py` or `assets/agents-snippet.md` must preserve:
+
+- repository-root scope by default;
+- case-variant reuse for an existing AGENTS.md;
+- idempotence;
+- safe failure on malformed markers;
+- removal of only EngSense-owned content;
+- no network, API-key, model-provider, or MCP dependency.

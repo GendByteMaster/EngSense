@@ -66,9 +66,10 @@ Start with the smallest useful set:
 3. A language module when language idioms materially affect the choice.
 4. A domain module when the change crosses that boundary.
 5. One or more principle lenses only when their question matters.
-6. `references/conflicts.md` when valid principles pull in different directions.
+6. `references/routing-map.md` when module ownership is ambiguous.
+7. `references/conflicts.md` when valid principles pull in different directions.
 
-Do not load every module for every task.
+Do not load every module for every task. Normally choose one primary principle lens and add another only when a distinct second trade-off could materially change the decision.
 
 ### Language modules
 
@@ -101,6 +102,7 @@ Do not load every module for every task.
 
 ### References
 
+- `references/routing-map.md`
 - `references/conflicts.md`
 - `references/smells.md`
 - `references/decision-examples.md`

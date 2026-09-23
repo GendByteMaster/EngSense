@@ -29,12 +29,12 @@ The copyrighted source text is not copied into this repository. These notes are 
 - [x] Chapter 4 — Meaningful Names
 - [x] Chapter 5 — Comments
 - [x] Chapter 6 — Formatting
-- [ ] Chapter 7 — Clean Functions
-- [ ] Chapter 8 — Function Heuristics
-- [ ] Chapter 9 — The Clean Method
-- [ ] Chapter 10 — One Thing
-- [ ] Chapter 11 — Be Polite
-- [ ] Chapter 12 — Objects and Data Structures
+- [x] Chapter 7 — Clean Functions
+- [x] Chapter 8 — Function Heuristics
+- [x] Chapter 9 — The Clean Method
+- [x] Chapter 10 — One Thing
+- [x] Chapter 11 — Be Polite
+- [x] Chapter 12 — Objects and Data Structures
 - [ ] Chapter 13 — Clean Classes
 - [ ] Chapter 14 — Testing Disciplines
 - [ ] Chapter 15 — Clean Tests
@@ -930,6 +930,687 @@ Expected EngSense behavior:
 - do not report a style-only finding;
 - follow repository formatter policy unless readability is materially impaired.
 
+# Chapter 7 — Clean Functions
+
+## Source thesis
+
+The chapter strongly prefers small functions, but it explicitly says this is not a hard rule and can be overdone. Some functions read better when they are not decomposed further.
+
+The more durable idea is not a line-count target. It is **abstraction discipline**:
+
+- one level of abstraction per function;
+- top-down reading through the Stepdown Rule;
+- names that describe intent rather than mechanics;
+- lower-level details placed behind meaningful names.
+
+## Entanglement is an acknowledged cost
+
+The chapter directly engages John Ousterhout's objection that extracting functions can create entanglement: understanding the child may require remembering context established by the parent.
+
+Martin accepts some entanglement when:
+
+- the lower-level function is directly below its caller;
+- it descends one abstraction level;
+- the name carries useful intent.
+
+But the source explicitly acknowledges that severe entanglement can make extraction a bad trade.
+
+### EngSense extraction
+
+Do not treat extraction as automatically good.
+
+Evaluate:
+
+~~~text
+intent gained from naming
++ abstraction separation
++ change isolation
+-
+context carried from caller
+- navigation cost
+- state scattering
+~~~
+
+When the lower-level function cannot be understood without many facts from its caller, locality may dominate decomposition.
+
+## Switch statements
+
+Martin's preferred OO strategy is to isolate switching in a low-level/construction area and use polymorphism elsewhere.
+
+This is a **source-specific OO heuristic**, not a universal EngSense rule.
+
+EngSense must gate it by:
+
+- language idioms;
+- openness of the type set;
+- volatility of types vs operations;
+- runtime dispatch cost;
+- plugin/provider requirements.
+
+Chapter 12 later supplies the important counterbalance.
+
+## PINCH model
+
+The chapter describes clean functions through five attributes:
+
+- contextual;
+- nameable;
+- insulated;
+- homogenous;
+- pure.
+
+Useful EngSense translations:
+
+### Contextual
+
+A function belongs to a coherent context/module. Public behavior and private implementation should form a meaningful boundary.
+
+### Nameable
+
+Names should be slightly more abstract than their implementation.
+
+### Insulated
+
+Inputs/outputs and other couplings should be kept purposeful. Argument count is a signal, not a score.
+
+### Homogenous
+
+A function should avoid mixing high-level policy with low-level mechanics.
+
+### Pure
+
+Purity is framed observationally: internal mutation does not necessarily make a function externally impure if all externally visible state is preserved.
+
+That is a useful distinction for EngSense because "contains assignment" is not a sufficient impurity finding.
+
+## Performance qualification
+
+The source explicitly allows lower-level optimization when measured runtime constraints justify it.
+
+EngSense rule:
+
+> Maintainability heuristics are defaults until evidence shows a materially different performance constraint.
+
+---
+
+# Chapter 8 — Function Heuristics
+
+## Source status of the rules
+
+The chapter explicitly calls these **heuristics and biases, not hard-and-fast rules**.
+
+That wording should be preserved in EngSense.
+
+## Arguments are coupling
+
+The source prefers fewer declared arguments and uses three as a personal rough limit, while acknowledging that the number is arbitrary and language features such as named arguments affect the trade-off.
+
+### EngSense extraction
+
+Argument count should trigger a question, not an automatic finding.
+
+Ask whether several arguments:
+
+- form a real cohesive value;
+- expose missing context;
+- are easy to misorder;
+- would be clearer as a typed structure;
+- are naturally separate and should remain separate.
+
+Do not create parameter objects merely to reduce a number.
+
+## Flag arguments
+
+Boolean flags often indicate multiple modes hidden behind one name and make call sites opaque.
+
+But the source explicitly allows exceptions.
+
+Candidate rule:
+
+Challenge a flag when the call site cannot communicate what mode it selects or when the two branches represent meaningfully separate operations.
+
+Do not ban booleans categorically.
+
+## Output arguments
+
+The source prefers return values or meaningful result structures because readers normally expect data to enter through parameters and leave through returns.
+
+EngSense should translate this through language idioms:
+
+- tuple/multiple returns may be natural;
+- a result struct may be clearer;
+- mutation through an output buffer may be justified by performance or FFI constraints.
+
+## Command Query Separation
+
+CQS is presented as useful where practical, not universal.
+
+The source explicitly discusses `pop()` as a convenient command+query and notes concurrency/exception-safety implications.
+
+EngSense extraction:
+
+Use CQS as a clarity and concurrency lens, not a prohibition.
+
+## Exceptions vs error codes
+
+The source prefers exceptions in languages where they are reliable and idiomatic, but explicitly treats Go-style returned errors as reasonable because Go does not use exceptions.
+
+This is critical for EngSense:
+
+> Error-handling advice must be language/runtime specific.
+
+Never export "prefer exceptions" into the Rust lens. Rust's `Result` model must be judged using Rust sources.
+
+## Error handling as a separate concern
+
+The chapter favors keeping happy-path logic readable and isolating error-processing structure when that reduces mixing of concerns.
+
+The exact try/catch extraction style is language-specific; the general principle is not.
+
+## Essential vs accidental duplication
+
+This is one of the most valuable EngSense contributions in the chapter.
+
+The source distinguishes:
+
+- **essential duplication** — code that represents the same concept and should evolve together;
+- **accidental duplication** — code that merely looks similar but belongs to different change responsibilities and may evolve apart.
+
+Candidate rule:
+
+> Deduplicate by shared reason to change, not by textual similarity.
+
+This supports EngSense's existing conflict:
+
+~~~text
+DRY
+vs
+duplication until the concept is stable
+~~~
+
+## Side effects and temporal coupling
+
+The chapter connects side effects to ordering constraints and temporal coupling.
+
+EngSense should treat a side effect as important when it creates hidden requirements such as:
+
+~~~text
+A must happen before B
+resource must be acquired before use
+state must be initialized before read
+operation must be undone after use
+~~~
+
+Functional style can reduce such coupling but does not eliminate all side effects.
+
+The source also argues OO encapsulation can hide side effects behind a boundary, with concurrency caveats.
+
+---
+
+# Chapter 9 — The Clean Method
+
+## Source thesis
+
+The chapter describes development as nested short feedback loops rather than a single write-then-clean event.
+
+Core process:
+
+~~~text
+make a small behavior work
+→ verify
+→ clean one small thing
+→ verify
+→ revert on failure
+→ repeat
+~~~
+
+## Tests are required infrastructure for cleaning
+
+The source states that serious cleanup depends on tests that are:
+
+- fast;
+- convenient;
+- trusted;
+- sufficiently comprehensive.
+
+EngSense extraction:
+
+The safe refactoring budget depends on verification quality.
+
+When tests are weak, the appropriate response may be:
+
+- add characterization/behavior tests first;
+- reduce refactoring scope;
+- avoid speculative cleanup.
+
+## Tests should tolerate implementation evolution
+
+The Bobolia example shows a second important principle: test code can itself be overcoupled to production representation.
+
+When adding a field forces broad unrelated test edits, that is evidence that tests know too much incidental structure.
+
+Candidate rule:
+
+Tests should preserve behavioral intent while minimizing coupling to irrelevant production details.
+
+## Tests as an independent statement of intent
+
+The source avoids reusing the production tax table in tests because the test is intended to provide an independent statement of expected behavior.
+
+EngSense extraction:
+
+Avoid tests whose expected result is computed by the same logic or data source they are supposed to verify.
+
+This does not mean "duplicate every algorithm manually." It means preserve independent evidence at the boundary where correctness matters.
+
+## Architecture can emerge from observed axes of change
+
+The worked example repeatedly steps back from local cleanup and notices emerging change axes.
+
+This is important because it weakens a caricature of Clean Code as purely upfront OOP design.
+
+Candidate rule:
+
+> Introduce stronger architectural boundaries when repeated change reveals stable axes worth isolating.
+
+This aligns with evidence-driven abstraction.
+
+## Language idioms matter
+
+The Python example uses duck typing rather than creating explicit interface declarations.
+
+EngSense should preserve the architectural purpose while adapting the mechanism to the language.
+
+---
+
+# Chapter 10 — One Thing
+
+## Defining "one thing"
+
+The chapter proposes a practical test:
+
+> a function does one thing when no additional **meaningful** extraction remains.
+
+The qualifier "meaningful" is the important part.
+
+The source explicitly demonstrates that extraction can go too far when:
+
+- the extracted name merely repeats the implementation;
+- a pure delegator adds no useful boundary;
+- the parts are naturally one cohesive operation.
+
+## "Extract till you drop" is not literal
+
+The author calls the phrase cheeky and says to **consider** many extractions, not necessarily perform all of them.
+
+This is essential for EngSense. A simplistic agent that maximizes function count would misread the source.
+
+## The strongest counterargument: entanglement
+
+The chapter lists multiple objections to tiny functions and identifies entanglement as the strongest.
+
+If extraction requires the reader to remember several facts from the parent context, the source explicitly says the extraction may not be worth doing.
+
+It ends the discussion as a judgment call.
+
+### EngSense rule
+
+A candidate extraction should pass both tests:
+
+1. **abstraction gain** — the new name hides a meaningful lower-level concept;
+2. **context independence** — the extracted body does not require excessive hidden caller state to understand.
+
+If either fails, keep or re-inline the code.
+
+## Extraction as a diagnostic technique
+
+The Video Store example uses extraction not only as a final design but as a way to discover misplaced behavior, responsibilities, and class boundaries.
+
+This suggests a useful EngSense technique:
+
+~~~text
+temporary extraction
+→ inspect cohesion/change ownership
+→ move behavior if a real boundary appears
+→ strategically inline again when extraction adds no lasting value
+~~~
+
+The source explicitly suggests "extract first, then strategically inline" as one possible discovery strategy.
+
+## Language-specific warning
+
+The chapter's major worked example is object-oriented and introduces polymorphic types.
+
+The source itself includes a later note acknowledging more idiomatic Go alternatives.
+
+EngSense must not copy this class/type-hierarchy result into Rust, Go, TypeScript, or functional code without checking their idioms and actual variation axis.
+
+---
+
+# Chapter 11 — Be Polite
+
+## Source thesis
+
+A polite module lets a reader obtain the level of detail they need and stop.
+
+The source borrows Ousterhout's idea of a narrow interface/deep implementation and combines it with Martin's Stepdown Rule.
+
+The goal is to reduce **interruption cost** while reading.
+
+## Newspaper metaphor
+
+High-level intent appears first; details become progressively deeper.
+
+The source does not define a module by "one file" or "one class." It explicitly describes a module as a cohesive bounded set of functions and variables that may span multiple files/classes.
+
+### EngSense extraction
+
+Do not equate module boundaries with filesystem boundaries.
+
+Review modules by:
+
+- cohesion;
+- public interface;
+- hidden implementation;
+- conceptual responsibility;
+- reader navigation.
+
+## Abstraction roller coaster
+
+Mixing policy and low-level detail forces the reader to repeatedly abandon and reconstruct a mental model.
+
+This gives EngSense a concrete readability failure mode:
+
+~~~text
+high-level policy
+→ low-level detail
+→ high-level policy
+→ unrelated mechanism
+→ policy again
+~~~
+
+Report this when it materially increases reasoning cost, not merely because different abstraction levels are technically present.
+
+## Reader-oriented completion criterion
+
+The chapter says working code is not the end; code should also be organized for the reader.
+
+EngSense should temper this with scope/risk constraints:
+
+- improve readability when it reduces future change cost;
+- do not turn every feature into an open-ended cleanup;
+- preserve performance/security/domain invariants.
+
+## Explicit non-dogmatism
+
+The chapter again says these are defaults, not religious rules.
+
+That should be preserved in the final lens.
+
+---
+
+# Chapter 12 — Objects and Data Structures
+
+## Source thesis
+
+This chapter is particularly important for EngSense because it rejects a universal "objects everywhere" position.
+
+It contrasts:
+
+- **objects** — expose behavior, hide representation;
+- **data structures** — expose representation, carry little or no meaningful behavior.
+
+Neither is universally superior.
+
+## Getters/setters are not automatic abstraction
+
+The source explicitly rejects the idea that private fields plus trivial getters/setters automatically create good encapsulation.
+
+EngSense extraction:
+
+> Encapsulation is about protecting a representation/decision, not accessor syntax.
+
+A transparent DTO may be more honest than a pseudo-object whose accessors merely expose every field.
+
+## Data/Object Antisymmetry
+
+The central trade-off is change direction.
+
+If the system is more likely to gain **new types/data representations**, object-oriented polymorphism can localize that change.
+
+If the system is more likely to gain **new operations over stable data**, exposed data structures plus procedures/switching can localize that change better.
+
+This is a major EngSense decision axis:
+
+~~~text
+variation_axis:
+  types | operations | mixed | unknown
+~~~
+
+Do not choose OO/procedural/data-oriented structure without asking what is expected to vary.
+
+## Law of Demeter / Tell the Other Guy
+
+The useful generalization is not "never use dots."
+
+It is:
+
+- avoid navigating through object internals merely to assemble the resources needed for an operation;
+- when an object owns the capability/invariant, prefer asking it to perform the operation.
+
+This must not be applied mechanically to DTOs/data structures, where traversal is the intended model.
+
+## DTOs are legitimate
+
+The source explicitly recognizes DTOs as useful at database, message, socket, and translation boundaries.
+
+This directly supports EngSense's rule against wrapping plain data in pointless getter/setter layers.
+
+## ORM limitation framing
+
+The source treats object behavior and relational data structure as fundamentally different representations. An ORM can translate/load data, but should not be mistaken for eliminating the conceptual boundary.
+
+EngSense extraction:
+
+Keep persistence representation and domain behavior conceptually distinct when their change forces differ.
+
+## Switch statements revisited: major correction to earlier chapters
+
+Earlier chapters strongly favor polymorphism for repeated switches. Chapter 12 adds the crucial trade-off.
+
+Polymorphism is beneficial when new **types** are the likely change.
+
+Procedural switching is beneficial when new **operations** over existing types are the likely change.
+
+The source explicitly says not to force OO into areas where behavior is more volatile than data.
+
+This means EngSense's Clean Code lens must **not** contain:
+
+~~~text
+switch/if chain
+→ replace with polymorphism
+~~~
+
+Instead:
+
+~~~text
+identify dominant variation axis
+→ choose representation that localizes that change
+~~~
+
+## Performance qualification
+
+The source acknowledges that switch-based dispatch can be faster than polymorphic dispatch and permits local departures from OCP/DIP when nanoseconds materially matter.
+
+Candidate rule:
+
+Prefer architecture for changeability by default, but allow measured hot paths to use a more direct representation without forcing the whole system into the same style.
+
+---
+
+# Cross-chapter synthesis from Chapters 7–12
+
+## 1. "Small functions" must become a conditional heuristic
+
+A faithful EngSense interpretation is:
+
+~~~text
+Prefer extraction when:
+- it reveals a meaningful abstraction;
+- lowers mixed-abstraction reasoning;
+- isolates a real change responsibility;
+- improves navigation through naming.
+
+Prefer locality/inlining when:
+- extraction repeats implementation in the name;
+- caller context must be carried mentally;
+- ownership/state becomes scattered;
+- hot-path cost is material;
+- language idioms favor a direct form.
+~~~
+
+## 2. Variation axis is more important than pattern preference
+
+Chapter 12 provides one of the strongest anti-dogma principles in the book:
+
+~~~text
+new types expected
+→ behavioral polymorphism may localize change
+
+new operations expected
+→ transparent data + procedures may localize change
+~~~
+
+This should become a first-class EngSense context signal.
+
+## 3. Error handling is language-sensitive
+
+The book itself distinguishes Java/Python exception environments from Go's explicit returned-error model.
+
+Therefore any EngSense source lens that emits language-independent "prefer exceptions" guidance would misrepresent the source.
+
+## 4. DRY must be semantic
+
+Textual similarity is not sufficient evidence for abstraction.
+
+Use co-evolution/change responsibility to distinguish essential from accidental duplication.
+
+## 5. Side effects should be reviewed as temporal coupling
+
+The important question is not whether mutation exists but whether external observers must know hidden ordering/state requirements.
+
+This will interact strongly with the Rust ownership/concurrency lens later.
+
+## 6. Tests are architecture for change
+
+Across the chapters, tests are not merely verification artifacts. Their design determines how safely production structure can evolve.
+
+Useful quality dimensions:
+
+- independent statement of behavior;
+- change resilience;
+- feedback latency;
+- representation coupling.
+
+---
+
+# Additional eval candidates from Chapters 7–12
+
+## Eval: "more than three args" false positive
+
+Context:
+
+A low-level numeric function naturally accepts four coordinates and the language/call site makes ordering clear.
+
+Expected EngSense behavior:
+
+- treat argument count as a signal only;
+- do not invent an object with no semantic identity merely to satisfy a threshold.
+
+## Eval: boolean flag with two real operations
+
+Context:
+
+`render(document, compact: true)` selects two independently meaningful public behaviors and callers frequently misread the call.
+
+Expected:
+
+- consider named variants/options or separate functions;
+- judge language support for named arguments/options;
+- do not ban boolean fields used as actual state.
+
+## Eval: Rust Result vs Clean Code exception preference
+
+Context:
+
+Idiomatic Rust API returns `Result<T, E>`.
+
+Expected:
+
+- Rust language lens overrides the Java-centric exception preference;
+- preserve typed error semantics;
+- do not recommend exceptions/panics merely because Clean Code prefers exceptions to error codes in other languages.
+
+## Eval: accidental duplication
+
+Context:
+
+Two similar validation blocks belong to unrelated domain actors and are already diverging.
+
+Expected:
+
+- preserve duplication;
+- reject common helper extraction based solely on textual similarity.
+
+## Eval: essential duplication
+
+Context:
+
+The same protocol framing logic appears in several places and must change together on every version update.
+
+Expected:
+
+- recognize a shared concept;
+- centralize the invariant where doing so reduces synchronized-edit risk.
+
+## Eval: externally pure mutable helper
+
+Context:
+
+A function uses local mutation internally but exposes deterministic output and no observable side effect.
+
+Expected:
+
+- do not flag it as impure merely because assignments exist;
+- evaluate purity at the observable boundary relevant to callers/concurrency.
+
+## Eval: OO vs procedural variation
+
+Context A:
+Many new variants are expected; operation set is stable.
+
+Expected:
+- favor a representation that localizes type extension.
+
+Context B:
+Data variants are stable; analysts continuously add new operations.
+
+Expected:
+- consider transparent data/procedural/data-oriented processing;
+- do not force a method onto every type for each new operation.
+
+## Eval: DTO pseudo-encapsulation
+
+Context:
+
+A transport model has private fields and one-to-one getters/setters with no invariants.
+
+Expected:
+
+- recognize it as data;
+- do not add ceremony solely to appear object-oriented;
+- preserve validation at the actual boundary where it belongs.
+
 # Research integrity notes
 
 - The source is being read from a user-provided full-text copy.
@@ -944,13 +1625,12 @@ Expected EngSense behavior:
 
 Continue with:
 
-1. Chapter 7 — Clean Functions;
-2. Chapter 8 — Function Heuristics;
-3. Chapter 9 — The Clean Method;
-4. Chapter 10 — One Thing;
-5. Chapter 11 — Be Polite;
-6. Chapter 12 — Objects and Data Structures.
+1. Chapter 13 — Clean Classes;
+2. Chapter 14 — Testing Disciplines;
+3. Chapter 15 — Clean Tests;
+4. Chapter 16 — Acceptance Testing;
+5. Chapter 17 — AIs, LLMs, and God Knows What.
 
-The function/locality conclusions remain provisional until these chapters and the appendix debate have been studied.
+After that, continue into Part II (Design). The comments/function/locality conclusions still remain provisional until the appendix debate is reviewed.
 
 Do not create the final Clean Code lens or mark Issue #2 complete until the full source has been studied.

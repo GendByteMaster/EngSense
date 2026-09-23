@@ -4,7 +4,7 @@ Source: *Clean Code: A Handbook of Agile Software Craftsmanship, Second Edition*
 Author: Robert C. Martin  
 Research basis: user-provided full-text PDF available in the EngSense research session
 
-Research status: **IN PROGRESS — full-text study started**
+Research status: **COMPLETE — full user-provided edition reviewed end to end**
 
 This note intentionally separates:
 
@@ -50,18 +50,18 @@ The copyrighted source text is not copied into this repository. These notes are 
 - [x] Chapter 25 — Architectural Boundaries
 - [x] Chapter 26 — Clean Boundaries
 - [x] Chapter 27 — The Clean Architecture
-- [ ] Chapter 28 — Harm
-- [ ] Chapter 29 — No Defect in Behavior or Structure
-- [ ] Chapter 30 — Repeatable Proof
-- [ ] Chapter 31 — Small Cycles
-- [ ] Chapter 32 — Relentless Improvement
-- [ ] Chapter 33 — Maintain High Productivity
-- [ ] Chapter 34 — Work as a Team
-- [ ] Chapter 35 — Estimate Honestly and Fairly
-- [ ] Chapter 36 — Respect for Fellow Programmers
-- [ ] Chapter 37 — Never Stop Learning
-- [ ] Afterword
-- [ ] Appendix — The Clean Code Debate
+- [x] Chapter 28 — Harm
+- [x] Chapter 29 — No Defect in Behavior or Structure
+- [x] Chapter 30 — Repeatable Proof
+- [x] Chapter 31 — Small Cycles
+- [x] Chapter 32 — Relentless Improvement
+- [x] Chapter 33 — Maintain High Productivity
+- [x] Chapter 34 — Work as a Team
+- [x] Chapter 35 — Estimate Honestly and Fairly
+- [x] Chapter 36 — Respect for Fellow Programmers
+- [x] Chapter 37 — Never Stop Learning
+- [x] Afterword
+- [x] Appendix — The Clean Code Debate
 
 ---
 
@@ -3593,6 +3593,981 @@ Expected:
 - identify negligible option value;
 - remove or avoid the wrapper unless another test/security/domain boundary justifies it.
 
+# Part IV — Craftsmanship and professional discipline
+
+## Source framing
+
+Part IV is an abridged/adapted ethics-and-craftsmanship argument from Martin's earlier work.
+
+It is substantially more normative than Parts I–III. It mixes:
+
+- engineering practices;
+- professional ethics;
+- personal working habits;
+- career advice;
+- historical interpretation;
+- claims about social responsibility.
+
+EngSense must **not** convert this whole section into mandatory software-design rules.
+
+The useful extraction is to separate:
+
+~~~text
+engineering-quality principle
+from
+professional norm
+from
+author preference
+from
+historical/personal anecdote
+~~~
+
+The proposed ten-point oath is a source artifact, not an EngSense constitution.
+
+---
+
+# Chapter 28 — Harm
+
+## Source thesis
+
+Martin argues that programmers have a responsibility to understand the consequences of the software they produce and to avoid harm to:
+
+- society;
+- users;
+- employers;
+- colleagues;
+- software structure itself.
+
+He uses high-consequence failure examples to argue that "I only implemented the requirement" is not always an adequate professional defense.
+
+## Risk should scale verification depth
+
+The strongest EngSense-compatible idea is risk proportionality.
+
+~~~text
+higher consequence
+→ stronger evidence required
+→ lower tolerance for unknown behavior
+~~~
+
+This aligns with EngSense's context model.
+
+A safety-critical, financial, authentication, persistence, or infrastructure change should not receive the same review depth as a low-consequence local utility.
+
+## Structural harm and epistemic risk
+
+The chapter connects poor structure with inability to know what a system will do.
+
+Dead code, hidden state, global state, deployment inconsistency, and tangled dependencies can turn maintainability problems into behavioral risk.
+
+### EngSense extraction
+
+Treat maintainability as a correctness multiplier when:
+
+- behavior depends on hidden coupling;
+- operators cannot determine deployed state;
+- obsolete behavior remains reachable;
+- risk is high enough that uncertainty itself is dangerous.
+
+## Emergency patches
+
+The source explicitly allows quick-and-dirty emergency fixes when necessary, but argues they must not become permanent accumulated structure.
+
+Candidate rule:
+
+~~~text
+emergency workaround
+→ restore service/safety first
+→ record debt/risk
+→ repair structure before building more dependency on it
+~~~
+
+The cleanup timing should still be proportional to actual consequence, not a ritual requirement.
+
+## Ethical claims — scope boundary
+
+Judgments about whether a lawful product is socially harmful are presented by the source as matters of conscience.
+
+EngSense should not attempt to become an ethics authority from this chapter.
+
+Its technical responsibility is narrower:
+
+- surface material risks;
+- preserve safety/security/legal constraints;
+- distinguish known uncertainty from verified behavior;
+- avoid hiding dangerous uncertainty behind style claims.
+
+---
+
+# Chapter 29 — No Defect in Behavior or Structure
+
+## Source thesis
+
+The chapter insists that "working" is not the end state. Structural defects accumulate change cost even when all current behavior passes.
+
+The source describes three classic structural smells:
+
+- rigidity — small changes trigger disproportionate rebuild/redeployment;
+- fragility — changes cause unexpected breakage elsewhere;
+- immobility — useful behavior cannot be separated/reused because it is entangled.
+
+## EngSense extraction
+
+These are more useful as **change-cost diagnostics** than as abstract design labels.
+
+Candidate questions:
+
+- Does a small requirement force broad unrelated edits?
+- Does a local change create unpredictable regression risk?
+- Is behavior inseparable from unrelated infrastructure?
+- Is the integration cost much greater than the behavior change itself?
+
+## Structure vs behavior — preserve disagreement
+
+Martin again argues that structural value ultimately outranks current behavior because behavior can be repaired only if the system remains changeable.
+
+EngSense must not universalize this ranking.
+
+For high-consequence software:
+
+~~~text
+current safety/correctness
+may dominate
+structural elegance
+~~~
+
+The more practical synthesis is:
+
+> behavior and structure are coupled assets; knowingly degrading either creates future cost, and the priority depends on consequence and reversibility.
+
+## Red-Green-Refactor scale
+
+The chapter resolves the apparent conflict between "make it work first" and "structure is important" by shrinking the cycle:
+
+~~~text
+make a tiny behavior work
+→ restore structure
+→ add next tiny behavior
+~~~
+
+EngSense should retain the small-batch principle without requiring literal TDD.
+
+## Professionals as stakeholders
+
+The chapter argues that developers have standing to challenge schedule pressure that knowingly degrades technical quality.
+
+That is professional advice rather than code-design law.
+
+For EngSense, the useful technical form is:
+
+- make structural debt explicit;
+- explain expected consequence;
+- distinguish temporary compromise from untracked accumulation;
+- present trade-offs rather than silently accepting degradation.
+
+---
+
+# Chapter 30 — Repeatable Proof
+
+## Source thesis
+
+The chapter traces a path from Dijkstra's formal proof ambitions through structured programming to automated tests as repeatable empirical evidence.
+
+Martin explicitly describes tests as **empirical/scientific evidence**, not mathematical proof.
+
+## Important qualification
+
+Tests do not prove correctness in the formal sense.
+
+The source itself acknowledges the distinction.
+
+Therefore EngSense should never say:
+
+~~~text
+tests pass
+→ system proven correct
+~~~
+
+Use instead:
+
+~~~text
+tests pass
+→ specified observations survived this repeatable experiment
+~~~
+
+## Quick, sure, repeatable
+
+The source's desired evidence has three properties:
+
+- quick enough to run frequently;
+- trusted enough to support release decisions;
+- repeatable by other people/environments.
+
+This maps well to EngSense's verification model.
+
+## Formal methods boundary
+
+The chapter largely treats industrial formal proof as impractical at general scale.
+
+EngSense should not infer that formal methods are useless.
+
+For cryptography, safety-critical protocols, concurrency models, parsers, or high-value invariants, specialized formal verification may be justified.
+
+This is another reason EngSense must defer to specialist workflows when stakes exceed ordinary test evidence.
+
+---
+
+# Chapter 31 — Small Cycles
+
+## Source thesis
+
+The chapter connects source-control history, continuous integration, deployment, and build automation to one principle:
+
+> long integration cycles impede other people and increase merge/recovery risk.
+
+## Commit/integration frequency
+
+The durable idea is not a universal hourly push schedule.
+
+It is minimizing divergence enough that:
+
+- merges remain understandable;
+- failures can be localized;
+- team progress is not blocked;
+- rollback distance stays small.
+
+## Branches vs toggles
+
+The source prefers frequent mainline integration but explicitly allows longer-lived branches where the work is highly isolated and comprehensive tests reduce merge risk.
+
+That explicit exception matters for EngSense.
+
+### EngSense rule
+
+Choose branch strategy from:
+
+- expected overlap;
+- integration risk;
+- feature isolation;
+- release frequency;
+- test strength;
+- repository/team workflow.
+
+Do not mark "branch exists for days" as a defect without context.
+
+## Continuous deployment
+
+The source treats deployability as a standing capability, distinct from a business decision to release.
+
+EngSense extraction:
+
+A healthy system should make deployment routine and automated where the operational context supports it.
+
+But regulated, hardware, safety-critical, or change-controlled environments may require deliberate gates. Ceremony is not automatically waste if it controls real risk.
+
+## Continuous build
+
+The source strongly argues that persistent broken builds normalize failure and destroy the signal.
+
+Candidate rule:
+
+> A required CI check should stay trustworthy. If it is routinely ignored, fix the check or the cause rather than institutionalizing red status.
+
+---
+
+# Chapter 32 — Relentless Improvement
+
+## Coverage as developer feedback, not management score
+
+This chapter explicitly warns against turning coverage into a management target or build bludgeon because it creates incentives to game the metric.
+
+That materially qualifies earlier enthusiastic coverage language.
+
+The source still treats 100% as an asymptotic goal, but says the measurement should be used to discover weak evidence, not punish teams.
+
+### EngSense rule
+
+Never infer test quality directly from a coverage percentage.
+
+Use coverage to ask:
+
+- what important behavior is unexercised?
+- which branches lack meaningful assertions?
+- where does risk exceed evidence?
+
+## Mutation testing
+
+Mutation testing is presented as a way to find cases where tests execute code but fail to constrain its semantics.
+
+This is highly relevant to EngSense.
+
+Candidate signal:
+
+~~~text
+high coverage + surviving meaningful mutations
+→ verification gap
+~~~
+
+Mutation testing cost can be large, so it should be routed by risk and value.
+
+## Semantic stability
+
+The source's target is a suite that detects meaningful behavioral regression and reduces fear of structural change.
+
+This is stronger than raw line coverage.
+
+EngSense should prefer the concept of **semantic confidence** over a coverage score.
+
+## Cleaning as a probe
+
+The chapter makes an interesting claim: small cleanups can test how flexible a design actually is.
+
+If a tiny, behavior-preserving change is surprisingly difficult, the resistance itself is evidence of coupling.
+
+Candidate EngSense heuristic:
+
+> Change friction is an observable architecture signal.
+
+## Scope qualification
+
+The source encourages continuous small cleanup.
+
+EngSense must still preserve task scope and review cost. Opportunistic cleanup should remain bounded and demonstrably helpful.
+
+---
+
+# Chapter 33 — Maintain High Productivity
+
+## Source scope
+
+This chapter mixes technical productivity with highly personal preferences about:
+
+- meetings;
+- music;
+- focus;
+- emotional state;
+- flow;
+- Pomodoro/time management.
+
+These personal recommendations are **not appropriate as EngSense code-review rules**.
+
+## System throughput over typing speed
+
+The important engineering point is that coding speed is only one component of delivery.
+
+The source calls out:
+
+- build time;
+- test time;
+- debugging;
+- deployment;
+- tooling/infrastructure.
+
+### EngSense extraction
+
+When productivity is the concern, inspect the end-to-end engineering loop rather than optimizing local typing/code-generation speed.
+
+This is especially relevant to AI-assisted development:
+
+~~~text
+faster code generation
+does not help much
+if build/test/review/deploy loops dominate
+~~~
+
+## Fast tests — important overreach to qualify
+
+The chapter recommends bypassing/mocking slow dependencies aggressively.
+
+That is useful for a fast inner loop, but EngSense must not convert it into "mock databases/network/UI everywhere."
+
+Fast isolated tests and realistic integration/system tests serve different evidence purposes.
+
+Candidate model:
+
+~~~text
+fast inner-loop tests
++
+targeted integration/contract/system evidence
++
+production-relevant performance/reliability tests
+~~~
+
+Do not sacrifice realism merely to optimize test duration.
+
+## Deployment automation
+
+The durable principle is to make repeatable operational procedures executable and testable where practical.
+
+That reduces human-error variance and supports reproducibility.
+
+---
+
+# Chapter 34 — Work as a Team
+
+## Source thesis
+
+The chapter argues against knowledge silos and for deliberate knowledge redundancy so team members can cover for each other.
+
+It favors pairing/mobbing and frequent interaction.
+
+## EngSense-compatible extraction
+
+Architecture quality includes **bus-factor/change-ownership risk** when a critical subsystem is understandable by only one person.
+
+Possible signals:
+
+- one maintainer owns all operational knowledge;
+- no executable documentation/tests;
+- opaque subsystem boundaries;
+- reviews cannot be performed independently.
+
+## Remote-work claims — source opinion, not EngSense rule
+
+The source claims colocated work is inherently more productive than remote work and recommends substantial synchronous overlap.
+
+That is an author opinion and organizational recommendation, not something EngSense should embed.
+
+EngSense should remain neutral about work arrangement and focus on evidence of collaboration quality:
+
+- handoff clarity;
+- review latency;
+- knowledge distribution;
+- reproducibility;
+- documentation;
+- ownership concentration.
+
+This is especially important because asynchronous written collaboration can be a deliberate accessibility or organizational requirement.
+
+---
+
+# Chapter 35 — Estimate Honestly and Fairly
+
+## Source thesis
+
+The chapter distinguishes:
+
+- estimate — an uncertain distribution/range;
+- commitment — a promise that should only be made with high confidence.
+
+The source strongly rejects estimates reverse-engineered from predetermined deadlines.
+
+## Accuracy vs precision
+
+A precise single date can be dishonest when uncertainty is large.
+
+The durable EngSense/project-planning insight is:
+
+> represent uncertainty explicitly rather than hiding it behind false precision.
+
+## Range/probability model
+
+Martin recommends best/normal/worst estimates and PERT-style aggregation.
+
+EngSense should record this as **one source technique**, not a universal estimation model.
+
+Task distributions may be correlated, heavy-tailed, poorly calibrated, or not well represented by the assumed shape.
+
+## Learning changes certainty
+
+The chapter correctly identifies implementation/research as one way to reduce uncertainty.
+
+EngSense extraction:
+
+For highly uncertain work, a spike/prototype/research task may be more valuable than demanding a more precise estimate from the same information.
+
+## Pressure
+
+The source gives strong interpersonal advice about refusing commitments without reasonable confidence.
+
+EngSense's relevant role is to make uncertainty and assumptions visible, not to coach workplace confrontation unless specifically asked.
+
+---
+
+# Chapter 36 — Respect for Fellow Programmers
+
+## Source thesis
+
+The chapter argues that professional respect should depend on engineering ethics, standards, disciplines, and skill rather than unrelated human characteristics.
+
+This is primarily an ethical/professional statement, not a software-design lens.
+
+For EngSense, the usable principle is narrower:
+
+- critique artifacts and engineering decisions;
+- do not personalize findings;
+- make review criteria technically relevant.
+
+---
+
+# Chapter 37 — Never Stop Learning
+
+## Source thesis
+
+The chapter argues that programmers must continuously learn across:
+
+- languages;
+- paradigms;
+- frameworks;
+- methodologies;
+- historical sources.
+
+That broad exposure is compatible with EngSense's multi-lens philosophy.
+
+## Important qualification
+
+The source recommends a specific amount of personal off-hours study and frames career learning as an individual responsibility.
+
+EngSense should not encode working-hours/lifestyle prescriptions.
+
+The technical extraction is:
+
+> avoid monoculture; compare multiple paradigms and historical approaches so local conventions are not mistaken for universal laws.
+
+---
+
+# Afterword
+
+## Source contribution
+
+Justin Martin's afterword emphasizes gradual design discovery through a pairing story with Ward Cunningham.
+
+The most useful example is the rejection of a prematurely designed projectile inheritance hierarchy.
+
+The pair:
+
+- started with behavior;
+- refactored in small verified steps;
+- added multiple concrete cases;
+- extracted the abstraction only after the common shape became evident.
+
+### EngSense extraction
+
+This is strong source-level evidence for:
+
+~~~text
+concrete evidence
+→ repeated shape
+→ abstraction
+~~~
+
+rather than:
+
+~~~text
+imagined future variants
+→ abstraction first
+~~~
+
+The afterword also argues that AI-generated code increases rather than removes the need for maintainability discipline.
+
+EngSense should keep the durable engineering point—generated code still needs verification and maintainability review—while treating claims about particular AI quality as anecdotal/source opinion.
+
+---
+
+# Appendix — The Clean Code Debate
+
+## Why the appendix matters
+
+The appendix is a direct 2024–2025 debate between Robert Martin and John Ousterhout.
+
+It is not a minor afterthought for EngSense. It provides explicit evidence that several famous Clean Code recommendations are contested by another experienced designer and, importantly, that Martin accepts some of the counterexamples and qualifications.
+
+The debate focuses on:
+
+1. method length/decomposition;
+2. comments;
+3. TDD.
+
+These should become first-class conflict cases rather than being flattened into one consensus rule.
+
+---
+
+## Debate 1 — Method length
+
+### Shared ground
+
+Martin and Ousterhout agree that:
+
+- modular design is valuable;
+- over-decomposition is possible;
+- interfaces/abstractions should reduce cognitive burden.
+
+### Core disagreement
+
+Martin weights:
+
+- small, named methods;
+- separation of concerns;
+- Stepdown/top-down reading;
+- exposing functional decomposition.
+
+Ousterhout weights:
+
+- deep abstractions;
+- locality;
+- avoiding shallow methods;
+- avoiding entanglement/conjoined methods;
+- minimizing information readers must keep across jumps.
+
+Martin acknowledges that the first edition provided insufficient guidance for recognizing over-decomposition and that his PrimeGenerator decomposition is problematic.
+
+The debate's own summary says they differ mainly in the **relative weight of decomposition versus entanglement**.
+
+### EngSense decision rule
+
+Do not impose a function-line threshold.
+
+Evaluate candidate extraction with at least these dimensions:
+
+~~~text
+abstraction depth
+intent/name value
+locality
+entanglement
+navigation distance
+shared state/context
+change isolation
+performance
+language ownership/lifetime cost
+~~~
+
+The correct answer can be:
+
+- extract;
+- keep together;
+- extract a larger deep module;
+- temporarily extract to discover design, then re-inline.
+
+---
+
+## Debate 2 — Comments
+
+### Martin's position
+
+Martin distrusts comments because they can:
+
+- drift;
+- mislead;
+- duplicate code;
+- become ignored noise.
+
+He prefers code/names to carry intent where possible and considers comments an unfortunate necessity when code cannot express information well.
+
+### Ousterhout's position
+
+Ousterhout sees comments as an essential information channel for:
+
+- interface contracts;
+- abstraction;
+- rationale;
+- non-obvious design knowledge;
+- information not expressible naturally in code.
+
+He argues missing comments often cost far more than stale comments.
+
+### Areas of agreement
+
+Despite strong disagreement, both accept that:
+
+- some comments are necessary;
+- public/external APIs often need documentation;
+- implementation comments are most useful for non-obvious behavior;
+- inaccurate/confusing comments should be fixed;
+- reviewer feedback matters.
+
+Martin explicitly concedes cases where precision is better expressed in a comment.
+
+### PrimeGenerator lesson
+
+The most useful result is not "Martin wins" or "Ousterhout wins."
+
+Both authors failed to communicate a subtle algorithm perfectly:
+
+- Martin's names/decomposition did not preserve enough understanding years later;
+- Ousterhout's comments contained errors/ambiguity and did not immediately make the algorithm obvious to Martin.
+
+They agree that communicating expert context to a non-intimate reader is difficult and that review by other readers is valuable.
+
+### EngSense decision rule
+
+Choose the information channel by the information:
+
+~~~text
+code / types / names
+→ executable structure and mechanically enforceable constraints
+
+comments/docs
+→ rationale, contracts, surprising behavior, nonlocal context,
+   mathematical reasoning, historical constraints
+
+tests/examples
+→ executable usage and behavioral evidence
+~~~
+
+Redundancy is acceptable when each channel independently reduces misunderstanding.
+
+Do not report:
+
+~~~text
+comment exists
+→ smell
+~~~
+
+or:
+
+~~~text
+complex code
+→ add comments instead of improving code
+~~~
+
+without comparing alternatives.
+
+---
+
+## Debate 3 — TDD vs bundling
+
+### Shared ground
+
+Martin and Ousterhout agree that:
+
+- unit tests are essential;
+- tests support fearless refactoring;
+- good design still requires deliberate thought;
+- bundling with disciplined testing can produce outcomes comparable to TDD;
+- both methods require discipline;
+- TDD can produce good designs.
+
+### Core disagreement
+
+Martin argues very short test/code cycles:
+
+- localize failures;
+- keep coverage strong;
+- provide fast feedback;
+- support continuous refactoring.
+
+Ousterhout argues TDD can overemphasize tactical next-test progress and underemphasize strategic design.
+
+He prefers a larger "bundle":
+
+~~~text
+design a related unit
+→ implement tens/hundreds of lines
+→ add comprehensive tests
+→ refactor
+~~~
+
+Martin explicitly says an adept bundler and adept TDD practitioner may produce very similar designs and coverage; he mainly expects a possible productivity/coverage advantage for TDD.
+
+The debate closes without empirical resolution and explicitly says readers lack sufficient comparative data.
+
+### EngSense synthesis
+
+This is exactly the kind of disagreement EngSense must **preserve**.
+
+Do not encode:
+
+~~~text
+TDD = required
+~~~
+
+or:
+
+~~~text
+TDD = harmful
+~~~
+
+Instead identify the properties required by the task:
+
+- feedback latency;
+- design uncertainty;
+- refactor safety;
+- testability;
+- defect localization;
+- need for strategic modeling;
+- reversibility;
+- team discipline.
+
+Accept multiple workflows when they preserve those properties.
+
+---
+
+# Cross-source-ready Clean Code synthesis
+
+The full second edition is significantly less dogmatic than many shorthand summaries of "Clean Code."
+
+The book itself contains repeated qualifications:
+
+- rules are heuristics/defaults;
+- functions can be over-decomposed;
+- accidental duplication should remain separate;
+- not every concrete dependency needs inversion;
+- component principles conflict;
+- component boundaries evolve;
+- test coverage should not be a management metric;
+- branching can be justified by isolation;
+- concurrency may be removed rather than increased;
+- not every architecture needs the same number of layers;
+- TDD is presented alongside TCR and Small Bundles;
+- the appendix explicitly preserves unresolved disagreements.
+
+## Strong EngSense-compatible principles
+
+The source most strongly supports these contextual lenses:
+
+- optimize code for readers and future change;
+- make intent discoverable;
+- use naming as part of design;
+- keep comments where they carry information code cannot carry well;
+- distinguish semantic duplication from visual duplication;
+- isolate independent reasons for change;
+- protect stable/high-value policy from volatile details;
+- manage dependency direction;
+- keep third-party representation at controlled boundaries when risk justifies it;
+- keep feedback cycles small enough to localize failures;
+- maintain trustworthy repeatable verification;
+- treat test code as maintainable design;
+- keep architecture adaptable to operational/deployment/team constraints;
+- measure and preserve semantic confidence, not only coverage;
+- use concurrency only for real operational/structural needs;
+- continuously revisit design as evidence changes.
+
+## Strong anti-rules derived from the complete source
+
+EngSense should **not** infer that Clean Code requires:
+
+- functions below a fixed line count;
+- one-line conditional bodies;
+- comments to be removed whenever possible;
+- interfaces around every concrete dependency;
+- polymorphism for every switch;
+- one repository/use-case layer per CRUD action;
+- exactly four Clean Architecture rings;
+- 100% coverage as a release gate/score;
+- TDD as the only professional testing workflow;
+- mainline development in every context;
+- microservices;
+- maximum abstraction;
+- OO mechanisms transplanted unchanged into other languages.
+
+These would be incomplete or distorted readings of the second edition.
+
+---
+
+# Final Clean Code eval additions
+
+## Eval: shallow extraction
+
+Context:
+
+A 12-line cohesive function is split into five helpers whose names mostly restate individual lines and whose behavior depends heavily on caller state.
+
+Expected:
+
+- identify shallow abstractions/entanglement;
+- favor locality or larger meaningful extraction;
+- explicitly reject function-count/line-count optimization.
+
+## Eval: deep extraction
+
+Context:
+
+A complex protocol operation contains a stable lower-level subproblem with a narrow meaningful contract and substantial implementation detail.
+
+Expected:
+
+- extract the deep abstraction;
+- preserve the high-level policy flow;
+- hide irrelevant detail.
+
+## Eval: comment vs type vs test
+
+Context:
+
+An API has a subtle precondition that can be encoded in a type, an important historical rationale that cannot, and a behavioral example.
+
+Expected:
+
+- encode enforceable precondition in types/validation;
+- document rationale in prose;
+- demonstrate behavior in a test/example;
+- do not force one representation channel to replace all others.
+
+## Eval: TDD process dogma
+
+Context:
+
+A team uses disciplined 15-minute design/implementation/test bundles, maintains fast trusted tests, and refactors continuously.
+
+Expected:
+
+- do not report absence of test-first TDD as a quality defect;
+- evaluate feedback distance, verification strength, and design quality.
+
+## Eval: risk-scaled verification
+
+Context A:
+Low-risk internal formatting helper.
+
+Context B:
+Money-moving idempotency logic.
+
+Expected:
+
+- require materially stronger independent evidence for B;
+- avoid identical review/test ceremony merely for process consistency.
+
+## Eval: coverage gaming
+
+Context:
+
+Coverage rises from 90% to 100% by adding execution-only tests with weak assertions.
+
+Expected:
+
+- reject the improvement claim;
+- prefer semantic assertions/mutation survival/risk coverage over the number.
+
+## Eval: long isolated feature branch
+
+Context:
+
+A parser rewrite has a stable interface, no overlapping edits, and exhaustive conformance tests.
+
+Expected:
+
+- allow an isolated branch if integration risk is genuinely bounded;
+- do not invoke trunk-based rules mechanically.
+
+## Eval: build/test bottleneck
+
+Context:
+
+AI generates code in seconds, but CI takes 50 minutes and flakes frequently.
+
+Expected:
+
+- identify feedback infrastructure as the throughput constraint;
+- prioritize reliability/latency of verification rather than optimizing generation speed.
+
+---
+
+# Full-source completion status
+
+The following material has now been reviewed from the supplied edition:
+
+- Foreword;
+- Introduction and historical introduction;
+- Chapters 1–37;
+- Parts I–IV;
+- Afterword;
+- Appendix: The Clean Code Debate;
+- bibliography/reference tail for completeness.
+
+The research gate for this **individual source** is therefore complete.
+
+This does **not** complete EngSense Issue #2. Cross-source synthesis must wait for the remaining mandatory corpus, especially *A Philosophy of Software Design*, *Refactoring*, *The Pragmatic Programmer*, *Code Complete*, *Working Effectively with Legacy Code*, architecture/data/production sources, and *Rust for Rustaceans*.
+
 # Research integrity notes
 
 - The source is being read from a user-provided full-text copy.
@@ -3605,23 +4580,13 @@ Expected:
 
 # Next research pass
 
-Parts I (Code), II (Design), and III (Architecture) are now complete.
+*Clean Code, 2nd Edition* full-source research is complete.
 
-Continue with Part IV (Craftsmanship):
+Next work for EngSense:
 
-1. Chapter 28 — Harm;
-2. Chapter 29 — No Defect in Behavior or Structure;
-3. Chapter 30 — Repeatable Proof;
-4. Chapter 31 — Small Cycles;
-5. Chapter 32 — Relentless Improvement;
-6. Chapter 33 — Maintain High Productivity;
-7. Chapter 34 — Work as a Team;
-8. Chapter 35 — Estimate Honestly and Fairly;
-9. Chapter 36 — Respect for Fellow Programmers;
-10. Chapter 37 — Never Stop Learning;
-11. Afterword;
-12. Appendix — The Clean Code Debate.
+1. derive the source-specific Clean Code lens from this completed note;
+2. add/update conflict and eval fixtures without flattening the Martin/Ousterhout disagreements;
+3. continue the mandatory *Rust for Rustaceans* full-text study;
+4. defer cross-school final synthesis until the remaining mandatory sources are complete.
 
-The source-specific lens remains provisional until Part IV, Afterword, and especially the appendix disagreement are fully reviewed.
-
-Do not mark Issue #2 complete until the full source has been studied.
+Do not mark EngSense Issue #2 complete until the entire mandatory corpus and cross-source synthesis are complete.

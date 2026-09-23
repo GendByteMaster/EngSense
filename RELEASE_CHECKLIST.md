@@ -67,7 +67,7 @@ The following source-specific lenses must remain blocked until their repository 
 - [ ] Code Complete / construction-quality source-specific lens.
 - [ ] Working Effectively with Legacy Code source-specific coverage.
 - [ ] Architecture trade-off source-specific coverage required by Issue #2.
-- [ ] Rust for Rustaceans source-specific coverage.
+- [x] Rust for Rustaceans source-specific coverage.
 - [ ] Other mandatory sources tracked in Issue #2.
 
 Do not mark these complete from summaries, excerpts, general knowledge, or unrelated sources.
@@ -169,7 +169,7 @@ A v1.0 release requires all of the following:
 A pre-v1 tag/release may be created before the mandatory research corpus is complete if it clearly states:
 
 - research is incomplete;
-- source-specific blocked lenses are not implemented;
+- remaining blocked source-specific lenses are not implemented;
 - current general lenses are based only on completed sources/synthesis;
 - interfaces and guidance may still change before v1.0.
 

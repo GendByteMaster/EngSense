@@ -6,6 +6,7 @@ The principle modules in this directory are **research-grounded lenses**, not un
 
 The following modules are based only on sources that have been read in full:
 
+- `clean-code.md` — source-specific Robert C. Martin / Clean Code 2e lens; preserves explicit appendix disagreements and anti-dogma guardrails.
 - `sustainable-engineering.md`
 - `empirical-architecture.md`
 - `complexity-placement.md`
@@ -23,12 +24,12 @@ Primary completed sources:
 - *The Architecture of Open Source Applications, Volume 2*
 - *The Performance of Open Source Applications*
 - *Site Reliability Engineering: How Google Runs Production Systems*
+- *Clean Code: A Handbook of Agile Software Craftsmanship, Second Edition*
 
 ## Planned source-specific lenses still blocked
 
 Do **not** claim the following source-specific lenses are complete until their mandatory full-book research is finished:
 
-- Clean Code / Robert C. Martin
 - Complexity / John Ousterhout
 - Refactoring / Martin Fowler
 - Pragmatic engineering / Thomas & Hunt

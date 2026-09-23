@@ -91,6 +91,11 @@ def validate_no_api_runtime_dependency(errors: list[str]) -> None:
         if rel.parts and rel.parts[0] == "research":
             continue
 
+        # This validator contains the forbidden tokens as detection patterns.
+        # Exclude only itself; other eval/development executables remain guarded.
+        if rel == Path("evals/validate_skill.py"):
+            continue
+
         if path.suffix.lower() in EXECUTABLE_SUFFIXES:
             candidates.append(path)
 

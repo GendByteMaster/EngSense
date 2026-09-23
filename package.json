@@ -1,0 +1,44 @@
+{
+  "name": "@gendbytemaster/engsense",
+  "version": "0.1.0",
+  "description": "Context-aware software engineering judgment Skill with managed Codex AGENTS integration",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "engsense": "bin/engsense.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "files": [
+    "bin/",
+    "SKILL.md",
+    "agents/",
+    "decision-framework.md",
+    "review-workflow.md",
+    "principles/",
+    "languages/",
+    "domains/",
+    "references/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GendByteMaster/EngSense.git"
+  },
+  "bugs": {
+    "url": "https://github.com/GendByteMaster/EngSense/issues"
+  },
+  "homepage": "https://github.com/GendByteMaster/EngSense#readme",
+  "keywords": [
+    "agent-skills",
+    "codex",
+    "software-engineering",
+    "code-review",
+    "architecture"
+  ]
+}

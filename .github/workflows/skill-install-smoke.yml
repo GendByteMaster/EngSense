@@ -5,8 +5,8 @@ on:
     paths:
       - "SKILL.md"
       - "agents/**"
-      - "assets/**"
-      - "scripts/**"
+      - "bin/**"
+      - "package.json"
       - "decision-framework.md"
       - "review-workflow.md"
       - "principles/**"
@@ -21,8 +21,8 @@ on:
     paths:
       - "SKILL.md"
       - "agents/**"
-      - "assets/**"
-      - "scripts/**"
+      - "bin/**"
+      - "package.json"
       - "decision-framework.md"
       - "review-workflow.md"
       - "principles/**"
@@ -45,6 +45,11 @@ jobs:
       - name: Checkout current revision
         uses: actions/checkout@v4
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
       - name: Set up clean test repository
         shell: bash
         run: |
@@ -53,22 +58,21 @@ jobs:
           mkdir -p "$RUNNER_TEMP/engsense-smoke"
           cd "$RUNNER_TEMP/engsense-smoke"
           git init -q
+          printf '%s\n\n%s\n' "# Existing project rule" "Preserve this line." > AGENTS.md
 
-      - name: Install EngSense with npx
+      - name: Install EngSense
         shell: bash
         working-directory: ${{ runner.temp }}/engsense-smoke
         run: |
           set -euo pipefail
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            SOURCE="$GITHUB_WORKSPACE"
+            node "$GITHUB_WORKSPACE/bin/engsense.js" install --client codex
           else
-            SOURCE="https://github.com/GendByteMaster/EngSense"
+            npx --yes github:GendByteMaster/EngSense install --client codex
           fi
 
-          npx --yes skills add "$SOURCE" -a codex -y
-
-      - name: Verify install and AGENTS registration
+      - name: Verify Skill and AGENTS integration
         shell: bash
         working-directory: ${{ runner.temp }}/engsense-smoke
         run: |
@@ -83,24 +87,42 @@ jobs:
           test -f .agents/skills/engsense/domains/distributed-systems.md
           test -f .agents/skills/engsense/domains/domain-modeling.md
           test -f .agents/skills/engsense/references/routing-map.md
-          test -f .agents/skills/engsense/assets/agents-snippet.md
-          test -f .agents/skills/engsense/scripts/sync_agents.py
 
           grep -Fqx "name: engsense" .agents/skills/engsense/SKILL.md
-
-          printf '%s\n\n%s\n' "# Existing project rule" "Preserve this line." > AGENTS.md
-
-          python .agents/skills/engsense/scripts/sync_agents.py
-          python .agents/skills/engsense/scripts/sync_agents.py --check
-
           grep -Fqx "# Existing project rule" AGENTS.md
           grep -Fqx "Preserve this line." AGENTS.md
-          test "$(grep -Fc "<!-- engsense:begin -->" AGENTS.md)" -eq 1
-          test "$(grep -Fc "<!-- engsense:end -->" AGENTS.md)" -eq 1
+          test "$(grep -Fc "<!-- engsense:managed-start -->" AGENTS.md)" -eq 1
+          test "$(grep -Fc "<!-- engsense:managed-end -->" AGENTS.md)" -eq 1
 
           before="$(sha256sum AGENTS.md | cut -d' ' -f1)"
-          python .agents/skills/engsense/scripts/sync_agents.py
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            node "$GITHUB_WORKSPACE/bin/engsense.js" install --client codex
+            node "$GITHUB_WORKSPACE/bin/engsense.js" status --client codex
+          else
+            npx --yes github:GendByteMaster/EngSense install --client codex
+            npx --yes github:GendByteMaster/EngSense status --client codex
+          fi
+
           after="$(sha256sum AGENTS.md | cut -d' ' -f1)"
           test "$before" = "$after"
 
-          echo "EngSense Skill install + AGENTS.md registration smoke test passed."
+      - name: Verify uninstall preserves user AGENTS content
+        shell: bash
+        working-directory: ${{ runner.temp }}/engsense-smoke
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            node "$GITHUB_WORKSPACE/bin/engsense.js" uninstall --client codex
+          else
+            npx --yes github:GendByteMaster/EngSense uninstall --client codex
+          fi
+
+          test ! -e .agents/skills/engsense
+          grep -Fqx "# Existing project rule" AGENTS.md
+          grep -Fqx "Preserve this line." AGENTS.md
+          ! grep -Fq "<!-- engsense:managed-start -->" AGENTS.md
+          ! grep -Fq "<!-- engsense:managed-end -->" AGENTS.md
+
+          echo "EngSense ForgeGuard-style install/status/uninstall smoke test passed."

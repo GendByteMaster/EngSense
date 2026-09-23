@@ -1,0 +1,56 @@
+{
+  "id": "simple-crud-should-not-escalate-domain-modeling",
+  "title": "Straightforward CRUD should not be escalated into rich domain architecture",
+  "mode": "architecture",
+  "task": "Review a proposal to add aggregates, value objects, domain services, repository interfaces, and use-case classes to a small CRUD module.",
+  "context": [
+    "The module stores and retrieves profile preferences.",
+    "Validation is limited to field shape, authorization, and a few range checks.",
+    "There are no meaningful state transitions or cross-entity business invariants.",
+    "There is one persistence implementation."
+  ],
+  "evidence": [
+    "Existing code maps HTTP input to validated data and performs direct persistence operations.",
+    "The proposed layers mostly forward the same values unchanged.",
+    "No bug or maintenance problem is tied to missing domain abstractions."
+  ],
+  "tempting_wrong_recommendation": [
+    "Adopt DDD because all business applications should have a domain layer.",
+    "Create repository interfaces for hypothetical future databases.",
+    "Wrap every primitive field in a value object regardless of invariant value."
+  ],
+  "expected_decision_properties": [
+    "Keep the design simple and explicit unless real domain complexity appears.",
+    "Preserve meaningful validation, authorization, and persistence boundaries without adding pass-through layers.",
+    "State that source-specific DDD guidance remains research-gated and is not needed to justify simplicity here.",
+    "Provide concrete revisit triggers such as growing invariants or lifecycle complexity."
+  ],
+  "unacceptable_reasoning": [
+    "A database-backed application is automatically a complex domain.",
+    "More domain layers always improve maintainability.",
+    "Simple CRUD is an architectural smell."
+  ],
+  "expected_quality_dimensions": [
+    "simplicity",
+    "locality",
+    "maintainability",
+    "discoverability",
+    "change_cost"
+  ],
+  "expected_tradeoffs": [
+    "present simplicity vs speculative domain extensibility",
+    "direct flow vs pass-through layering"
+  ],
+  "expected_authority": "guidance",
+  "verification_expectations": [
+    "Run current API and persistence tests.",
+    "Verify authorization and validation remain explicit.",
+    "Check repository history for evidence of repeated domain-rule changes before adding new abstractions."
+  ],
+  "revisit_when": [
+    "Cross-field or cross-entity invariants become non-trivial.",
+    "State transitions acquire domain semantics.",
+    "Business policy becomes duplicated across multiple entry points."
+  ],
+  "notes": "Complements the existing Python layering case with language-neutral domain-complexity routing."
+}

@@ -49,9 +49,6 @@ jobs:
           test -f .agents/skills/engsense/domains/domain-modeling.md
           test -f .agents/skills/engsense/references/routing-map.md
 
-          grep -q '^name: engsense .agents/skills/engsense/SKILL.md
-
-          echo "EngSense GitHub npx install smoke test passed."
- .agents/skills/engsense/SKILL.md
+          grep -q '^name: engsense$' .agents/skills/engsense/SKILL.md
 
           echo "EngSense GitHub npx install smoke test passed."

@@ -115,20 +115,11 @@ It does not judge model quality. Behavioral scoring can be performed externally 
 30. Dependency order discovered through retry instead of an explicit graph
 31. Human CLI presentation scraped as a machine protocol
 32. Normalization layer erases a provider capability required for correctness
-
-The suite intentionally includes:
-
-- over-engineering traps;
-- under-engineering traps;
-- language-pattern transfer traps;
-- specialist-boundary cases;
-- compatibility risks;
-- conflicting-principle scenarios.
-
-## Rust source-grounded cases on `research/rust-for-rustaceans`
-
-The completed *Rust for Rustaceans* research pass adds these branch-local cases. Their numeric filenames intentionally start at 038 because 033–037 are reserved by the parallel Clean Code research branch and will be reconciled during integration.
-
+33. Cohesive function should not be split by line count
+34. Preserve non-obvious rationale in the right information channel
+35. TDD vs disciplined small bundles
+36. High coverage without semantic confidence
+37. Data/operations vs polymorphism from the dominant variation axis
 38. Unsafe Rust without an explicit safety proof
 39. Relaxed atomic ordering used for security-sensitive publication state
 40. Detached async task lifecycle / durability mismatch
@@ -138,3 +129,11 @@ The completed *Rust for Rustaceans* research pass adds these branch-local cases.
 44. Self-referential/raw-pointer design versus index/arena representation
 45. Cargo feature-composition failure under feature unification
 
+The suite intentionally includes:
+
+- over-engineering traps;
+- under-engineering traps;
+- language-pattern transfer traps;
+- specialist-boundary cases;
+- compatibility risks;
+- conflicting-principle scenarios.

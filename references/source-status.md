@@ -17,8 +17,9 @@ Completed research notes are tracked in the repository. The completed AOSA Volum
 
 ## Completed mandatory full-text sources
 
-- *Clean Code: A Handbook of Agile Software Craftsmanship, 2nd Edition* — user-provided full-text edition reviewed end to end on `research/clean-code-2e`; structured research note, source-specific lens work, conflicts, and evals recorded. Pending branch integration/review.
-- *Rust for Rustaceans* — user-provided full-text edition reviewed end to end on `research/rust-for-rustaceans`; structured research note, research-grounded Rust guidance, conflicts, and Rust-specific evals recorded. Pending branch integration/review.
+- *Clean Code: A Handbook of Agile Software Craftsmanship, 2nd Edition* — user-provided full-text edition reviewed end to end on `research/clean-code-2e`; structured research note, conflicts, qualifications, and eval candidates recorded.
+
+- *Rust for Rustaceans* — user-provided full-text edition reviewed end to end on `research/rust-for-rustaceans`; structured research note, research-grounded Rust guidance, conflicts, and Rust-specific evals recorded.
 
 ## Mandatory corpus still open
 

@@ -1,0 +1,56 @@
+{
+  "id": "data-vs-polymorphism-variation-axis",
+  "title": "Choose objects or transparent data from the dominant variation axis",
+  "mode": "architecture",
+  "task": "Review a proposal to replace a stable data representation and several analysis functions with a polymorphic object hierarchy solely to eliminate switch statements.",
+  "context": [
+    "The set of record variants is stable and changes rarely.",
+    "New independent analysis operations are added frequently.",
+    "The data is also serialized and exchanged across process boundaries.",
+    "The proposed hierarchy would require adding a method to every variant for each new analysis."
+  ],
+  "evidence": [
+    "Repository history shows many new operations and almost no new record variants.",
+    "Consumers already use the transparent representation safely.",
+    "No invariant currently requires hiding the representation."
+  ],
+  "tempting_wrong_recommendation": [
+    "Replace every switch with polymorphism because switch statements violate clean design.",
+    "Move every operation onto the data variants even though the operation set is the volatile axis.",
+    "Add getters and setters to make plain transport data look object-oriented."
+  ],
+  "expected_decision_properties": [
+    "Identify operations as the dominant variation axis.",
+    "Prefer transparent data plus separate operations when that localizes expected change.",
+    "Do not treat DTO/data structures as inferior to objects.",
+    "Revisit polymorphism if type/variant extension becomes the dominant change axis or representation invariants require encapsulation."
+  ],
+  "unacceptable_reasoning": [
+    "Object-oriented polymorphism is always cleaner than procedural switching.",
+    "All data must be encapsulated behind getters and setters.",
+    "Switch statements are always a design smell regardless of what changes."
+  ],
+  "expected_quality_dimensions": [
+    "change_locality",
+    "representation_clarity",
+    "coupling",
+    "evolvability",
+    "compatibility"
+  ],
+  "expected_tradeoffs": [
+    "polymorphic objects vs transparent data + operations",
+    "encapsulation vs transparent representation"
+  ],
+  "expected_authority": "guidance",
+  "verification_expectations": [
+    "Check repository history or roadmap for the actual variation axis.",
+    "Confirm the transparent data shape has no hidden invariant requiring encapsulation.",
+    "Verify serialization/consumer compatibility remains intact."
+  ],
+  "revisit_when": [
+    "New record variants become frequent.",
+    "Representation invariants become difficult to protect.",
+    "External implementations require an open substitution boundary."
+  ],
+  "notes": "Grounded in Clean Code 2e Chapter 12 Data/Object Antisymmetry and its qualification of polymorphism-for-switch advice."
+}

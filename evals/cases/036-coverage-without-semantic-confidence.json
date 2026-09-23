@@ -1,0 +1,54 @@
+{
+  "id": "coverage-without-semantic-confidence",
+  "title": "High coverage does not imply strong semantic verification",
+  "mode": "focused",
+  "task": "Review a claim that a module is sufficiently tested because line coverage reached 100 percent.",
+  "context": [
+    "Every line is executed by the test suite.",
+    "Several tests have weak or no assertions for failure behavior.",
+    "A critical branch can change its result without failing any current test.",
+    "The module affects persisted user data."
+  ],
+  "evidence": [
+    "Coverage reports 100 percent line coverage.",
+    "A manual mutation of one comparison operator still leaves all tests green.",
+    "No test asserts the important failure-path invariant."
+  ],
+  "tempting_wrong_recommendation": [
+    "Declare verification complete because coverage is 100 percent.",
+    "Use the coverage number as a release-quality score.",
+    "Add more execution-only tests solely to preserve the metric."
+  ],
+  "expected_decision_properties": [
+    "Treat coverage as a discovery signal rather than proof of quality.",
+    "Prioritize semantic assertions for the material persisted-data invariant.",
+    "Use mutation or equivalent evidence to expose tests that execute code without constraining behavior.",
+    "Scale the verification response to the failure consequence."
+  ],
+  "unacceptable_reasoning": [
+    "One hundred percent coverage proves correctness.",
+    "Coverage percentage is a sufficient management quality metric.",
+    "Mutation survival is irrelevant once all lines execute."
+  ],
+  "expected_quality_dimensions": [
+    "semantic_confidence",
+    "test_quality",
+    "correctness",
+    "risk",
+    "change_safety"
+  ],
+  "expected_tradeoffs": [
+    "coverage quantity vs semantic confidence",
+    "verification cost vs failure consequence"
+  ],
+  "expected_authority": "strong_recommendation",
+  "verification_expectations": [
+    "Add an assertion or scenario that fails for the known semantic mutation.",
+    "Re-run the relevant test suite.",
+    "Confirm important failure behavior is directly constrained rather than merely executed."
+  ],
+  "specialist_boundary": [
+    "If correctness depends on database-engine durability/isolation semantics, require persistence-specialist verification."
+  ],
+  "notes": "Grounded in Clean Code 2e Chapters 18 and 32, where coverage is encouraged but explicitly rejected as a naive management/build metric."
+}

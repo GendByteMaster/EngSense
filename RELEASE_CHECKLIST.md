@@ -52,12 +52,13 @@ A pre-v1 development release may be reasonable once the repository is packaged a
 - [x] Change strategy lens.
 - [x] Representation design lens.
 - [x] Reliability/operability lens.
+- [x] Clean Code 2e source-specific lens.
 
 ## 4. Mandatory source-specific research gate
 
 The following source-specific lenses must remain blocked until their repository research requirements are completed.
 
-- [ ] Clean Code source-specific lens.
+- [x] Clean Code source-specific lens.
 - [ ] Ousterhout / complexity source-specific lens.
 - [ ] Fowler / refactoring source-specific lens.
 - [ ] Pragmatic Programmer source-specific lens.
@@ -92,7 +93,7 @@ Do not mark these complete from summaries, excerpts, general knowledge, or unrel
 - [x] Language-pattern transfer scenarios exist.
 - [x] Specialist-boundary scenarios exist.
 - [x] Performance/change-strategy/representation scenarios exist.
-- [x] Current fixture set contains 32 scenarios.
+- [x] Current fixture set contains 45 scenarios.
 - [ ] Final v1.0 fixture review after all mandatory source-specific lenses are added.
 
 The eval folder remains lightweight development evidence. A model-execution platform is not part of the EngSense Skill.

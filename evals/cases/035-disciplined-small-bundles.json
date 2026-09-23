@@ -1,0 +1,57 @@
+{
+  "id": "disciplined-small-bundles",
+  "title": "Do not require TDD when disciplined small bundles preserve the safety properties",
+  "mode": "refactoring",
+  "task": "Review a team workflow where developers design and implement a small coherent unit, then immediately add comprehensive tests before the change is considered complete.",
+  "context": [
+    "Typical bundles take 10 to 20 minutes.",
+    "Every bundle ends in a green trusted test suite.",
+    "Developers refactor before moving to the next bundle.",
+    "The team deliberately reviews the larger design between bundles.",
+    "Failures are normally localized to the current bundle."
+  ],
+  "evidence": [
+    "The repository has fast deterministic tests and small commits.",
+    "Recent defects are caught before merge.",
+    "No evidence shows that test-after-code inside the small bundle reduces coverage or change safety."
+  ],
+  "tempting_wrong_recommendation": [
+    "Require strict test-first TDD because it is the only professional discipline.",
+    "Declare the workflow defective solely because production code is sometimes written before its tests.",
+    "Ignore the team's short feedback and refactoring discipline."
+  ],
+  "expected_decision_properties": [
+    "Accept the workflow when it preserves bounded change, nearby verification, short rollback distance, and deliberate design review.",
+    "Preserve the unresolved Martin/Ousterhout disagreement rather than claiming one workflow is universally superior.",
+    "Evaluate actual feedback latency and verification quality instead of ceremony.",
+    "Recommend TDD only if repository evidence shows it would address a material weakness."
+  ],
+  "unacceptable_reasoning": [
+    "Tests must always be written first.",
+    "TDD always creates bad design.",
+    "Green tests prove the design is good."
+  ],
+  "expected_quality_dimensions": [
+    "feedback_latency",
+    "testability",
+    "change_safety",
+    "design_quality",
+    "reversibility"
+  ],
+  "expected_tradeoffs": [
+    "TDD short cycles vs larger tested bundles",
+    "tactical feedback vs strategic design attention"
+  ],
+  "expected_authority": "guidance",
+  "verification_expectations": [
+    "Confirm each bundle remains small enough for failures to be attributable.",
+    "Confirm comprehensive tests are added before integration.",
+    "Check that refactoring/design review is not routinely deferred."
+  ],
+  "revisit_when": [
+    "Bundles grow until defects become difficult to localize.",
+    "Tests are frequently postponed after code appears to work.",
+    "Design review/refactoring repeatedly fails to occur."
+  ],
+  "notes": "Grounded in Clean Code 2e Chapters 14 and 31 plus the appendix TDD debate."
+}

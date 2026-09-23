@@ -13,8 +13,8 @@ CORE_FILES = {
     Path("decision-framework.md"),
     Path("review-workflow.md"),
     Path("agents/openai.yaml"),
-    Path("assets/agents-snippet.md"),
-    Path("scripts/sync_agents.py"),
+    Path("package.json"),
+    Path("bin/engsense.js"),
 }
 
 CORE_DIRS = (
@@ -32,13 +32,27 @@ REFERENCE_PATTERN = re.compile(
 FORBIDDEN_EXECUTABLE_PATTERNS = {
     "OPENAI_API_KEY": re.compile(r"OPENAI_API_KEY", re.IGNORECASE),
     "API key assignment": re.compile(r"\bapi_key\s*=", re.IGNORECASE),
-    "OpenAI Python SDK import": re.compile(r"^\s*(?:from\s+openai\s+import|import\s+openai\b)", re.MULTILINE),
+    "OpenAI Python SDK import": re.compile(
+        r"^\s*(?:from\s+openai\s+import|import\s+openai\b)", re.MULTILINE
+    ),
+    "OpenAI JavaScript SDK import": re.compile(
+        r"(?:from\s+['\"]openai['\"]|require\(['\"]openai['\"]\))"
+    ),
     "OpenAI client construction": re.compile(r"\bOpenAI\s*\("),
     "OpenAI responses call": re.compile(r"\bclient\.responses\."),
     "OpenAI chat completions call": re.compile(r"\bclient\.chat\.completions\."),
 }
 
-EXECUTABLE_SUFFIXES = {".py", ".sh", ".bash", ".yml", ".yaml"}
+EXECUTABLE_SUFFIXES = {
+    ".py",
+    ".js",
+    ".mjs",
+    ".cjs",
+    ".sh",
+    ".bash",
+    ".yml",
+    ".yaml",
+}
 
 EVAL_NAME_PATTERN = re.compile(r"^(\d{3})-[a-z0-9][a-z0-9-]*\.json$")
 README_CASE_PATTERN = re.compile(r"^(\d+)\.\s+.+$", re.MULTILINE)
@@ -57,7 +71,7 @@ def load(path: Path) -> str:
 def validate_required_structure(errors: list[str]) -> None:
     for path in sorted(CORE_FILES):
         if not (ROOT / path).is_file():
-            errors.append(f"missing required Skill file: {path}")
+            errors.append(f"missing required Skill/installer file: {path}")
 
     for directory in CORE_DIRS:
         full = ROOT / directory
@@ -79,24 +93,41 @@ def validate_skill_references(errors: list[str]) -> None:
         errors.append("SKILL.md must expose domains/domain-modeling.md in its routing surface")
 
 
-def validate_agents_registration(errors: list[str]) -> None:
-    skill = load(Path("SKILL.md"))
-    if "scripts/sync_agents.py" not in skill:
-        errors.append("SKILL.md must route repository self-registration through scripts/sync_agents.py")
-    if "AGENTS.md" not in skill:
-        errors.append("SKILL.md must document repository AGENTS.md self-registration")
+def validate_installer_contract(errors: list[str]) -> None:
+    try:
+        package = json.loads(load(Path("package.json")))
+    except json.JSONDecodeError as exc:
+        errors.append(f"package.json is invalid JSON: {exc}")
+        return
 
-    snippet = load(Path("assets/agents-snippet.md"))
-    begin = "<!-- engsense:begin -->"
-    end = "<!-- engsense:end -->"
-    if snippet.count(begin) != 1 or snippet.count(end) != 1:
-        errors.append("assets/agents-snippet.md must contain exactly one EngSense managed marker pair")
-    if "engsense" not in snippet.lower():
-        errors.append("assets/agents-snippet.md must explicitly reference the engsense Skill")
+    if package.get("bin", {}).get("engsense") != "bin/engsense.js":
+        errors.append("package.json must expose the engsense CLI at bin/engsense.js")
+
+    cli = load(Path("bin/engsense.js"))
+    required_tokens = (
+        "install",
+        "status",
+        "uninstall",
+        "--no-agents",
+        "--global",
+        "<!-- engsense:managed-start -->",
+        "<!-- engsense:managed-end -->",
+        "AGENTS.override.md",
+        "AGENTS.md",
+    )
+    for token in required_tokens:
+        if token not in cli:
+            errors.append(f"bin/engsense.js is missing installer contract token: {token}")
+
+    if "scripts/sync_agents.py" in load(Path("SKILL.md")):
+        errors.append(
+            "SKILL.md must not perform activation-time AGENTS self-registration; "
+            "AGENTS integration belongs to the installer CLI"
+        )
 
 
 def validate_no_api_runtime_dependency(errors: list[str]) -> None:
-    # EngSense is a static Skill. It must not gain a model-provider/API runtime.
+    # EngSense may have installer/development executables, but not a model-provider runtime.
     candidates: list[Path] = []
 
     for path in ROOT.rglob("*"):
@@ -105,12 +136,10 @@ def validate_no_api_runtime_dependency(errors: list[str]) -> None:
         rel = path.relative_to(ROOT)
         if ".git" in rel.parts:
             continue
-
         if rel.parts and rel.parts[0] == "research":
             continue
 
-        # This validator contains the forbidden tokens as detection patterns.
-        # Exclude only itself; other eval/development executables remain guarded.
+        # The validator contains forbidden tokens as detection patterns.
         if rel == Path("evals/validate_skill.py"):
             continue
 
@@ -124,7 +153,7 @@ def validate_no_api_runtime_dependency(errors: list[str]) -> None:
             if pattern.search(text):
                 errors.append(
                     f"{rel}: forbidden runtime/provider integration detected ({label}); "
-                    "EngSense must remain a static Skill with no API-key model runtime"
+                    "EngSense must remain a static Skill with installer-only local file management"
                 )
 
     metadata = load(Path("agents/openai.yaml"))
@@ -179,9 +208,7 @@ def validate_eval_catalog(errors: list[str]) -> int:
     readme = load(Path("README.md"))
     readme_match = README_FIXTURE_COUNT_PATTERN.search(readme)
     if not readme_match or int(readme_match.group(1)) != len(paths):
-        errors.append(
-            f"README.md must report {len(paths)} deterministic eval fixtures"
-        )
+        errors.append(f"README.md must report {len(paths)} deterministic eval fixtures")
 
     checklist = load(Path("RELEASE_CHECKLIST.md"))
     checklist_match = CHECKLIST_FIXTURE_COUNT_PATTERN.search(checklist)
@@ -198,7 +225,7 @@ def main() -> int:
 
     validate_required_structure(errors)
     validate_skill_references(errors)
-    validate_agents_registration(errors)
+    validate_installer_contract(errors)
     validate_no_api_runtime_dependency(errors)
     eval_count = validate_eval_catalog(errors)
 
@@ -210,7 +237,8 @@ def main() -> int:
 
     print(
         "OK: EngSense static Skill integrity validated "
-        f"({eval_count} eval fixtures, no API-key/model-provider runtime)"
+        f"({eval_count} eval fixtures, ForgeGuard-style local installer, "
+        "no API-key/model-provider runtime)"
     )
     return 0
 

@@ -7,6 +7,8 @@ on:
       - "decision-framework.md"
       - "review-workflow.md"
       - "agents/**"
+      - "assets/**"
+      - "scripts/**"
       - "principles/**"
       - "languages/**"
       - "domains/**"
@@ -21,6 +23,8 @@ on:
       - "decision-framework.md"
       - "review-workflow.md"
       - "agents/**"
+      - "assets/**"
+      - "scripts/**"
       - "principles/**"
       - "languages/**"
       - "domains/**"
@@ -48,3 +52,6 @@ jobs:
 
       - name: Validate static Skill integrity
         run: python evals/validate_skill.py
+
+      - name: Test AGENTS.md registration helper
+        run: python evals/test_sync_agents.py

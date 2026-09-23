@@ -94,7 +94,7 @@ Current research-grounded principle lenses include:
 
 Language modules currently cover Rust, TypeScript, Python, and general language-neutral guidance.
 
-Domain modules cover API design, testing, concurrency, persistence, and distributed-systems engineering-quality boundaries.
+Domain modules cover API design, domain-modeling routing, testing, concurrency, persistence, and distributed-systems engineering-quality boundaries.
 
 ## Example
 
@@ -217,7 +217,7 @@ Official references:
 
 ## Project status
 
-The reusable Skill foundation, language/domain routing, conflict matrix, research-grounded general/source-specific lenses, and 45 deterministic eval fixtures are implemented.
+The reusable Skill foundation, language/domain routing, conflict matrix, research-grounded general/source-specific lenses, and 48 deterministic eval fixtures are implemented.
 
 EngSense is still **pre-v1.0** while the mandatory source corpus and blocked source-specific lenses remain incomplete. The release checklist records the remaining gates explicitly rather than treating unfinished research as complete.
 

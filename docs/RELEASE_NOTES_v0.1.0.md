@@ -4,7 +4,7 @@
 
 EngSense is a portable, static Agent Skill for software-engineering judgment. It helps coding agents evaluate code structure, refactoring, architecture, abstraction, compatibility, maintainability and testability without treating any single engineering school as universal doctrine.
 
-This first public development release provides a reusable Skill and a GitHub-first installer for Codex. It is not v1.0.0; the mandatory research corpus remains incomplete.
+This first public development release provides a reusable Skill and a GitHub-first installer for Codex, Claude Code and Cursor. It is not v1.0.0; the mandatory research corpus remains incomplete.
 
 ## What's included
 
@@ -15,7 +15,7 @@ This first public development release provides a reusable Skill and a GitHub-fir
 - **Six domain modules:** API design, domain modeling, testing, concurrency, persistence and distributed systems.
 - **Conflict matrix:** evaluate competing principles such as DRY vs local clarity, abstraction vs simplicity, and compatibility vs architectural freedom.
 - **Evidence-based review:** actionable findings, appropriate authority, specialist deferral, and verification matched to risk.
-- **Codex installer:** `install`, `status`, and `uninstall`, with user/project scopes and managed AGENTS integration.
+- **Portable installer:** `install`, `status`, and `uninstall`, with user/project scopes and managed AGENTS integration.
 - **Development validation:** 51 deterministic scenario specifications, static integrity checks, and installer lifecycle checks.
 
 ### How EngSense works
@@ -41,7 +41,7 @@ EngSense does not execute a separate runtime, replace repository authorization r
 ## Requirements
 
 - Node.js 18 or later with npm/npx and Git for GitHub installation.
-- Codex with Agent Skills support.
+- Codex, Claude Code or Cursor with Agent Skills support.
 - No npm-registry publication, model-provider API key, MCP server, or EngSense backend is required.
 
 ## Install
@@ -65,6 +65,30 @@ npx --yes "github:GendByteMaster/EngSense#v0.1.0" install --client codex
 Project-level location: `.agents/skills/engsense/`.
 
 EngSense also reconciles its marked block in the active Codex AGENTS instructions. Use `--no-agents` to skip AGENTS management. Restart Codex after installing to reload the Skill and instructions.
+
+### Claude Code
+
+~~~powershell
+npx --yes "github:GendByteMaster/EngSense#v0.1.0" install --client claude --global
+~~~
+
+User location: `~/.claude/skills/engsense/`. Without `--global`: `.claude/skills/engsense/`.
+
+### Cursor
+
+~~~powershell
+npx --yes "github:GendByteMaster/EngSense#v0.1.0" install --client cursor --global
+~~~
+
+User location: `~/.cursor/skills/engsense/`. Without `--global`: `.agents/skills/engsense/`.
+
+### All three clients
+
+~~~powershell
+npx --yes "github:GendByteMaster/EngSense#v0.1.0" install --client all --global
+~~~
+
+Codex remains the default. Codex and Cursor share a project-level payload; uninstalling either removes the shared copy and EngSense's Codex registration unless `--no-agents` is set. Claude Code and Cursor use native discovery without CLAUDE.md or Cursor rules modifications. Replace `--client codex` in status, refresh and uninstall examples with the desired client. Native activation and live model behavior for Claude Code and Cursor are not yet verified.
 
 ### Verify installation
 
@@ -114,9 +138,9 @@ After installation, start a new Codex session in a repository:
 ## CLI reference
 
 ```text
-engsense install    [--client codex] [--global] [--force] [--no-agents] [--dry-run]
-engsense status     [--client codex] [--global] [--no-agents]
-engsense uninstall  [--client codex] [--global] [--no-agents] [--dry-run]
+engsense install    [--client all|codex|claude|cursor] [--global] [--force] [--no-agents] [--dry-run]
+engsense status     [--client all|codex|claude|cursor] [--global] [--no-agents]
+engsense uninstall  [--client all|codex|claude|cursor] [--global] [--no-agents] [--dry-run]
 engsense --version
 engsense --help
 ```
@@ -126,7 +150,7 @@ engsense --help
 - The release workflow validates fixtures, static Skill integrity, Node installer tests, and npm package contents before publication.
 - The 51 fixtures specify expected decisions; a structural pass is not 51 live model passes. The recorded Codex behavior review is the separate release gate.
 - Three of fourteen mandatory books are completed, alongside four supplemental full-text sources. Remaining book-specific lenses are research-gated.
-- The installer currently targets Codex only. Claude Code and Cursor installation are not claimed.
+- The portable installer targets Codex, Claude Code and Cursor. Live native activation and model behavior in Claude Code and Cursor are not yet verified.
 - ChatGPT Skills smoke testing remains a v1.0 gate; this release does not claim that verification.
 - EngSense is not a security auditor, profiler, distributed-systems verifier, or standalone agent service.
 

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -137,4 +137,88 @@ test('status reports Skill and AGENTS integration', () => {
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /installed codex:/);
   assert.match(result.stdout, /linked\s+agents:/);
+});
+
+test('Claude project installation leaves Codex instructions unchanged', () => {
+  const cwd = tempProject();
+  const original = '# User rule\n';
+  writeFileSync(join(cwd, 'AGENTS.md'), original);
+  writeFileSync(join(cwd, 'CLAUDE.md'), original);
+  assert.equal(run(cwd, ['install', '--client', 'claude']).status, 0);
+  assert.equal(existsSync(join(cwd, '.claude', 'skills', 'engsense', 'references', 'routing-map.md')), true);
+  assert.equal(existsSync(join(cwd, '.agents')), false);
+  assert.equal(readFileSync(join(cwd, 'AGENTS.md'), 'utf8'), original);
+  assert.equal(readFileSync(join(cwd, 'CLAUDE.md'), 'utf8'), original);
+  assert.match(run(cwd, ['status', '--client', 'claude']).stdout, /installed claude:/);
+  assert.equal(run(cwd, ['uninstall', '--client', 'claude']).status, 0);
+  assert.equal(existsSync(join(cwd, '.claude', 'skills', 'engsense')), false);
+});
+
+test('Cursor project install shares the .agents payload but does not create AGENTS', () => {
+  const cwd = tempProject();
+  const result = run(cwd, ['install', '--client', 'cursor']);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(existsSync(join(cwd, '.agents', 'skills', 'engsense', 'SKILL.md')), true);
+  assert.equal(existsSync(join(cwd, 'AGENTS.md')), false);
+  assert.match(run(cwd, ['status', '--client', 'cursor']).stdout, /installed cursor:/);
+});
+
+test('all project clients deduplicate shared Codex and Cursor target', () => {
+  const cwd = tempProject();
+  const result = run(cwd, ['install', '--client', 'all']);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /codex\+cursor:/);
+  assert.equal(existsSync(join(cwd, '.agents', 'skills', 'engsense', 'SKILL.md')), true);
+  assert.equal(existsSync(join(cwd, '.claude', 'skills', 'engsense', 'SKILL.md')), true);
+  assert.match(readFileSync(join(cwd, 'AGENTS.md'), 'utf8'), /engsense:managed-start/);
+  assert.equal(run(cwd, ['uninstall', '--client', 'all']).status, 0);
+  assert.equal(existsSync(join(cwd, '.agents', 'skills', 'engsense')), false);
+  assert.equal(existsSync(join(cwd, '.claude', 'skills', 'engsense')), false);
+  assert.equal(existsSync(join(cwd, 'AGENTS.md')), false);
+});
+
+test('Cursor shared project uninstall reconciles existing Codex block', () => {
+  const cwd = tempProject();
+  writeFileSync(join(cwd, 'AGENTS.md'), '# Keep\n');
+  assert.equal(run(cwd, ['install', '--client', 'codex']).status, 0);
+  assert.equal(run(cwd, ['uninstall', '--client', 'cursor']).status, 0);
+  assert.equal(readFileSync(join(cwd, 'AGENTS.md'), 'utf8'), '# Keep\n');
+});
+
+test('global clients install independently under isolated home and Codex home', () => {
+  const cwd = tempProject();
+  const home = tempProject();
+  const env = { HOME: home, USERPROFILE: home, CODEX_HOME: join(home, '.codex') };
+  const result = run(cwd, ['install', '--client', 'all', '--global'], env);
+  assert.equal(result.status, 0, result.stderr);
+  for (const root of ['.agents', '.claude', '.cursor']) {
+    assert.equal(existsSync(join(home, root, 'skills', 'engsense', 'SKILL.md')), true);
+  }
+  assert.equal(existsSync(join(home, '.codex', 'AGENTS.md')), true);
+  assert.equal(run(cwd, ['uninstall', '--client', 'claude', '--global'], env).status, 0);
+  assert.equal(existsSync(join(home, '.claude', 'skills', 'engsense')), false);
+  assert.equal(existsSync(join(home, '.agents', 'skills', 'engsense')), true);
+  assert.equal(run(cwd, ['uninstall', '--client', 'all', '--global'], env).status, 0);
+  assert.equal(existsSync(join(home, '.cursor', 'skills', 'engsense')), false);
+  assert.equal(existsSync(join(home, '.codex', 'AGENTS.md')), false);
+});
+
+test('all dry-run writes no files and invalid clients fail', () => {
+  const cwd = tempProject();
+  assert.equal(run(cwd, ['install', '--client', 'all', '--dry-run']).status, 0);
+  assert.equal(existsSync(join(cwd, '.agents')), false);
+  assert.equal(existsSync(join(cwd, '.claude')), false);
+  assert.equal(existsSync(join(cwd, 'AGENTS.md')), false);
+  assert.notEqual(run(cwd, ['install', '--client', 'unknown']).status, 0);
+});
+
+test('refuses to overwrite or remove unmanaged target', () => {
+  const cwd = tempProject();
+  const target = join(cwd, '.claude', 'skills', 'engsense');
+  mkdirSync(target, { recursive: true });
+  writeFileSync(join(target, 'custom.txt'), 'keep');
+  assert.notEqual(run(cwd, ['install', '--client', 'all', '--force']).status, 0);
+  assert.notEqual(run(cwd, ['uninstall', '--client', 'claude']).status, 0);
+  assert.equal(readFileSync(join(target, 'custom.txt'), 'utf8'), 'keep');
+  assert.equal(existsSync(join(cwd, '.agents')), false);
 });

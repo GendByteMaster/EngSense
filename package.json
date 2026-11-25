@@ -1,7 +1,7 @@
 {
   "name": "@gendbytemaster/engsense",
   "version": "0.1.0",
-  "description": "Context-aware software engineering judgment Skill with managed Codex AGENTS integration",
+  "description": "Context-aware engineering judgment Skill for Codex, Claude Code and Cursor with managed Codex AGENTS integration",
   "license": "MIT",
   "type": "module",
   "bin": {

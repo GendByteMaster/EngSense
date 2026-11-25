@@ -117,6 +117,8 @@ The eval folder remains lightweight development evidence. A model-execution plat
 - [x] GitHub-first CLI package exposes `engsense install/status/uninstall` via `npx github:GendByteMaster/EngSense`.
 - [x] Codex repository-scope installation is documented.
 - [x] Codex user-scope installation is documented.
+- [x] Claude Code and Cursor installation targets and shared project-path behavior are documented.
+- [ ] Record native discovery and focused behavior smoke for Claude Code and Cursor (distinct from installer CI).
 - [x] ChatGPT installation flow is documented with current official references.
 - [x] Supporting files are documented as required parts of the Skill.
 - [x] Optional `agents/openai.yaml` metadata added; implicit invocation enabled; no tool dependencies declared.

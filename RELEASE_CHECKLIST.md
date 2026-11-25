@@ -192,4 +192,4 @@ Do not label such a release `v1.0.0`.
 
 ## Publishing v0.1.0 (Delegrix-style)
 
-The manual `Create GitHub Release` workflow publishes only from `main`, with an exact reviewed commit SHA and matching package version. It requires a recorded `Status: PASS.` in `docs/CODEX_BEHAVIOR_REVIEW.md` and successful main CI on that SHA, validates the package again, refuses existing tags/releases, and uses the version-specific release notes. Do not mark the live gate complete without actual evidence. No npm registry publication is required.
+The manual `Create GitHub Release` workflow publishes only from `main`, with an exact reviewed commit SHA and matching package version. It requires a recorded `Status: PASS.` in `docs/CODEX_BEHAVIOR_REVIEW.md`, a complete revision-bound `docs/CODEX_BEHAVIOR_RESULTS.json` passing `evals/validate_release_review.py`, and successful main CI on that SHA, validates the package again, refuses existing tags/releases, and uses the version-specific release notes. Do not mark the live gate complete without actual evidence. No npm registry publication is required.

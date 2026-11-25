@@ -28,6 +28,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -44,7 +46,7 @@ jobs:
           test "$GITHUB_SHA" = "$EXPECTED_SHA"
           test "$TAG" = "v$(node -p "require('./package.json').version")"
           test "$TAG" = "v0.1.0"
-          grep -Fx 'Status: PASS.' docs/CODEX_BEHAVIOR_REVIEW.md
+          python evals/validate_release_review.py
           python evals/validate.py
           python evals/validate_skill.py
           npm test

@@ -300,3 +300,13 @@ It does not require:
 - a database;
 - a vector store;
 - an EngSense server.
+
+## Released package (recommended for v0.1.0)
+
+Once the GitHub release is published, install the tested npm tarball without an npm registry account:
+
+~~~powershell
+npm exec --yes --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense install --client all --global
+~~~
+
+Replace `all` with `codex`, `claude` or `cursor`; omit `--global` for project scope. Use the same package argument for status, refresh or uninstall. Direct GitHub source shorthand is an alternative, but npm 10.8.2 failed the pinned-commit smoke with a GitFetcher error; use the release package if affected.

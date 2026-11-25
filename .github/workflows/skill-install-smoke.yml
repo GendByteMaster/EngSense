@@ -37,6 +37,16 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Pack exact checkout for installation smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/engsense-package"
+          npm pack --pack-destination "$RUNNER_TEMP/engsense-package"
+          package="$RUNNER_TEMP/engsense-package/gendbytemaster-engsense-$(node -p "require('./package.json').version").tgz"
+          test -f "$package"
+          echo "ENGSENSE_PACKAGE=$package" >> "$GITHUB_ENV"
+
       - name: Set up clean test repository
         shell: bash
         run: |
@@ -53,11 +63,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            node "$GITHUB_WORKSPACE/bin/engsense.js" install --client codex
-          else
-            npx --yes "github:GendByteMaster/EngSense#$GITHUB_SHA" install --client codex
-          fi
+            npm exec --yes --package="$ENGSENSE_PACKAGE" -- engsense install --client codex
+
 
       - name: Verify Skill and AGENTS integration
         shell: bash
@@ -83,13 +90,9 @@ jobs:
 
           before="$(sha256sum AGENTS.md | cut -d' ' -f1)"
 
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            node "$GITHUB_WORKSPACE/bin/engsense.js" install --client codex
-            node "$GITHUB_WORKSPACE/bin/engsense.js" status --client codex
-          else
-            npx --yes "github:GendByteMaster/EngSense#$GITHUB_SHA" install --client codex
-            npx --yes "github:GendByteMaster/EngSense#$GITHUB_SHA" status --client codex
-          fi
+            npm exec --yes --package="$ENGSENSE_PACKAGE" -- engsense install --client codex
+            npm exec --yes --package="$ENGSENSE_PACKAGE" -- engsense status --client codex
+
 
           after="$(sha256sum AGENTS.md | cut -d' ' -f1)"
           test "$before" = "$after"
@@ -100,11 +103,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            node "$GITHUB_WORKSPACE/bin/engsense.js" uninstall --client codex
-          else
-            npx --yes "github:GendByteMaster/EngSense#$GITHUB_SHA" uninstall --client codex
-          fi
+            npm exec --yes --package="$ENGSENSE_PACKAGE" -- engsense uninstall --client codex
+
 
           test ! -e .agents/skills/engsense
           grep -Fqx "# Existing project rule" AGENTS.md

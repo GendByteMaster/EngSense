@@ -185,6 +185,18 @@ Completed full-text research currently includes:
 
 Several planned source-specific lenses remain blocked until their required full-book research is complete. See [references/source-status.md](references/source-status.md).
 
+## Install or refresh directly from GitHub
+
+To install the current default branch for Codex (or replace an existing EngSense installation):
+
+~~~powershell
+npx --yes github:GendByteMaster/EngSense install --client codex --global --force
+~~~
+
+For Claude Code, Cursor or all supported clients, replace `codex` with `claude`, `cursor` or `all`. Omit `--global` for the current project. Use the same source with `status` or `uninstall` (without `--force`). Restart the agent after installation.
+
+This command follows `main`, not the immutable v0.1.0 release asset. A normal first installation does not need `--force`; it replaces the entire EngSense target directory, so back up any local additions first. If npm reports a GitFetcher error, use the versioned release tarball documented below.
+
 ## Install
 
 EngSense follows a ForgeGuard-style GitHub-first installer model.

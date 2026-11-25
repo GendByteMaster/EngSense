@@ -24,6 +24,18 @@ npx --yes github:GendByteMaster/EngSense install --client all --global
 
 Use the same client for status, refresh with `install --force`, and uninstall. Omit `--global` for project scope. Default remains Codex for compatibility. Claude Code and Cursor rely on native Skill discovery; the CLI does not create or modify CLAUDE.md or Cursor rules. Codex and Cursor share one project payload; `all` deduplicates it, and removing it for either client removes it for both and unlinks EngSense's Codex block (unless `--no-agents`). Cursor may discover additional compatible paths; avoid duplicate global copies if the host reports ambiguity. Global installs are separate directories. Native host behavior must be verified separately; installer tests alone do not establish model behavior.
 
+## Install or refresh directly from GitHub
+
+To install the current default branch for Codex (or replace an existing EngSense installation):
+
+~~~powershell
+npx --yes github:GendByteMaster/EngSense install --client codex --global --force
+~~~
+
+For Claude Code, Cursor or all supported clients, replace `codex` with `claude`, `cursor` or `all`. Omit `--global` for the current project. Use the same source with `status` or `uninstall` (without `--force`). Restart the agent after installation.
+
+This command follows `main`, not the immutable v0.1.0 release asset. A normal first installation does not need `--force`; it replaces the entire EngSense target directory, so back up any local additions first. If npm reports a GitFetcher error, use the versioned release tarball documented below.
+
 ## Recommended — ForgeGuard-style GitHub install
 
 Install EngSense into the current repository for Codex:

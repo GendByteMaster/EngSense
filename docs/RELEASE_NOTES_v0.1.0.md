@@ -44,6 +44,18 @@ EngSense does not execute a separate runtime, replace repository authorization r
 - Codex, Claude Code or Cursor with Agent Skills support.
 - No npm-registry publication, model-provider API key, MCP server, or EngSense backend is required.
 
+## Install or refresh directly from GitHub
+
+To install the current default branch for Codex (or replace an existing EngSense installation):
+
+~~~powershell
+npx --yes github:GendByteMaster/EngSense install --client codex --global --force
+~~~
+
+For Claude Code, Cursor or all supported clients, replace `codex` with `claude`, `cursor` or `all`. Omit `--global` for the current project. Use the same source with `status` or `uninstall` (without `--force`). Restart the agent after installation.
+
+This command follows `main`, not the immutable v0.1.0 release asset. A normal first installation does not need `--force`; it replaces the entire EngSense target directory, so back up any local additions first. If npm reports a GitFetcher error, use the versioned release tarball documented below.
+
 ## Install
 
 The published npm tarball is the tested distribution path. It requires no npm registry publication and avoids a GitFetcher error observed in npm 10.8.2 when fetching a GitHub commit directly. Use the release asset in the commands below. GitHub source shorthand (`github:GendByteMaster/EngSense#v0.1.0`) may work with other npm versions but has not been verified for this release.

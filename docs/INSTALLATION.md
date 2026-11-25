@@ -6,6 +6,24 @@ The Skill itself remains static: Markdown guidance and metadata. The CLI only in
 
 No OpenAI API key, model-provider SDK, MCP server, or EngSense backend is required.
 
+## Other coding agents
+
+EngSense uses one portable Skill payload. The installer supports Codex, Claude Code and Cursor.
+
+| Client | Project | User |
+|---|---|---|
+| Codex | `.agents/skills/engsense/` | `~/.agents/skills/engsense/` |
+| Claude Code | `.claude/skills/engsense/` | `~/.claude/skills/engsense/` |
+| Cursor | `.agents/skills/engsense/` | `~/.cursor/skills/engsense/` |
+
+~~~bash
+npx --yes github:GendByteMaster/EngSense install --client claude --global
+npx --yes github:GendByteMaster/EngSense install --client cursor --global
+npx --yes github:GendByteMaster/EngSense install --client all --global
+~~~
+
+Use the same client for status, refresh with `install --force`, and uninstall. Omit `--global` for project scope. Default remains Codex for compatibility. Claude Code and Cursor rely on native Skill discovery; the CLI does not create or modify CLAUDE.md or Cursor rules. Codex and Cursor share one project payload; `all` deduplicates it, and removing it for either client removes it for both and unlinks EngSense's Codex block (unless `--no-agents`). Cursor may discover additional compatible paths; avoid duplicate global copies if the host reports ambiguity. Global installs are separate directories. Native host behavior must be verified separately; installer tests alone do not establish model behavior.
+
 ## Recommended — ForgeGuard-style GitHub install
 
 Install EngSense into the current repository for Codex:
@@ -78,7 +96,7 @@ engsense install [options]
 engsense status [options]
 engsense uninstall [options]
 
---client <codex>
+--client <all|codex|claude|cursor>
 --global
 --force
 --no-agents
@@ -230,7 +248,7 @@ Manual copying does not automatically modify `AGENTS.md`.
 
 EngSense can still be used as a normal Skill in supported ChatGPT Skills surfaces.
 
-The GitHub installer CLI is specifically for local coding-agent installation and Codex AGENTS integration. It does not turn EngSense into an API-backed service.
+The GitHub installer CLI supports local Codex, Claude Code and Cursor Skill installation, with AGENTS integration for Codex. It does not turn EngSense into an API-backed service.
 
 ## Development checkout
 

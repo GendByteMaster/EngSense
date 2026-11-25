@@ -221,6 +221,24 @@ The generic `npx skills add https://github.com/GendByteMaster/EngSense -a codex`
 
 For full installation details, see [docs/INSTALLATION.md](docs/INSTALLATION.md).
 
+## Other coding agents
+
+EngSense uses one portable Skill payload. The installer supports Codex, Claude Code and Cursor.
+
+| Client | Project | User |
+|---|---|---|
+| Codex | `.agents/skills/engsense/` | `~/.agents/skills/engsense/` |
+| Claude Code | `.claude/skills/engsense/` | `~/.claude/skills/engsense/` |
+| Cursor | `.agents/skills/engsense/` | `~/.cursor/skills/engsense/` |
+
+~~~bash
+npx --yes github:GendByteMaster/EngSense install --client claude --global
+npx --yes github:GendByteMaster/EngSense install --client cursor --global
+npx --yes github:GendByteMaster/EngSense install --client all --global
+~~~
+
+Use the same client for status, refresh with `install --force`, and uninstall. Omit `--global` for project scope. Default remains Codex for compatibility. Claude Code and Cursor rely on native Skill discovery; the CLI does not create or modify CLAUDE.md or Cursor rules. Codex and Cursor share one project payload; `all` deduplicates it, and removing it for either client removes it for both and unlinks EngSense's Codex block (unless `--no-agents`). Cursor may discover additional compatible paths; avoid duplicate global copies if the host reports ambiguity. Global installs are separate directories. Native host behavior must be verified separately; installer tests alone do not establish model behavior.
+
 ## Documentation
 
 - [Philosophy and design principles](docs/PHILOSOPHY.md)
@@ -233,7 +251,7 @@ For full installation details, see [docs/INSTALLATION.md](docs/INSTALLATION.md).
 
 ## Project status
 
-The reusable Skill foundation, language/domain routing, conflict matrix, research-grounded general/source-specific lenses, and 48 deterministic eval fixtures are implemented.
+The reusable Skill foundation, language/domain routing, conflict matrix, research-grounded general/source-specific lenses, and 51 deterministic eval fixtures are implemented.
 
 EngSense is still **pre-v1.0** while the mandatory source corpus and blocked source-specific lenses remain incomplete. The release checklist records the remaining gates explicitly rather than treating unfinished research as complete.
 

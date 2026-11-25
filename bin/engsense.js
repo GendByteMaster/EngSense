@@ -14,6 +14,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const SKILL_NAME = 'engsense';
+const CLIENTS = ['codex', 'claude', 'cursor'];
 const VERSION = '0.1.0';
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -51,7 +52,7 @@ Usage:
   engsense uninstall [options]
 
 Options:
-  --client <codex>   Target client (default: codex)
+  --client <all|codex|claude|cursor> Target client (default: codex)
   --global           Install in the user-level Skill directory
   --force            Replace an existing EngSense installation
   --no-agents        Do not manage Codex AGENTS.md integration
@@ -100,7 +101,7 @@ function parseArgs(argv) {
     else throw new Error(`unknown option: ${arg}`);
   }
 
-  if (out.client !== 'codex') {
+  if (out.client !== 'all' && !CLIENTS.includes(out.client)) {
     throw new Error(`unsupported client: ${out.client}`);
   }
 
@@ -115,10 +116,35 @@ function codexHome() {
   return process.env.CODEX_HOME ? resolve(process.env.CODEX_HOME) : join(homedir(), '.codex');
 }
 
-function targetPath(globalScope) {
-  return globalScope
-    ? join(homedir(), '.agents', 'skills', SKILL_NAME)
-    : join(process.cwd(), '.agents', 'skills', SKILL_NAME);
+function targets(options) {
+  const clients = options.client === 'all' ? CLIENTS : [options.client];
+  const base = options.global ? homedir() : process.cwd();
+  const result = new Map();
+  for (const client of clients) {
+    const directory = client === 'claude' ? '.claude'
+      : client === 'cursor' && options.global ? '.cursor' : '.agents';
+    const target = join(base, directory, 'skills', SKILL_NAME);
+    result.set(target, [...(result.get(target) || []), client]);
+  }
+  return result;
+}
+
+function includesCodex(options) {
+  return options.client === 'all' || options.client === 'codex';
+}
+
+function needsAgentsCleanup(options) {
+  // Cursor and Codex share the project payload. Removing it must also unlink
+  // any existing EngSense Codex registration unless --no-agents was requested.
+  return includesCodex(options) || (!options.global && options.client === 'cursor');
+}
+
+function assertOwned(target) {
+  if (!existsSync(target)) return;
+  const skill = join(target, 'SKILL.md');
+  if (!existsSync(skill) || !/^name:\s*engsense\s*$/m.test(readFileSync(skill, 'utf8'))) {
+    throw new Error('refuse to replace/remove unmanaged Skill: ' + target);
+  }
 }
 
 function agentsPaths(globalScope) {
@@ -247,13 +273,13 @@ function uninstallAgentsIntegration(options) {
   }
 }
 
-function copySkill(target, options) {
+function copySkill(target, label, options) {
   if (existsSync(target) && !options.force) {
-    console.log(`skip      codex: ${target} (already exists; use --force)`);
+    console.log(`skip      ${label}: ${target} (already exists; use --force)`);
     return;
   }
 
-  console.log(`${options.dryRun ? 'would install' : 'install   '} codex: ${target}`);
+  console.log(`${options.dryRun ? 'would install' : 'install   '} ${label}: ${target}`);
   if (options.dryRun) return;
 
   if (existsSync(target)) rmSync(target, { recursive: true, force: true });
@@ -269,31 +295,37 @@ function copySkill(target, options) {
 }
 
 function install(options) {
-  copySkill(targetPath(options.global), options);
-  installAgentsIntegration(options);
+  const selected = targets(options);
+  for (const target of selected.keys()) assertOwned(target);
+  for (const [target, clients] of selected) copySkill(target, clients.join('+'), options);
+  if (includesCodex(options)) installAgentsIntegration(options);
 
-  if (!options.noAgents && !options.dryRun) {
+  if (includesCodex(options) && !options.noAgents && !options.dryRun) {
     console.log('note      codex: start a new session to reload AGENTS instructions');
   }
 }
 
 function status(options) {
-  const target = targetPath(options.global);
-  const installed = existsSync(join(target, 'SKILL.md'));
-  console.log(`${installed ? 'installed' : 'missing  '} codex: ${target}`);
-  statusAgentsIntegration(options);
+  for (const [target, clients] of targets(options)) {
+    const installed = existsSync(join(target, 'SKILL.md'));
+    console.log(`${installed ? 'installed' : 'missing  '} ${clients.join('+')}: ${target}`);
+  }
+  if (includesCodex(options)) statusAgentsIntegration(options);
 }
 
 function uninstall(options) {
-  const target = targetPath(options.global);
-  if (!existsSync(target)) {
-    console.log(`skip      codex: ${target} (not installed)`);
-  } else {
-    console.log(`${options.dryRun ? 'would remove' : 'remove   '} codex: ${target}`);
-    if (!options.dryRun) rmSync(target, { recursive: true, force: true });
+  const selected = targets(options);
+  for (const target of selected.keys()) assertOwned(target);
+  for (const [target, clients] of selected) {
+    const label = clients.join('+');
+    if (!existsSync(target)) {
+      console.log(`skip      ${label}: ${target} (not installed)`);
+    } else {
+      console.log(`${options.dryRun ? 'would remove' : 'remove   '} ${label}: ${target}`);
+      if (!options.dryRun) rmSync(target, { recursive: true, force: true });
+    }
   }
-
-  uninstallAgentsIntegration(options);
+  if (needsAgentsCleanup(options)) uninstallAgentsIntegration(options);
 }
 
 try {

@@ -2,9 +2,6 @@ name: Eval fixture validation
 
 on:
   push:
-    paths:
-      - "evals/**"
-      - ".github/workflows/evals.yml"
   pull_request:
     paths:
       - "evals/**"
@@ -27,3 +24,6 @@ jobs:
 
       - name: Validate EngSense eval cases
         run: python evals/validate.py
+
+      - name: Test release evidence validation
+        run: python -m unittest discover -s evals -p 'test_release_review.py'

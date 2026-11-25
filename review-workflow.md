@@ -86,7 +86,7 @@ Do not recommend a different architecture without understanding why the current 
 
 ## Finding acceptance gate
 
-Emit a finding only when most of the following are true:
+Emit a finding only when all of the following are satisfied. A material risk with incomplete evidence may be recorded as an explicitly qualified question or verification gap, not as an established defect:
 
 - materially relevant;
 - concrete;

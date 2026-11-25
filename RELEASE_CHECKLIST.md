@@ -10,7 +10,7 @@ A checked documentation item means the artifact exists and is internally consist
 
 The Skill foundation is usable, but the mandatory source corpus and blocked source-specific lenses tracked in Issue #2 are not complete.
 
-A pre-v1 development release may be reasonable once the repository is packaged and reviewed, but it must not claim the blocked source-specific coverage.
+A pre-v1 development release is tracked separately below. Three of fourteen mandatory sources are complete; four additional full-text sources are supplemental. Neither the package version nor green structural CI is evidence of a completed behavioral review.
 
 ## 1. Skill structure
 
@@ -95,7 +95,7 @@ Do not mark these complete from summaries, excerpts, general knowledge, or unrel
 - [x] Language-pattern transfer scenarios exist.
 - [x] Specialist-boundary scenarios exist.
 - [x] Performance/change-strategy/representation scenarios exist.
-- [x] Current fixture set contains 48 scenarios.
+- [x] Current fixture set contains 51 scenarios.
 - [ ] Final v1.0 fixture review after all mandatory source-specific lenses are added.
 
 The eval folder remains lightweight development evidence. A model-execution platform is not part of the EngSense Skill.
@@ -117,6 +117,8 @@ The eval folder remains lightweight development evidence. A model-execution plat
 - [x] GitHub-first CLI package exposes `engsense install/status/uninstall` via `npx github:GendByteMaster/EngSense`.
 - [x] Codex repository-scope installation is documented.
 - [x] Codex user-scope installation is documented.
+- [x] Claude Code and Cursor installation targets and shared project-path behavior are documented.
+- [ ] Record native discovery and focused behavior smoke for Claude Code and Cursor (distinct from installer CI).
 - [x] ChatGPT installation flow is documented with current official references.
 - [x] Supporting files are documented as required parts of the Skill.
 - [x] Optional `agents/openai.yaml` metadata added; implicit invocation enabled; no tool dependencies declared.
@@ -173,6 +175,14 @@ A v1.0 release requires all of the following:
 
 ## Pre-v1 development release
 
+Candidate: `v0.1.0` (package version already set). The pre-v1 release gate is independent of the mandatory v1.0 research gate.
+
+- [ ] Candidate revision merged and all three CI workflows green on that revision.
+- [ ] Installer install/status/uninstall smoke and Node tests verified for candidate.
+- [ ] Representative real Codex Skill behavior review recorded (see `docs/CODEX_BEHAVIOR_REVIEW.md`); required for a behavior-verified release, not an explicitly authorized GitHub development prerelease.
+- [ ] Release notes reviewed (see `docs/RELEASE_NOTES_v0.1.0.md`).
+- [ ] Verify tag does not already exist; create tag and GitHub release for the verified commit.
+
 A pre-v1 tag/release may be created before the mandatory research corpus is complete if it clearly states:
 
 - research is incomplete;
@@ -181,3 +191,9 @@ A pre-v1 tag/release may be created before the mandatory research corpus is comp
 - interfaces and guidance may still change before v1.0.
 
 Do not label such a release `v1.0.0`.
+
+## Publishing v0.1.0 (Delegrix-style)
+
+The manual `Create GitHub Release` workflow publishes only from `main`, with an exact reviewed commit SHA and matching package version. It requires a recorded `Status: PASS.` in `docs/CODEX_BEHAVIOR_REVIEW.md`, a complete revision-bound `docs/CODEX_BEHAVIOR_RESULTS.json` passing `evals/validate_release_review.py`, and successful main CI on that SHA, validates the package again, refuses existing tags/releases, and uses the version-specific release notes. Do not mark the live gate complete without actual evidence. No npm registry publication is required.
+
+The repository owner requested publication of v0.1.0 before live behavior verification. A one-time development prerelease request file triggers the release workflow on merge to main; all exact-revision CI checks and package validation still must succeed. GitHub marks this publication as a pre-release. The manual verified-release path retains the evidence validator; no live test or research gate is marked complete. Future releases require a separate decision; do not recreate or overwrite v0.1.0.

@@ -1,0 +1,35 @@
+{
+  "id": "domain-only-no-speculative-lenses",
+  "title": "Domain-only routing without speculative principle lenses",
+  "mode": "focused",
+  "task": "Review cancellation handling for an in-process worker. The task is limited to its shutdown contract.",
+  "context": [
+    "Single process; one worker; no broker or remote failure boundary.",
+    "No structural refactor or alternative representation is requested."
+  ],
+  "evidence": [
+    "The worker owns an async task and must await cancellation before shutdown returns.",
+    "Existing architecture is adequate; only lifecycle semantics are in question."
+  ],
+  "tempting_wrong_recommendation": [
+    "Load all principle lenses or treat the worker as distributed."
+  ],
+  "expected_decision_properties": [
+    "Use concurrency guidance and language guidance only if its mechanism matters.",
+    "Allow zero principle lenses; do not manufacture a conflict.",
+    "Preserve cancellation and shutdown invariants."
+  ],
+  "unacceptable_reasoning": [
+    "A queue necessarily implies a distributed system.",
+    "Every substantive review requires every lens."
+  ],
+  "expected_quality_dimensions": [
+    "correctness",
+    "reliability",
+    "cognitive_complexity"
+  ],
+  "expected_authority": "guidance",
+  "verification_expectations": [
+    "Test cancellation during active work and assert shutdown joins the worker."
+  ]
+}

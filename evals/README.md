@@ -137,6 +137,9 @@ It does not judge model quality. Behavioral scoring can be performed externally 
 46. Repeated business invariant needs an authoritative domain home
 47. Straightforward CRUD should not be escalated into rich domain architecture
 48. In-process concurrency should not be treated as a distributed system without a remote failure boundary
+49. Domain-only routing without speculative principle lenses
+50. Unsupported review assertion is not an established defect
+51. Specialist invariant takes precedence over idiomatic simplification
 
 The suite intentionally includes:
 

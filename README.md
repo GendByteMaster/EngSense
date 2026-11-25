@@ -190,7 +190,7 @@ Several planned source-specific lenses remain blocked until their required full-
 To install the current default branch for Codex (or replace an existing EngSense installation):
 
 ~~~powershell
-npx --yes github:GendByteMaster/EngSense install --client codex --global --force
+npx --yes --allow-git=all github:GendByteMaster/EngSense install --client codex --global --force
 ~~~
 
 For Claude Code, Cursor or all supported clients, replace `codex` with `claude`, `cursor` or `all`. Omit `--global` for the current project. Use the same source with `status` or `uninstall` (without `--force`). Restart the agent after installation.
@@ -204,7 +204,7 @@ EngSense follows a ForgeGuard-style GitHub-first installer model.
 Install into the current repository for Codex:
 
 ~~~bash
-npx --yes github:GendByteMaster/EngSense install --client codex
+npx --yes --allow-git=all github:GendByteMaster/EngSense install --client codex
 ~~~
 
 That command installs the Skill at `.agents/skills/engsense/` and automatically reconciles the EngSense managed block in the active root `AGENTS.md` / `AGENTS.override.md`.
@@ -212,19 +212,19 @@ That command installs the Skill at `.agents/skills/engsense/` and automatically 
 Check status:
 
 ~~~bash
-npx --yes github:GendByteMaster/EngSense status --client codex
+npx --yes --allow-git=all github:GendByteMaster/EngSense status --client codex
 ~~~
 
 Uninstall:
 
 ~~~bash
-npx --yes github:GendByteMaster/EngSense uninstall --client codex
+npx --yes --allow-git=all github:GendByteMaster/EngSense uninstall --client codex
 ~~~
 
 Global/user scope:
 
 ~~~bash
-npx --yes github:GendByteMaster/EngSense install --client codex --global
+npx --yes --allow-git=all github:GendByteMaster/EngSense install --client codex --global
 ~~~
 
 Use `--force` to refresh an existing installation, `--no-agents` to skip AGENTS management, and `--dry-run` to preview changes.
@@ -244,9 +244,9 @@ EngSense uses one portable Skill payload. The installer supports Codex, Claude C
 | Cursor | `.agents/skills/engsense/` | `~/.cursor/skills/engsense/` |
 
 ~~~bash
-npx --yes github:GendByteMaster/EngSense install --client claude --global
-npx --yes github:GendByteMaster/EngSense install --client cursor --global
-npx --yes github:GendByteMaster/EngSense install --client all --global
+npx --yes --allow-git=all github:GendByteMaster/EngSense install --client claude --global
+npx --yes --allow-git=all github:GendByteMaster/EngSense install --client cursor --global
+npx --yes --allow-git=all github:GendByteMaster/EngSense install --client all --global
 ~~~
 
 Use the same client for status, refresh with `install --force`, and uninstall. Omit `--global` for project scope. Default remains Codex for compatibility. Claude Code and Cursor rely on native Skill discovery; the CLI does not create or modify CLAUDE.md or Cursor rules. Codex and Cursor share one project payload; `all` deduplicates it, and removing it for either client removes it for both and unlinks EngSense's Codex block (unless `--no-agents`). Cursor may discover additional compatible paths; avoid duplicate global copies if the host reports ambiguity. Global installs are separate directories. Native host behavior must be verified separately; installer tests alone do not establish model behavior.
@@ -276,7 +276,35 @@ EngSense is licensed under the [MIT License](LICENSE).
 Once the GitHub release is published, install the tested npm tarball without an npm registry account:
 
 ~~~powershell
-npm exec --yes --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense install --client all --global
+npm exec --yes --allow-remote=all --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense install --client all --global
 ~~~
 
 Replace `all` with `codex`, `claude` or `cursor`; omit `--global` for project scope. Use the same package argument for status, refresh or uninstall. Direct GitHub source shorthand is an alternative, but npm 10.8.2 failed the pinned-commit smoke with a GitFetcher error; use the release package if affected.
+
+## npm 12 compatibility (EALLOWGIT)
+
+npm 12 denies Git-sourced packages by default. The examples use `--allow-git=all` before the package argument to opt in for one invocation only, without changing persistent configuration. It permits all Git dependencies in that invocation; use only trusted, reviewed sources. On older npm versions that do not recognize this option, omit it if Git fetching is permitted. See [npm configuration](https://docs.npmjs.com/cli/using-npm/config/#allow-git).
+
+```bash
+# Install
+npx --yes --allow-git=all github:GendByteMaster/EngSense#v0.1.0 install --client codex --global
+# Upgrade existing installation
+npx --yes --allow-git=all github:GendByteMaster/EngSense#v0.1.0 install --client codex --global --force
+# Verify installed Skill
+npx --yes --allow-git=all github:GendByteMaster/EngSense#v0.1.0 status --client codex --global
+```
+
+Back up local additions before using --force, which replaces the managed Skill directory. The v0.1.0 release is a prerelease. Its HTTPS tarball uses the separate npm 12 allow-remote policy; use --allow-remote=all only for trusted sources. Omit `--global` for project scope; restart the agent after updating.
+
+If Git fetching is prohibited, use Git and Node.js directly (from the intended target project, with a separate source checkout):
+
+```powershell
+$src = Join-Path $env:TEMP ("engsense-" + [guid]::NewGuid().ToString("N"))
+git clone --branch v0.1.0 --depth 1 https://github.com/GendByteMaster/EngSense.git $src
+node "$src/bin/engsense.js" install --client codex --global
+# For an existing installation, use instead:
+# node "$src/bin/engsense.js" install --client codex --global --force
+node "$src/bin/engsense.js" status --client codex --global
+```
+
+The npm 12 option follows npm's documented configuration; live npm 12 execution is not yet verified here.

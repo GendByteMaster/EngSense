@@ -49,7 +49,7 @@ EngSense does not execute a separate runtime, replace repository authorization r
 To install the current default branch for Codex (or replace an existing EngSense installation):
 
 ~~~powershell
-npx --yes github:GendByteMaster/EngSense install --client codex --global --force
+npx --yes --allow-git=all github:GendByteMaster/EngSense install --client codex --global --force
 ~~~
 
 For Claude Code, Cursor or all supported clients, replace `codex` with `claude`, `cursor` or `all`. Omit `--global` for the current project. Use the same source with `status` or `uninstall` (without `--force`). Restart the agent after installation.
@@ -64,7 +64,7 @@ The published npm tarball is the tested distribution path. It requires no npm re
 ### Codex — user scope (recommended)
 
 ```powershell
-npm exec --yes --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense install --client codex --global
+npm exec --yes --allow-remote=all --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense install --client codex --global
 ```
 
 User-level Skill location: `~/.agents/skills/engsense/`.
@@ -74,7 +74,7 @@ User-level Skill location: `~/.agents/skills/engsense/`.
 Run from the project root:
 
 ```powershell
-npm exec --yes --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense install --client codex
+npm exec --yes --allow-remote=all --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense install --client codex
 ```
 
 Project-level location: `.agents/skills/engsense/`.
@@ -84,7 +84,7 @@ EngSense also reconciles its marked block in the active Codex AGENTS instruction
 ### Claude Code
 
 ~~~powershell
-npm exec --yes --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense install --client claude --global
+npm exec --yes --allow-remote=all --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense install --client claude --global
 ~~~
 
 User location: `~/.claude/skills/engsense/`. Without `--global`: `.claude/skills/engsense/`.
@@ -92,7 +92,7 @@ User location: `~/.claude/skills/engsense/`. Without `--global`: `.claude/skills
 ### Cursor
 
 ~~~powershell
-npm exec --yes --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense install --client cursor --global
+npm exec --yes --allow-remote=all --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense install --client cursor --global
 ~~~
 
 User location: `~/.cursor/skills/engsense/`. Without `--global`: `.agents/skills/engsense/`.
@@ -100,7 +100,7 @@ User location: `~/.cursor/skills/engsense/`. Without `--global`: `.agents/skills
 ### All three clients
 
 ~~~powershell
-npm exec --yes --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense install --client all --global
+npm exec --yes --allow-remote=all --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense install --client all --global
 ~~~
 
 Codex remains the default. Codex and Cursor share a project-level payload; uninstalling either removes the shared copy and EngSense's Codex registration unless `--no-agents` is set. Claude Code and Cursor use native discovery without CLAUDE.md or Cursor rules modifications. Replace `--client codex` in status, refresh and uninstall examples with the desired client. Native activation and live model behavior for Claude Code and Cursor are not yet verified.
@@ -108,8 +108,8 @@ Codex remains the default. Codex and Cursor share a project-level payload; unins
 ### Verify installation
 
 ```powershell
-npm exec --yes --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense status --client codex --global
-npm exec --yes --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense --version
+npm exec --yes --allow-remote=all --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense status --client codex --global
+npm exec --yes --allow-remote=all --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense --version
 ```
 
 The status command reports installation presence and AGENTS linkage; `--version` reports the invoked CLI package version, not an independent installed-file version check.
@@ -119,19 +119,19 @@ The status command reports installation presence and AGENTS linkage; `--version`
 To reapply this exact release:
 
 ```powershell
-npm exec --yes --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense install --client codex --global --force
+npm exec --yes --allow-remote=all --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense install --client codex --global --force
 ```
 
 To refresh from the current default branch:
 
 ```powershell
-npx --yes github:GendByteMaster/EngSense install --client codex --global --force
+npx --yes --allow-git=all github:GendByteMaster/EngSense install --client codex --global --force
 ```
 
 Preview a refresh:
 
 ```powershell
-npx --yes github:GendByteMaster/EngSense install --client codex --global --force --dry-run
+npx --yes --allow-git=all github:GendByteMaster/EngSense install --client codex --global --force --dry-run
 ```
 
 **Important:** `--force` replaces the EngSense target directory, including custom files stored inside it. Back up any local additions first. Keep personal instructions outside the Skill directory. The pinned command does not advance beyond its tag. EngSense has no background updater or separate `update` command.
@@ -139,7 +139,7 @@ npx --yes github:GendByteMaster/EngSense install --client codex --global --force
 ## Uninstall
 
 ```powershell
-npm exec --yes --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense uninstall --client codex --global
+npm exec --yes --allow-remote=all --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense uninstall --client codex --global
 ```
 
 Omit `--global` for project scope. Uninstall removes the target Skill directory and its managed AGENTS blocks. It preserves unrelated instruction content, but does not preserve custom files within the target Skill directory. Use `--dry-run` to preview.
@@ -172,3 +172,31 @@ engsense --help
 **Repository:** https://github.com/GendByteMaster/EngSense
 
 **License:** MIT.
+
+## npm 12 compatibility (EALLOWGIT)
+
+npm 12 denies Git-sourced packages by default. The examples use `--allow-git=all` before the package argument to opt in for one invocation only, without changing persistent configuration. It permits all Git dependencies in that invocation; use only trusted, reviewed sources. On older npm versions that do not recognize this option, omit it if Git fetching is permitted. See [npm configuration](https://docs.npmjs.com/cli/using-npm/config/#allow-git).
+
+```bash
+# Install
+npx --yes --allow-git=all github:GendByteMaster/EngSense#v0.1.0 install --client codex --global
+# Upgrade existing installation
+npx --yes --allow-git=all github:GendByteMaster/EngSense#v0.1.0 install --client codex --global --force
+# Verify installed Skill
+npx --yes --allow-git=all github:GendByteMaster/EngSense#v0.1.0 status --client codex --global
+```
+
+Back up local additions before using --force, which replaces the managed Skill directory. The v0.1.0 release is a prerelease. Its HTTPS tarball uses the separate npm 12 allow-remote policy; use --allow-remote=all only for trusted sources. Omit `--global` for project scope; restart the agent after updating.
+
+If Git fetching is prohibited, use Git and Node.js directly (from the intended target project, with a separate source checkout):
+
+```powershell
+$src = Join-Path $env:TEMP ("engsense-" + [guid]::NewGuid().ToString("N"))
+git clone --branch v0.1.0 --depth 1 https://github.com/GendByteMaster/EngSense.git $src
+node "$src/bin/engsense.js" install --client codex --global
+# For an existing installation, use instead:
+# node "$src/bin/engsense.js" install --client codex --global --force
+node "$src/bin/engsense.js" status --client codex --global
+```
+
+The npm 12 option follows npm's documented configuration; live npm 12 execution is not yet verified here.

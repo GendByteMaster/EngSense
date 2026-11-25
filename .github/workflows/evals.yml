@@ -2,9 +2,6 @@ name: Eval fixture validation
 
 on:
   push:
-    paths:
-      - "evals/**"
-      - ".github/workflows/evals.yml"
   pull_request:
     paths:
       - "evals/**"

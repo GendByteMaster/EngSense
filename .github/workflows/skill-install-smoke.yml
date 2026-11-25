@@ -18,19 +18,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - "SKILL.md"
-      - "agents/**"
-      - "bin/**"
-      - "package.json"
-      - "decision-framework.md"
-      - "review-workflow.md"
-      - "principles/**"
-      - "languages/**"
-      - "domains/**"
-      - "references/**"
-      - "docs/INSTALLATION.md"
-      - ".github/workflows/skill-install-smoke.yml"
   workflow_dispatch:
 
 permissions:
@@ -69,7 +56,7 @@ jobs:
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             node "$GITHUB_WORKSPACE/bin/engsense.js" install --client codex
           else
-            npx --yes github:GendByteMaster/EngSense install --client codex
+            npx --yes "github:GendByteMaster/EngSense#$GITHUB_SHA" install --client codex
           fi
 
       - name: Verify Skill and AGENTS integration
@@ -100,8 +87,8 @@ jobs:
             node "$GITHUB_WORKSPACE/bin/engsense.js" install --client codex
             node "$GITHUB_WORKSPACE/bin/engsense.js" status --client codex
           else
-            npx --yes github:GendByteMaster/EngSense install --client codex
-            npx --yes github:GendByteMaster/EngSense status --client codex
+            npx --yes "github:GendByteMaster/EngSense#$GITHUB_SHA" install --client codex
+            npx --yes "github:GendByteMaster/EngSense#$GITHUB_SHA" status --client codex
           fi
 
           after="$(sha256sum AGENTS.md | cut -d' ' -f1)"
@@ -116,7 +103,7 @@ jobs:
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             node "$GITHUB_WORKSPACE/bin/engsense.js" uninstall --client codex
           else
-            npx --yes github:GendByteMaster/EngSense uninstall --client codex
+            npx --yes "github:GendByteMaster/EngSense#$GITHUB_SHA" uninstall --client codex
           fi
 
           test ! -e .agents/skills/engsense

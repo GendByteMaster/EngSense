@@ -2,22 +2,6 @@ name: Static Skill integrity
 
 on:
   push:
-    paths:
-      - "SKILL.md"
-      - "decision-framework.md"
-      - "review-workflow.md"
-      - "agents/**"
-      - "bin/**"
-      - "test/**"
-      - "package.json"
-      - "principles/**"
-      - "languages/**"
-      - "domains/**"
-      - "references/**"
-      - "evals/**"
-      - "README.md"
-      - "RELEASE_CHECKLIST.md"
-      - ".github/workflows/skill-static-integrity.yml"
   pull_request:
     paths:
       - "SKILL.md"

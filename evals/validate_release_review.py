@@ -49,6 +49,8 @@ def validate(data: object, review: str) -> list[str]:
             errors.append("each run needs a string id")
             continue
         name = run["id"]
+        if name not in REQUIRED_RUNS:
+            errors.append(f"unknown required-run identifier: {name}")
         if name in seen:
             errors.append(f"duplicate run: {name}")
         seen.add(name)
@@ -69,11 +71,15 @@ def main() -> int:
         errors = validate(data, review)
         if not errors:
             sha = data["reviewed_sha"]
+            commit = subprocess.run(
+                ["git", "cat-file", "-t", sha], cwd=ROOT,
+                capture_output=True, text=True, check=False,
+            )
             result = subprocess.run(
                 ["git", "diff", "--quiet", sha, "HEAD", "--", *REVIEWED_PATHS],
                 cwd=ROOT, check=False,
             )
-            if result.returncode != 0:
+            if commit.returncode != 0 or commit.stdout.strip() != "commit" or result.returncode != 0:
                 errors.append("reviewed payload differs from HEAD or reviewed commit is unavailable")
     except (OSError, ValueError) as exc:
         errors = [str(exc)]

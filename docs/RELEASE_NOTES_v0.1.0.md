@@ -46,10 +46,13 @@ EngSense does not execute a separate runtime, replace repository authorization r
 
 ## Install
 
+The published npm tarball is the tested distribution path. It requires no npm registry publication and avoids a GitFetcher error observed in npm 10.8.2 when fetching a GitHub commit directly. Use the release asset in the commands below. GitHub source shorthand (`github:GendByteMaster/EngSense#v0.1.0`) may work with other npm versions but has not been verified for this release.
+
+
 ### Codex — user scope (recommended)
 
 ```powershell
-npx --yes "github:GendByteMaster/EngSense#v0.1.0" install --client codex --global
+npm exec --yes --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense install --client codex --global
 ```
 
 User-level Skill location: `~/.agents/skills/engsense/`.
@@ -59,7 +62,7 @@ User-level Skill location: `~/.agents/skills/engsense/`.
 Run from the project root:
 
 ```powershell
-npx --yes "github:GendByteMaster/EngSense#v0.1.0" install --client codex
+npm exec --yes --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense install --client codex
 ```
 
 Project-level location: `.agents/skills/engsense/`.
@@ -69,7 +72,7 @@ EngSense also reconciles its marked block in the active Codex AGENTS instruction
 ### Claude Code
 
 ~~~powershell
-npx --yes "github:GendByteMaster/EngSense#v0.1.0" install --client claude --global
+npm exec --yes --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense install --client claude --global
 ~~~
 
 User location: `~/.claude/skills/engsense/`. Without `--global`: `.claude/skills/engsense/`.
@@ -77,7 +80,7 @@ User location: `~/.claude/skills/engsense/`. Without `--global`: `.claude/skills
 ### Cursor
 
 ~~~powershell
-npx --yes "github:GendByteMaster/EngSense#v0.1.0" install --client cursor --global
+npm exec --yes --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense install --client cursor --global
 ~~~
 
 User location: `~/.cursor/skills/engsense/`. Without `--global`: `.agents/skills/engsense/`.
@@ -85,7 +88,7 @@ User location: `~/.cursor/skills/engsense/`. Without `--global`: `.agents/skills
 ### All three clients
 
 ~~~powershell
-npx --yes "github:GendByteMaster/EngSense#v0.1.0" install --client all --global
+npm exec --yes --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense install --client all --global
 ~~~
 
 Codex remains the default. Codex and Cursor share a project-level payload; uninstalling either removes the shared copy and EngSense's Codex registration unless `--no-agents` is set. Claude Code and Cursor use native discovery without CLAUDE.md or Cursor rules modifications. Replace `--client codex` in status, refresh and uninstall examples with the desired client. Native activation and live model behavior for Claude Code and Cursor are not yet verified.
@@ -93,8 +96,8 @@ Codex remains the default. Codex and Cursor share a project-level payload; unins
 ### Verify installation
 
 ```powershell
-npx --yes "github:GendByteMaster/EngSense#v0.1.0" status --client codex --global
-npx --yes "github:GendByteMaster/EngSense#v0.1.0" --version
+npm exec --yes --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense status --client codex --global
+npm exec --yes --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense --version
 ```
 
 The status command reports installation presence and AGENTS linkage; `--version` reports the invoked CLI package version, not an independent installed-file version check.
@@ -104,7 +107,7 @@ The status command reports installation presence and AGENTS linkage; `--version`
 To reapply this exact release:
 
 ```powershell
-npx --yes "github:GendByteMaster/EngSense#v0.1.0" install --client codex --global --force
+npm exec --yes --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense install --client codex --global --force
 ```
 
 To refresh from the current default branch:
@@ -124,7 +127,7 @@ npx --yes github:GendByteMaster/EngSense install --client codex --global --force
 ## Uninstall
 
 ```powershell
-npx --yes "github:GendByteMaster/EngSense#v0.1.0" uninstall --client codex --global
+npm exec --yes --package="https://github.com/GendByteMaster/EngSense/releases/download/v0.1.0/gendbytemaster-engsense-0.1.0.tgz" -- engsense uninstall --client codex --global
 ```
 
 Omit `--global` for project scope. Uninstall removes the target Skill directory and its managed AGENTS blocks. It preserves unrelated instruction content, but does not preserve custom files within the target Skill directory. Use `--dry-run` to preview.
@@ -147,7 +150,7 @@ engsense --help
 
 ## Validation and known limitations
 
-- The release workflow validates fixtures, static Skill integrity, Node installer tests, and npm package contents before publication.
+- The release workflow validates fixtures, static Skill integrity, Node installer tests and installation from the npm tarball built from the exact release commit before publication. The tarball is attached to the GitHub release.
 - The 51 fixtures specify expected decisions; a structural pass is not 51 live model passes. Live Codex behavior review has not been run. This public development pre-release is not a behavior-verified release.
 - Three of fourteen mandatory books are completed, alongside four supplemental full-text sources. Remaining book-specific lenses are research-gated.
 - The portable installer targets Codex, Claude Code and Cursor. Live native activation and model behavior in Claude Code and Cursor are not yet verified.

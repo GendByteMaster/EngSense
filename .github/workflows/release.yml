@@ -1,0 +1,78 @@
+name: Create GitHub Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Version tag matching package.json'
+        required: true
+        default: 'v0.1.0'
+      expected_sha:
+        description: 'Exact reviewed main commit SHA'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: engsense-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+      actions: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate release artifact and review gate
+        shell: bash
+        env:
+          TAG: ${{ inputs.tag }}
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_SHA" = "$EXPECTED_SHA"
+          test "$TAG" = "v$(node -p "require('./package.json').version")"
+          test "$TAG" = "v0.1.0"
+          grep -Fx 'Status: PASS.' docs/CODEX_BEHAVIOR_REVIEW.md
+          python evals/validate.py
+          python evals/validate_skill.py
+          npm test
+          npm pack --dry-run
+      - name: Verify main CI on exact revision
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for workflow in evals.yml skill-static-integrity.yml skill-install-smoke.yml; do
+            result=$(gh run list --workflow "$workflow" --commit "$GITHUB_SHA" --branch main --event push --limit 1 --json conclusion --jq '.[0].conclusion // ""')
+            test "$result" = success || { echo "Missing successful main check: $workflow"; exit 1; }
+          done
+      - name: Publish GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release already exists; refusing replacement"; exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null; then
+            echo "Tag already exists; refusing replacement"; exit 1
+          else
+            code=$?
+            test "$code" = 2 || exit "$code"
+          fi
+          gh release create "$TAG" --target "$GITHUB_SHA" --title "EngSense $TAG — Engineering Judgment Skill" --notes-file docs/RELEASE_NOTES_v0.1.0.md

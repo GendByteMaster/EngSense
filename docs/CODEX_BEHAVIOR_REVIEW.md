@@ -9,3 +9,5 @@ Run structural checks first. Then start a fresh session per case, explicitly inv
 Representative cases: 001, 002, 003, 004, 009, 010, 017, 019, 020, 025, 032, 046, 047, 048, 049, 050, 051. Repeat critical specialist cases 009, 010, 051 in fresh sessions. Check a mechanical rename separately: EngSense must not force architecture analysis. For each run record PASS/FAIL/INCONCLUSIVE, rationale, observed modules, missing expected properties, prohibited reasoning, and transcript reference. PASS requires every mandatory property and no prohibited reasoning. Any critical failure or inconclusive required case blocks candidate approval until retested. This protocol is an external manual review, not a new runtime.
 
 Do not claim effectiveness across all models or comparative improvement without a separate baseline experiment.
+
+When all required cases and repeats are independently scored PASS, append the evidence record (candidate SHA, environment, case results and transcript references) and replace the current status line with `Status: PASS.` on its own line. Do not use that marker for a static-only review or an incomplete run.

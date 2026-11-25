@@ -189,3 +189,7 @@ A pre-v1 tag/release may be created before the mandatory research corpus is comp
 - interfaces and guidance may still change before v1.0.
 
 Do not label such a release `v1.0.0`.
+
+## Publishing v0.1.0 (Delegrix-style)
+
+The manual `Create GitHub Release` workflow publishes only from `main`, with an exact reviewed commit SHA and matching package version. It requires a recorded `Status: PASS.` in `docs/CODEX_BEHAVIOR_REVIEW.md` and successful main CI on that SHA, validates the package again, refuses existing tags/releases, and uses the version-specific release notes. Do not mark the live gate complete without actual evidence. No npm registry publication is required.

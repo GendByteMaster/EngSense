@@ -1,0 +1,33 @@
+{
+  "id": "review-unsupported-defect",
+  "title": "Unsupported review assertion is not an established defect",
+  "mode": "focused",
+  "task": "Review whether a private helper's allocation is a performance defect.",
+  "context": [
+    "No performance target, workload profile or benchmark is available.",
+    "The helper is on an unknown execution path."
+  ],
+  "evidence": [
+    "The code allocates once per invocation; call frequency and measured cost are unknown."
+  ],
+  "tempting_wrong_recommendation": [
+    "Declare a high-severity performance defect and redesign the helper."
+  ],
+  "expected_decision_properties": [
+    "Distinguish observed allocation from unknown impact.",
+    "Suppress unsupported defect claims or record a qualified measurement gap.",
+    "Recommend measurement only if performance is materially relevant."
+  ],
+  "unacceptable_reasoning": [
+    "Invent a benchmark or assume the path is hot.",
+    "Use high severity based on allocation alone."
+  ],
+  "expected_quality_dimensions": [
+    "performance_observability",
+    "maintainability"
+  ],
+  "expected_authority": "note",
+  "verification_expectations": [
+    "If performance matters, measure representative call frequency, allocations and latency before proposing changes."
+  ]
+}

@@ -233,7 +233,7 @@ For full installation details, see [docs/INSTALLATION.md](docs/INSTALLATION.md).
 
 ## Project status
 
-The reusable Skill foundation, language/domain routing, conflict matrix, research-grounded general/source-specific lenses, and 48 deterministic eval fixtures are implemented.
+The reusable Skill foundation, language/domain routing, conflict matrix, research-grounded general/source-specific lenses, and 51 deterministic eval fixtures are implemented.
 
 EngSense is still **pre-v1.0** while the mandatory source corpus and blocked source-specific lenses remain incomplete. The release checklist records the remaining gates explicitly rather than treating unfinished research as complete.
 

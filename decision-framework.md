@@ -213,7 +213,7 @@ A centralized abstraction may also become an expensive bottleneck.
 
 ## 8. Identify conflicts
 
-Load `references/conflicts.md`.
+Load `references/conflicts.md` only when competing valid principles materially change the decision. Otherwise skip this reference and do not manufacture a conflict.
 
 Do not resolve tensions by slogan.
 

@@ -15,14 +15,14 @@ SKILL.md
 + decision-framework.md
 + language module when language semantics matter
 + domain module when domain semantics matter
-+ one primary principle lens
++ zero or one primary principle lens, when needed
 + one supporting lens only when a real second trade-off exists
 + conflicts.md only when valid principles pull in opposite directions
 ```
 
 Do not load every lens because several could be relevant in theory.
 
-A lens is justified when ignoring it could materially change the decision.
+A lens is justified when ignoring it could materially change the decision. If the dominant question is unclear, consult this map before loading a candidate lens. A domain/language-only route is valid. Mechanical tasks need no EngSense review.
 
 ---
 

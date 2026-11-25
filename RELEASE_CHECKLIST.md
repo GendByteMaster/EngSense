@@ -10,7 +10,7 @@ A checked documentation item means the artifact exists and is internally consist
 
 The Skill foundation is usable, but the mandatory source corpus and blocked source-specific lenses tracked in Issue #2 are not complete.
 
-A pre-v1 development release may be reasonable once the repository is packaged and reviewed, but it must not claim the blocked source-specific coverage.
+A pre-v1 development release is tracked separately below. Three of fourteen mandatory sources are complete; four additional full-text sources are supplemental. Neither the package version nor green structural CI is evidence of a completed behavioral review.
 
 ## 1. Skill structure
 
@@ -95,7 +95,7 @@ Do not mark these complete from summaries, excerpts, general knowledge, or unrel
 - [x] Language-pattern transfer scenarios exist.
 - [x] Specialist-boundary scenarios exist.
 - [x] Performance/change-strategy/representation scenarios exist.
-- [x] Current fixture set contains 48 scenarios.
+- [x] Current fixture set contains 51 scenarios.
 - [ ] Final v1.0 fixture review after all mandatory source-specific lenses are added.
 
 The eval folder remains lightweight development evidence. A model-execution platform is not part of the EngSense Skill.
@@ -172,6 +172,14 @@ A v1.0 release requires all of the following:
 - [ ] version/tag created only after the above gates pass.
 
 ## Pre-v1 development release
+
+Candidate: `v0.1.0` (package version already set). The pre-v1 release gate is independent of the mandatory v1.0 research gate.
+
+- [ ] Candidate revision merged and all three CI workflows green on that revision.
+- [ ] Installer install/status/uninstall smoke and Node tests verified for candidate.
+- [ ] Representative real Codex Skill behavior review recorded (see `docs/CODEX_BEHAVIOR_REVIEW.md`).
+- [ ] Release notes reviewed (see `docs/RELEASE_NOTES_v0.1.0.md`).
+- [ ] Verify tag does not already exist; create tag and GitHub release for the verified commit.
 
 A pre-v1 tag/release may be created before the mandatory research corpus is complete if it clearly states:
 

@@ -148,7 +148,7 @@ engsense --help
 ## Validation and known limitations
 
 - The release workflow validates fixtures, static Skill integrity, Node installer tests, and npm package contents before publication.
-- The 51 fixtures specify expected decisions; a structural pass is not 51 live model passes. The recorded Codex behavior review is the separate release gate.
+- The 51 fixtures specify expected decisions; a structural pass is not 51 live model passes. Live Codex behavior review has not been run. This public development pre-release is not a behavior-verified release.
 - Three of fourteen mandatory books are completed, alongside four supplemental full-text sources. Remaining book-specific lenses are research-gated.
 - The portable installer targets Codex, Claude Code and Cursor. Live native activation and model behavior in Claude Code and Cursor are not yet verified.
 - ChatGPT Skills smoke testing remains a v1.0 gate; this release does not claim that verification.
